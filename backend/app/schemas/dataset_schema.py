@@ -34,7 +34,7 @@ class DatasetResponse(BaseModel):
     license: str
     category_id: uuid.UUID | None
     tags: list[uuid.UUID] = Field(default_factory=list)
-    dataset_metadata: dict[str, Any] | None = Field(None, alias="metadata")
+    metadata: dict[str, Any] | None = Field(None, validation_alias="dataset_metadata")
     quality_score: int | None
     download_count: int
     view_count: int

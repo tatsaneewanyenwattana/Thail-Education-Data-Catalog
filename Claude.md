@@ -9,7 +9,7 @@
 **ปัญหาที่ระบบนี้แก้**
 - ปัญหาที่ 1 — ข้อมูลกระจัดกระจาย ไม่มี Single Entry Point ที่รวมข้อมูลการศึกษาไว้ที่เดียว
 - ปัญหาที่ 2 — ข้อมูลส่วนตัวปนอยู่ในไฟล์ เช่น รหัสนักเรียน เบอร์โทร เลขบัตรประชาชน ระบบนี้จึงมี PII Masking อัตโนมัติ
-- ปัญหาที่ 3 — ไม่มีมาตรฐานการเผยแพร่ข้อมูล ระบบนี้บังคับใช้มาตรฐาน DCAT-AP และมี Approval Workflow ก่อนเผยแพร่
+- ปัญหาที่ 3 — ไม่มีมาตรฐานการเผยแพร่ข้อมูล ระบบนี้บังคับใช้มาตรฐาน DCAT-AP และเผยแพร่ Dataset ทันทีหลังอัปโหลด
 - ปัญหาที่ 4 — นักพัฒนาหรือนักวิจัยที่อยากนำข้อมูลไปใช้ต่อไม่มี API กลาง ระบบนี้สร้าง API อัตโนมัติให้ทุก Dataset
 - ปัญหาที่ 5 — ไม่รู้ว่าข้อมูลนำไปใช้ได้แค่ไหน ระบบนี้มีระบบ License ชัดเจนทุก Dataset
 
@@ -55,12 +55,12 @@
 | บันทึกเงื่อนไขค้นหา | ❌ | ✅ | ✅ |
 | อัปโหลด Dataset | ❌ | ✅ | ✅ |
 | แก้ไข Dataset ของตัวเอง | ❌ | ✅ | ✅ |
-| ส่ง Dataset ขอ Approve | ❌ | ✅ | ✅ |
+| ลบ Dataset ของตัวเอง | ❌ | ✅ | ✅ |
+| ลบ Dataset ของ Agency (ทุกหน่วยงาน) | ❌ | ❌ | ✅ |
 | ดู Version History Dataset ตัวเอง | ❌ | ✅ | ✅ |
 | Restore Version Dataset ตัวเอง | ❌ | ✅ | ✅ |
 | Bulk Upload Excel Template | ❌ | ✅ | ✅ |
 | ดู Data Quality Score | ❌ | ✅ | ✅ |
-| Approve / Reject Dataset | ❌ | ❌ | ✅ |
 | จัดการ User ทั้งหมด | ❌ | ❌ | ✅ |
 | Suspend บัญชี Agency | ❌ | ❌ | ✅ |
 | สร้าง/แก้ไขหมวดหมู่ของตัวเอง | ❌ | ✅ | ✅ |
@@ -88,13 +88,15 @@
 - Admin Unsuspend → เปลี่ยน Status เป็น active
 
 **M2 · Dataset**
-- Dataset ที่ยังเป็น Draft ไม่แสดงต่อ Visitor
+- Agency อัปโหลด Dataset → Status = published ทันที บันทึก published_at
+- Admin อัปโหลด Dataset → Status = published ทันที บันทึก published_at
+- แสดงเฉพาะ Dataset ที่ Status = published ต่อ Visitor
 - Agency แก้ไข Dataset ได้เฉพาะ Dataset ของตัวเองเท่านั้น
+- Agency ลบ Dataset ได้เฉพาะของตัวเอง (Soft Delete)
 - Admin แก้ไขได้ทุก Dataset
-- Dataset ที่ถูก Reject ต้องแก้ไขแล้ว Submit ใหม่เท่านั้น ไม่สามารถ Approve ต่อจาก Rejected ได้
-- Dataset ที่ Publish แล้ว ถ้าแก้ไขต้องกลับไป Submit ใหม่เสมอ
-- Version ใหม่จะถูกสร้างทุกครั้งที่มีการแก้ไขและ Submit
-- Admin อัปโหลด Dataset แล้ว Publish ได้เลยทันที ไม่ต้องผ่านขั้นตอน Approve
+- Admin ลบ Dataset ของ Agency ได้ (Soft Delete)
+- ไม่มี Submit / Reject อีกต่อไป (ไม่มี Approval Workflow)
+- หลัง Publish แล้ว ส่ง Email แจ้ง Subscriber ที่ติดตามหมวดหรือหน่วยงาน
 
 **M3 · Search**
 - แสดงเฉพาะ Dataset ที่ Status เป็น Published เท่านั้น
@@ -403,7 +405,7 @@ NEXT_PUBLIC_APP_ENV=development
 | category_id | UUID | YES | NULL | FK → categories |
 | title | VARCHAR(500) | NO | - | |
 | description | TEXT | YES | NULL | |
-| status | ENUM(dataset_status) | NO | draft | |
+| status | ENUM(dataset_status) | NO | published | ตั้งเป็น published ทันทีหลังอัปโหลด |
 | license | ENUM(dataset_license) | NO | - | |
 | metadata | JSONB | YES | NULL | DCAT-AP metadata |
 | quality_score | INTEGER | YES | NULL | 0-100 |
@@ -586,10 +588,10 @@ NEXT_PUBLIC_APP_ENV=development
 | | | active | ใช้งานได้ปกติ |
 | | | rejected | ถูกปฏิเสธ |
 | | | suspended | ถูกระงับ |
-| dataset_status | datasets.status | draft | ยังไม่ส่ง อยู่ระหว่างแก้ไข |
-| | | submitted | ส่งให้ Admin ตรวจแล้ว |
-| | | published | อนุมัติแล้ว เผยแพร่สาธารณะ |
-| | | rejected | ถูกส่งกลับ ต้องแก้ไขใหม่ |
+| dataset_status | datasets.status | published | เผยแพร่สาธารณะ (ค่าเริ่มต้นหลังอัปโหลด) |
+| | | draft | ไม่ใช้ใน Flow ปัจจุบัน |
+| | | submitted | ไม่ใช้ใน Flow ปัจจุบัน |
+| | | rejected | ไม่ใช้ใน Flow ปัจจุบัน |
 | dataset_license | datasets.license | open | เปิดเผยสาธารณะ ใช้ได้เลย |
 | | | conditional | มีเงื่อนไขการใช้งาน |
 | | | cc | Creative Commons |
@@ -744,7 +746,7 @@ Table datasets {
   category_id uuid [null, ref: > categories.id]
   title varchar(500) [not null]
   description text [null]
-  status dataset_status [not null, default: 'draft']
+  status dataset_status [not null, default: 'published']
   license dataset_license [not null]
   metadata jsonb [null]
   quality_score integer [null]
@@ -1008,8 +1010,7 @@ Enum file_format {
 | GET | /api/v1/datasets | ดูรายการ Dataset | ❌ |
 | GET | /api/v1/datasets/{id} | ดู Dataset ชิ้นเดียว | ❌ |
 | PATCH | /api/v1/datasets/{id} | แก้ไข Dataset | ✅ |
-| DELETE | /api/v1/datasets/{id} | ลบ Dataset | ✅ |
-| POST | /api/v1/datasets/{id}/submit | ส่ง Dataset ขอ Approve | ✅ |
+| DELETE | /api/v1/datasets/{id} | ลบ Dataset (Agency เฉพาะของตัวเอง / Admin ทุก Dataset) | ✅ |
 | GET | /api/v1/datasets/{id}/versions | ดูประวัติ Version | ✅ |
 | POST | /api/v1/datasets/{id}/versions/{version_number}/restore | Restore Version | ✅ |
 | POST | /api/v1/datasets/bulk-upload | Bulk Upload | ✅ |
@@ -1051,8 +1052,6 @@ Enum file_format {
 | POST | /api/v1/admin/users/{id}/approve | อนุมัติบัญชี Agency | ✅ Admin |
 | POST | /api/v1/admin/users/{id}/reject | ปฏิเสธบัญชี Agency | ✅ Admin |
 | POST | /api/v1/admin/users/{id}/suspend | Suspend User | ✅ Admin |
-| POST | /api/v1/admin/datasets/{id}/approve | Approve Dataset | ✅ Admin |
-| POST | /api/v1/admin/datasets/{id}/reject | Reject Dataset | ✅ Admin |
 | GET | /api/v1/admin/categories | ดูรายการหมวดหมู่ทั้งหมดทุก Agency | ✅ Admin |
 | POST | /api/v1/admin/categories | เพิ่มหมวดหมู่ของ Agency ใดก็ได้ | ✅ Admin |
 | PATCH | /api/v1/admin/categories/{id} | แก้ไขหมวดหมู่ของ Agency ใดก็ได้ | ✅ Admin |
@@ -1238,7 +1237,6 @@ data: <JSON metadata>
 | DATASET_PERMISSION_DENIED | 403 | ไม่ใช่เจ้าของ Dataset |
 | DATASET_INVALID_STATUS | 400 | สถานะ Dataset ไม่อนุญาตให้ทำสิ่งนี้ |
 | DATASET_ALREADY_PUBLISHED | 400 | Dataset ถูก Publish แล้ว |
-| DATASET_REJECT_COMMENT_REQUIRED | 400 | ต้องใส่ Comment เมื่อ Reject |
 
 **File**
 | Code | HTTP Status | ความหมาย |
@@ -1433,9 +1431,10 @@ Authorization: Bearer <token>
 6. Scan หาข้อมูล PII ในไฟล์ด้วย Pandas → พบ PII → Mask อัตโนมัติก่อนบันทึก
 7. คำนวณ Data Quality Score ด้วย Pandas
 8. บันทึกไฟล์ลง MinIO พร้อม Encryption
-9. บันทึก Metadata ลง PostgreSQL → Status = draft, version_number = 1
+9. บันทึก Metadata ลง PostgreSQL → Status = published, published_at = now(), version_number = 1
 10. Index ข้อมูลลง Elasticsearch
-11. คืน Dataset Object กลับไปพร้อม 201 Created
+11. Background Task ส่ง Email แจ้ง Subscriber
+12. คืน Dataset Object กลับไปพร้อม 201 Created
 ```
 
 **Bulk Upload Flow**
@@ -1451,57 +1450,28 @@ Authorization: Bearer <token>
 
 ---
 
-## #30 · Approval Workflow
+## #30 · Dataset Publish Workflow
 
-**Submit Flow**
+**Upload Flow (ทุก Role)**
 ```
-1. Agency/Admin กดส่ง Dataset ที่ POST /api/v1/datasets/{id}/submit
-2. ตรวจสอบว่าเป็นเจ้าของ Dataset มั้ย → ไม่ใช่ → คืน DATASET_PERMISSION_DENIED 403
-3. ตรวจสอบว่า Status เป็น draft หรือ rejected มั้ย → ไม่ใช่ → คืน DATASET_INVALID_STATUS 400
-4. เปลี่ยน Status เป็น submitted
-5. ส่ง Email แจ้ง Admin ว่ามี Dataset รอ Approve
-6. บันทึก Audit Log
-7. คืน Dataset Object พร้อม Status ใหม่
-```
-
-**Approve Flow**
-```
-1. Admin กด Approve ที่ POST /api/v1/admin/datasets/{id}/approve
-2. ตรวจสอบว่า Status เป็น submitted มั้ย → ไม่ใช่ → คืน DATASET_INVALID_STATUS 400
-3. เปลี่ยน Status เป็น published
-4. บันทึก published_at = เวลาปัจจุบัน
-5. อัปเดต Elasticsearch Index
-6. ส่ง Email แจ้ง Agency ว่า Dataset ได้รับการอนุมัติแล้ว
-7. แจ้งเตือน User ที่ Subscribe หมวดหรือหน่วยงานนั้นไว้
-8. บันทึก Audit Log
-9. คืน Dataset Object พร้อม Status ใหม่
-```
-
-**Reject Flow**
-```
-1. Admin กด Reject พร้อมใส่ Comment ที่ POST /api/v1/admin/datasets/{id}/reject
-2. ตรวจสอบว่า Status เป็น submitted มั้ย → ไม่ใช่ → คืน DATASET_INVALID_STATUS 400
-3. ตรวจสอบว่ามี Comment มั้ย → ไม่มี → คืน DATASET_REJECT_COMMENT_REQUIRED 400
-4. เปลี่ยน Status เป็น rejected
-5. บันทึก reject_comment
-6. ส่ง Email แจ้ง Agency พร้อม Comment เหตุผล
-7. บันทึก Audit Log
-8. คืน Dataset Object พร้อม Status ใหม่
-```
-
-**Admin Upload Flow**
-```
-1. Admin อัปโหลด Dataset ตาม Upload Flow ปกติ
-2. ระบบเปลี่ยน Status เป็น published ทันที ข้ามขั้นตอน Approve
+1. Agency/Admin อัปโหลด Dataset
+2. ระบบ Published ทันที
 3. บันทึก published_at = เวลาปัจจุบัน
 4. อัปเดต Elasticsearch Index
-5. บันทึก Audit Log
+5. แจ้ง Subscriber ที่ติดตามหมวดหรือหน่วยงานนั้น
+```
+
+**Delete Flow**
+```
+1. Agency ลบที่ DELETE /api/v1/datasets/{id} → เฉพาะ Dataset ของตัวเอง
+2. Admin ลบที่ DELETE /api/v1/datasets/{id} → ลบ Dataset ของ Agency ใดก็ได้
+3. ไม่ใช่เจ้าของและไม่ใช่ Admin → คืน DATASET_PERMISSION_DENIED 403
+4. Soft Delete (is_deleted = true) + บันทึก Audit Log
 ```
 
 **State Diagram**
 ```
-draft → submitted → published
-                 ↘ rejected → submitted → published
+upload → published
 ```
 
 ---
@@ -1591,21 +1561,6 @@ draft → submitted → published
 - ไม่บล็อก Response รอส่ง Email ก่อน ส่ง Response กลับทันทีแล้วส่ง Email ทีหลัง
 - ถ้าส่ง Email ไม่สำเร็จ บันทึก Error Log ไว้ ไม่ต้อง Rollback Transaction หลัก
 
-**Dataset Submitted — แจ้ง Admin**
-- ส่ง Email ไปหา Admin ทุกคน
-- หัวข้อ: มี Dataset ใหม่รอการอนุมัติ
-- เนื้อหา: ชื่อ Dataset หน่วยงาน และ Link ไปหน้า Admin
-
-**Dataset Approved — แจ้ง Agency**
-- ส่ง Email ไปหา Agency เจ้าของ Dataset
-- หัวข้อ: Dataset ของคุณได้รับการอนุมัติแล้ว
-- เนื้อหา: ชื่อ Dataset และ Link ไปหน้า Dataset
-
-**Dataset Rejected — แจ้ง Agency**
-- ส่ง Email ไปหา Agency เจ้าของ Dataset
-- หัวข้อ: Dataset ของคุณถูกส่งกลับเพื่อแก้ไข
-- เนื้อหา: ชื่อ Dataset เหตุผล และ Link ไปหน้าแก้ไข
-
 **New Dataset Published — แจ้ง Subscriber**
 - ค้นหา User ที่ Subscribe หมวดหรือหน่วยงานนั้นไว้
 - ส่ง Email ไปหาแต่ละ User
@@ -1637,30 +1592,21 @@ Transaction {
 **Upload Dataset**
 ```
 Transaction {
-  INSERT datasets
+  INSERT datasets (status = published, published_at = now())
   INSERT dataset_files
   INSERT dataset_versions (version 1)
   INSERT dataset_tags (ถ้ามี)
 }
 → ถ้าล้มเหลว Rollback ทั้งหมด + ลบไฟล์ออกจาก MinIO
+→ Background Task ส่ง Email แจ้ง Subscriber อยู่นอก Transaction
 ```
 
-**Approve Dataset**
+**Delete Dataset**
 ```
 Transaction {
-  UPDATE datasets.status = published
-  UPDATE datasets.published_at = now()
+  UPDATE datasets.is_deleted = true
 }
-→ Background Task ส่ง Email อยู่นอก Transaction
-```
-
-**Reject Dataset**
-```
-Transaction {
-  UPDATE datasets.status = rejected
-  UPDATE datasets.reject_comment = comment
-}
-→ Background Task ส่ง Email อยู่นอก Transaction
+→ บันทึก Audit Log ใน Transaction เดียวกัน
 ```
 
 **Restore Version**
@@ -1738,7 +1684,7 @@ app/
             ├── users/
             │   └── page.tsx                 # หน้าจัดการ User
             ├── datasets/
-            │   └── page.tsx                 # หน้าอนุมัติ Dataset
+            │   └── page.tsx                 # หน้าจัดการ Dataset ทุก Agency
             ├── categories/
             │   └── page.tsx                 # หน้าจัดการหมวดหมู่
             ├── tags/
@@ -1780,7 +1726,7 @@ app/
 |---|---|---|
 | Dashboard | /dashboard | Dataset ของตัวเอง, สถานะ, ยอดดาวน์โหลด |
 | Custom Dashboard | /dashboard/custom | Drag & Drop Widget, เลือก Dataset, เลือกประเภทกราฟ |
-| รายการ Dataset | /datasets | รายการ Dataset, Status, ปุ่มแก้ไข, ปุ่มส่ง Approve |
+| รายการ Dataset | /datasets | รายการ Dataset, Status, ปุ่มแก้ไข, ปุ่มลบ |
 | อัปโหลด Dataset | /datasets/create | Form อัปโหลดไฟล์, Metadata, License, Tag |
 | Bulk Upload | /datasets/bulk-upload | ดาวน์โหลด Template, อัปโหลด Excel, ผลลัพธ์รายแถว |
 | แก้ไข Dataset | /datasets/[id]/edit | Form แก้ไข, อัปโหลดไฟล์ใหม่, Quality Score |
@@ -1795,7 +1741,7 @@ app/
 |---|---|---|
 | Admin Dashboard | /admin | สถิติ Users/Datasets/Downloads รายวัน |
 | จัดการ User | /admin/users | รายการ User, อนุมัติ/ปฏิเสธบัญชีใหม่, Suspend, เปลี่ยน Role |
-| อนุมัติ Dataset | /admin/datasets | รายการ Dataset รอ Approve, Approve/Reject |
+| จัดการ Dataset | /admin/datasets | รายการ Dataset ทุก Agency, แก้ไข/ลบได้ |
 | จัดการหมวดหมู่ทั้งหมด | /admin/categories | รายการหมวดหมู่ทุก Agency จัดกลุ่มตามหน่วยงาน, แก้ไข/ลบได้ทุกหมวด |
 | จัดการแท็ก | /admin/tags | รายการแท็ก, เพิ่ม/แก้ไข/ลบ |
 | จัดการประกาศ | /admin/announcements | รายการประกาศ, เพิ่ม/แก้ไข/ลบ, เปิด/ปิด |
@@ -1866,15 +1812,12 @@ app/
 |---|---|
 | AdminStatsCard | การ์ดแสดงสถิติภาพรวมระบบ |
 | UserTable | ตารางรายการ User |
-| DatasetApprovalTable | ตารางรายการ Dataset รอ Approve |
 | AuditLogTable | ตารางรายการ Audit Log |
 | AnnouncementForm | Form เพิ่ม/แก้ไขประกาศ |
 | CategoryTree | แสดงหมวดหมู่แบบ 2 ระดับ จัดกลุ่มตามหน่วยงาน |
 | CategoryForm | Form Agency เพิ่ม/แก้ไขหมวดหมู่ระดับ 1 ของตัวเอง |
 | SubcategoryForm | Form Agency เพิ่ม/แก้ไขหมวดหมู่ระดับ 2 ของตัวเอง |
 | TagForm | Form เพิ่ม/แก้ไขแท็ก |
-| RejectModal | Modal กรอก Comment เมื่อ Reject |
-| ApproveModal | Modal ยืนยันก่อน Approve |
 
 **Auth**
 | Component | ใช้ทำอะไร |
@@ -2030,11 +1973,6 @@ useUIStore
 | purpose | Required, ขั้นต่ำ 10 ตัวอักษร, สูงสุด 500 ตัวอักษร |
 | file_format | Required, เลือกได้ CSV/Excel/JSON/XML |
 
-**Reject Modal**
-| Field | กฎ |
-|---|---|
-| reject_comment | Required, ขั้นต่ำ 10 ตัวอักษร, สูงสุด 1000 ตัวอักษร |
-
 **Category Form**
 | Field | กฎ |
 |---|---|
@@ -2077,9 +2015,9 @@ useUIStore
 | primary-hover | #0A4A8C | Hover ปุ่มหลัก |
 | secondary | #F4F6F9 | Background รอง |
 | success | #16A34A | สถานะสำเร็จ, Published |
-| warning | #D97706 | สถานะรอ, Submitted |
-| error | #DC2626 | สถานะผิดพลาด, Rejected |
-| info | #0284C7 | สถานะข้อมูล, Draft |
+| warning | #D97706 | แจ้งเตือนทั่วไป |
+| error | #DC2626 | สถานะผิดพลาด |
+| info | #0284C7 | ข้อมูลเสริม |
 | text-primary | #111827 | ข้อความหลัก |
 | text-secondary | #6B7280 | ข้อความรอง |
 | border | #E5E7EB | เส้นขอบ |
@@ -2120,10 +2058,7 @@ useUIStore
 **Dataset Status สี**
 | Status | สี |
 |---|---|
-| draft | #0284C7 |
-| submitted | #D97706 |
 | published | #16A34A |
-| rejected | #DC2626 |
 
 **กฎ**
 - ใช้สีจาก Design System เท่านั้น ห้าม Hardcode สีใน Component
@@ -2209,12 +2144,14 @@ Visitor
 
 Agency
 - เข้าถึงได้เฉพาะ Dataset ของตัวเองเท่านั้น
-- ห้ามแก้ไข Dataset ของ Agency อื่น
+- แก้ไข/ลบได้เฉพาะ Dataset ของตัวเอง
+- ห้ามแก้ไข/ลบ Dataset ของ Agency อื่น
 - ห้ามเข้าถึง Endpoint ของ Admin ทุกตัว
 
 Admin
 - เข้าถึงได้ทุก Endpoint
-- แก้ไขได้ทุก Dataset ทุก User
+- แก้ไข/ลบได้ทุก Dataset รวมของ Agency
+- แก้ไขได้ทุก User
 - ห้าม Suspend ตัวเอง
 
 **การเช็ค Ownership**
@@ -2829,7 +2766,7 @@ PostgreSQL   Redis       MinIO    Elasticsearch
 - Login Flow
 - Register Flow
 - Upload Dataset Flow
-- Approval Workflow
+- Dataset Publish Workflow
 - Search Flow
 - Download Flow
 - Notification Flow

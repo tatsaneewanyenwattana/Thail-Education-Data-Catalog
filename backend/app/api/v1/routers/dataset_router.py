@@ -15,7 +15,7 @@ from app.core.security import (
     get_current_user_payload_with_status,
     require_roles,
 )
-from app.schemas.dataset_schema import DatasetCreateRequest, DatasetUpdateRequest, RejectRequest
+from app.schemas.dataset_schema import DatasetCreateRequest, DatasetUpdateRequest
 
 router = APIRouter()
 
@@ -57,6 +57,10 @@ def upload_dataset(
     - PII Scan → Mask → MinIO → Transaction → ES Index ตาม #29
     """
     import json
+
+    content = file.file.read()
+    dataset_service._validate_file(file, content)
+    file.file.seek(0)
 
     cat_id = uuid.UUID(category_id) if category_id else None
 
@@ -171,28 +175,6 @@ def delete_dataset(
     return delete_response()
 
 
-@router.post("/datasets/{dataset_id}/submit", status_code=status.HTTP_200_OK)
-def submit_dataset(
-    dataset_id: uuid.UUID,
-    request: Request,
-    background_tasks: BackgroundTasks,
-    payload: dict = Depends(get_current_user_payload_with_status),
-    db: Session = Depends(get_db),
-):
-    """
-    ส่ง Dataset ขอ Approve ตาม #30
-    - Auth ✅
-    """
-    result = dataset_service.submit(
-        db=db,
-        background_tasks=background_tasks,
-        dataset_id=dataset_id,
-        current_user=payload,
-        ip_address=get_client_ip(request),
-    )
-    return success_response(data=result.model_dump(mode="json"))
-
-
 @router.get("/datasets/{dataset_id}/versions", status_code=status.HTTP_200_OK)
 def get_versions(
     dataset_id: uuid.UUID,
@@ -277,52 +259,3 @@ def get_quality_score(
         db=db, dataset_id=dataset_id, current_user=payload
     )
     return success_response(data={"quality_score": score})
-
-
-@router.post("/admin/datasets/{dataset_id}/approve", status_code=status.HTTP_200_OK)
-def admin_approve_dataset(
-    dataset_id: uuid.UUID,
-    request: Request,
-    background_tasks: BackgroundTasks,
-    payload: dict = Depends(require_roles("admin")),
-    db: Session = Depends(get_db),
-):
-    """
-    Admin: Approve Dataset ตาม #30
-    - Auth ✅ Admin
-    - Transaction: UPDATE status=published + published_at ตาม #34
-    """
-    result = dataset_service.approve(
-        db=db,
-        es_client=_get_es(),
-        background_tasks=background_tasks,
-        dataset_id=dataset_id,
-        current_user=payload,
-        ip_address=get_client_ip(request),
-    )
-    return success_response(data=result.model_dump(mode="json"))
-
-
-@router.post("/admin/datasets/{dataset_id}/reject", status_code=status.HTTP_200_OK)
-def admin_reject_dataset(
-    dataset_id: uuid.UUID,
-    request_body: RejectRequest,
-    request: Request,
-    background_tasks: BackgroundTasks,
-    payload: dict = Depends(require_roles("admin")),
-    db: Session = Depends(get_db),
-):
-    """
-    Admin: Reject Dataset ตาม #30
-    - Auth ✅ Admin
-    - Transaction: UPDATE status=rejected + reject_comment ตาม #34
-    """
-    result = dataset_service.reject(
-        db=db,
-        background_tasks=background_tasks,
-        dataset_id=dataset_id,
-        comment=request_body.comment,
-        current_user=payload,
-        ip_address=get_client_ip(request),
-    )
-    return success_response(data=result.model_dump(mode="json"))
