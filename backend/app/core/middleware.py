@@ -137,8 +137,10 @@ class RBACMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         auth_header = request.headers.get("Authorization")
+
+        # ไม่มี token → ผ่านไปได้ (route dependencies จะ enforce auth เอง)
         if not auth_header:
-            return _error_response("AUTH_TOKEN_MISSING", 401)
+            return await call_next(request)
 
         parts = auth_header.split(" ", 1)
         if len(parts) != 2 or parts[0].lower() != "bearer":
@@ -166,6 +168,7 @@ class RBACMiddleware(BaseHTTPMiddleware):
             finally:
                 db.close()
 
+            # Admin prefix ต้องเป็น admin เท่านั้น
             if path.startswith(ADMIN_PREFIX) and role != "admin":
                 return _error_response("AUTH_PERMISSION_DENIED", 403)
 
