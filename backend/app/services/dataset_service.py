@@ -77,8 +77,6 @@ def _save_to_minio(
     content: bytes,
     ext: str,
 ) -> str:
-    from minio.sse import SseS3
-
     file_uuid = uuid.uuid4()
     object_name = f"datasets/{dataset_id}/{file_uuid}.{ext}"
     minio_client.put_object(
@@ -86,7 +84,6 @@ def _save_to_minio(
         object_name,
         io.BytesIO(content),
         length=len(content),
-        sse=SseS3(),
     )
     return object_name
 
