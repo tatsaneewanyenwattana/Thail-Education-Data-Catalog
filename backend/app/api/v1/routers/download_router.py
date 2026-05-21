@@ -141,8 +141,14 @@ def export_pdf_dataset(
         minio_client=_get_minio(),
         dataset_id=id,
     )
+    filename_rfc = f"dataset_{id}.pdf"
+    filename_encoded = quote(filename_rfc, encoding="utf-8")
+    content_disposition = (
+        f'attachment; filename="dataset.pdf"; '
+        f"filename*=UTF-8''{filename_encoded}"
+    )
     return StreamingResponse(
         io.BytesIO(pdf_bytes),
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": content_disposition},
     )

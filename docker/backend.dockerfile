@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     libgdk-pixbuf-xlib-2.0-0 \
     fonts-thai-tlwg \
+    fonts-noto \
     && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir -r requirements.txt
 

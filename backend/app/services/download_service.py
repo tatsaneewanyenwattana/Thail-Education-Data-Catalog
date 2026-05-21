@@ -256,6 +256,18 @@ def export_pdf(
         df = _read_dataframe(content, source_format).head(PREVIEW_ROW_LIMIT)
         numeric_cols = df.select_dtypes(include="number").columns.tolist()
         if numeric_cols:
+            import matplotlib.font_manager as fm
+
+            thai_fonts = fm.findSystemFonts(fontext="ttf")
+            thai_font = next(
+                (f for f in thai_fonts if "noto" in f.lower() and "thai" in f.lower()),
+                next((f for f in thai_fonts if "tlwg" in f.lower()), None),
+            )
+            if thai_font:
+                matplotlib.rcParams["font.family"] = ["Noto Sans Thai", "DejaVu Sans"]
+                matplotlib.rcParams["axes.unicode_minus"] = False
+                plt.rcParams["font.family"] = ["Noto Sans Thai", "DejaVu Sans"]
+
             col = numeric_cols[0]
             fig, ax = plt.subplots(figsize=(6, 3))
             df[col].dropna().head(20).plot(kind="bar", ax=ax)
