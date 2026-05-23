@@ -126,8 +126,9 @@ function sortResults(items: SearchResultMock[], sort: SortOption): SearchResultM
   return copy;
 }
 
-function SearchResultCard({ item, locale }: { item: SearchResultMock; locale: string }) {
+function SearchResultCard({ item }: { item: SearchResultMock }) {
   const t = useTranslations("search");
+  const locale = useLocale();
   const title = locale === "th" ? item.titleTh : item.titleEn;
   const description = locale === "th" ? item.descriptionTh : item.descriptionEn;
   const category = locale === "th" ? item.categoryTh : item.categoryEn;
@@ -242,7 +243,7 @@ export default function SearchResult(props: SearchResultProps) {
       ) : (
         <div className="flex flex-col gap-4">
           {pageItems.map((item) => (
-            <SearchResultCard key={item.id} item={item} locale={locale} />
+            <SearchResultCard key={item.id} item={item} />
           ))}
         </div>
       )}

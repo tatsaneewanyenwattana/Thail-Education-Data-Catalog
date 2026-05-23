@@ -14,8 +14,8 @@ export default async function LocaleLayout({
   const messages = await getMessages({ locale });
 
   return (
-    <html lang={locale}>
-      <body className="font-sarabun bg-surface-page">
+    <html lang={locale} suppressHydrationWarning>
+      <body className="font-sarabun bg-surface-page" suppressHydrationWarning>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AppProviders>
             {children}

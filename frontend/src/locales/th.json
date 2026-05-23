@@ -296,7 +296,42 @@
     "bulkUpload": "อัปโหลดหลายรายการ",
     "bulkResult": "ผลการอัปโหลด",
     "bulkSuccess": "สำเร็จ",
-    "bulkFailed": "ล้มเหลว"
+    "bulkFailed": "ล้มเหลว",
+    "detail": {
+      "breadcrumbHome": "หน้าหลัก",
+      "breadcrumbCategory": "หมวดหมู่",
+      "agency": "หน่วยงาน",
+      "publishedAt": "วันที่เผยแพร่",
+      "downloads": "ดาวน์โหลด",
+      "downloadsUnit": "ครั้ง",
+      "qualityScore": "Quality Score",
+      "description": "คำอธิบาย",
+      "tags": "แท็ก",
+      "preview": "ตัวอย่างข้อมูล 100 แถวแรก",
+      "piiNote": "คอลัมน์ที่มีข้อมูลส่วนบุคคลถูก Mask อัตโนมัติ",
+      "citation": "การอ้างอิง",
+      "download": "ดาวน์โหลด",
+      "bookmark": "บุ๊กมาร์ก",
+      "compare": "เปรียบเทียบ",
+      "quote": "อ้างอิง",
+      "openDataCommon": "Open Data Common"
+    },
+    "download": {
+      "title": "เลือกรูปแบบไฟล์และวัตถุประสงค์",
+      "format": "รูปแบบไฟล์",
+      "purpose": "วัตถุประสงค์การใช้งาน",
+      "purposePlaceholder": "กรุณาระบุวัตถุประสงค์เพื่อพัฒนาคุณภาพการบริการข้อมูล (อย่างน้อย 10 ตัวอักษร)",
+      "submit": "ยืนยันการดาวน์โหลด",
+      "purposeMin": "วัตถุประสงค์ต้องมีอย่างน้อย 10 ตัวอักษร",
+      "processing": "กำลังประมวลผล...",
+      "success": "สำเร็จ!"
+    },
+    "citationStyles": {
+      "apa": "APA Style",
+      "vancouver": "Vancouver Style",
+      "copy": "คัดลอก",
+      "copied": "คัดลอกแล้ว"
+    }
   },
   "search": {
     "placeholder": "ค้นหาชุดข้อมูล...",

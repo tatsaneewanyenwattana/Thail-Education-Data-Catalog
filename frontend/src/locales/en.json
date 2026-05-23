@@ -296,7 +296,42 @@
     "bulkUpload": "Bulk upload",
     "bulkResult": "Upload results",
     "bulkSuccess": "Success",
-    "bulkFailed": "Failed"
+    "bulkFailed": "Failed",
+    "detail": {
+      "breadcrumbHome": "Home",
+      "breadcrumbCategory": "Category",
+      "agency": "Agency",
+      "publishedAt": "Published",
+      "downloads": "Downloads",
+      "downloadsUnit": "times",
+      "qualityScore": "Quality Score",
+      "description": "Description",
+      "tags": "Tags",
+      "preview": "Preview — first 100 rows",
+      "piiNote": "Columns containing personal data are automatically masked",
+      "citation": "Citation",
+      "download": "Download",
+      "bookmark": "Bookmark",
+      "compare": "Compare",
+      "quote": "Citation",
+      "openDataCommon": "Open Data Common"
+    },
+    "download": {
+      "title": "Select file format and purpose",
+      "format": "File format",
+      "purpose": "Purpose of use",
+      "purposePlaceholder": "Please describe how you will use this data (at least 10 characters)",
+      "submit": "Confirm download",
+      "purposeMin": "Purpose must be at least 10 characters",
+      "processing": "Processing...",
+      "success": "Success!"
+    },
+    "citationStyles": {
+      "apa": "APA Style",
+      "vancouver": "Vancouver Style",
+      "copy": "Copy",
+      "copied": "Copied"
+    }
   },
   "search": {
     "placeholder": "Search datasets...",
