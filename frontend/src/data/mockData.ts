@@ -1116,3 +1116,122 @@ export const MOCK_DATASET_DETAILS: Record<string, DatasetDetailMock> = {
 export function getDatasetDetailById(id: string): DatasetDetailMock | null {
   return MOCK_DATASET_DETAILS[id] ?? null;
 }
+
+export type StatsYearPoint = {
+  year: string;
+  count: number;
+};
+
+export type StatsCategorySlice = {
+  nameTh: string;
+  nameEn: string;
+  value: number;
+};
+
+export type StatsTopDataset = {
+  id: string;
+  titleTh: string;
+  titleEn: string;
+  categoryTh: string;
+  categoryEn: string;
+  downloads: number;
+};
+
+export type StatsDataMock = {
+  overview: {
+    totalDatasets: number;
+    totalAgencies: number;
+    totalDownloads: number;
+    totalCategories: number;
+  };
+  studentsByYear: StatsYearPoint[];
+  teachersByYear: StatsYearPoint[];
+  schoolsByYear: StatsYearPoint[];
+  datasetByCategory: StatsCategorySlice[];
+  topDatasets: StatsTopDataset[];
+};
+
+export const MOCK_STATS_DATA: StatsDataMock = {
+  overview: {
+    totalDatasets: 1234,
+    totalAgencies: 45,
+    totalDownloads: 56789,
+    totalCategories: 12,
+  },
+  studentsByYear: [
+    { year: "2560", count: 7234567 },
+    { year: "2561", count: 7156234 },
+    { year: "2562", count: 7089123 },
+    { year: "2563", count: 6987456 },
+    { year: "2564", count: 6876543 },
+    { year: "2565", count: 6789012 },
+    { year: "2566", count: 6712345 },
+  ],
+  teachersByYear: [
+    { year: "2560", count: 456789 },
+    { year: "2561", count: 461234 },
+    { year: "2562", count: 458976 },
+    { year: "2563", count: 452341 },
+    { year: "2564", count: 447832 },
+    { year: "2565", count: 443219 },
+    { year: "2566", count: 438765 },
+  ],
+  schoolsByYear: [
+    { year: "2560", count: 30123 },
+    { year: "2561", count: 29876 },
+    { year: "2562", count: 29654 },
+    { year: "2563", count: 29432 },
+    { year: "2564", count: 29198 },
+    { year: "2565", count: 28976 },
+    { year: "2566", count: 28754 },
+  ],
+  datasetByCategory: [
+    { nameTh: "สถิตินักเรียน", nameEn: "Student statistics", value: 45 },
+    { nameTh: "จำนวนครู", nameEn: "Teachers", value: 28 },
+    { nameTh: "โรงเรียน", nameEn: "Schools", value: 32 },
+    { nameTh: "มหาวิทยาลัย", nameEn: "Higher education", value: 19 },
+    { nameTh: "อื่นๆ", nameEn: "Other", value: 15 },
+  ],
+  topDatasets: [
+    {
+      id: "1",
+      titleTh: "สถิตินักเรียนรายจังหวัด 2566",
+      titleEn: "Provincial Student Statistics 2023",
+      categoryTh: "สถิตินักเรียน",
+      categoryEn: "Student statistics",
+      downloads: 12400,
+    },
+    {
+      id: "2",
+      titleTh: "จำนวนนักเรียนรายชั้นเรียน จำแนกตามเพศ ปีการศึกษา 2566",
+      titleEn: "Student Enrollment by Grade and Gender, Academic Year 2023",
+      categoryTh: "สถิติพื้นฐาน",
+      categoryEn: "Basic statistics",
+      downloads: 9800,
+    },
+    {
+      id: "3",
+      titleTh: "รายชื่อโรงเรียนและพิกัดที่ตั้งทั่วประเทศไทย ประจำปี 2567",
+      titleEn: "School Directory and Coordinates Nationwide 2024",
+      categoryTh: "ทรัพยากร",
+      categoryEn: "Resources",
+      downloads: 8765,
+    },
+    {
+      id: "4",
+      titleTh: "สถิติจำนวนบัณฑิตจบใหม่ แยกตามกลุ่มสาขาวิชา 2562-2566",
+      titleEn: "New Graduates by Field of Study 2019-2023",
+      categoryTh: "อุดมศึกษา",
+      categoryEn: "Higher education",
+      downloads: 7654,
+    },
+    {
+      id: "5",
+      titleTh: "ผลการเรียน O-NET ระดับประถมศึกษา 2566",
+      titleEn: "O-NET Primary Education Results 2023",
+      categoryTh: "การประเมิน",
+      categoryEn: "Assessment",
+      downloads: 6543,
+    },
+  ],
+};
