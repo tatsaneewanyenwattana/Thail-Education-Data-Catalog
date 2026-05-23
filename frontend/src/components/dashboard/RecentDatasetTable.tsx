@@ -48,7 +48,7 @@ export default function RecentDatasetTable({ limit = 5 }: RecentDatasetTableProp
   const tStatus = useTranslations("agency.status");
   const locale = useLocale();
   const base = `/${locale}`;
-  const { data, isLoading } = useAgencyDatasets(limit);
+  const { data, isLoading } = useAgencyDatasets("all", 1, limit);
 
   const rows = data?.data ?? [];
 
