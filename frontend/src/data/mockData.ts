@@ -1151,6 +1151,114 @@ export type StatsDataMock = {
   topDatasets: StatsTopDataset[];
 };
 
+export type PageContentSection = {
+  id: string;
+  titleTh: string;
+  titleEn: string;
+  contentTh: string;
+  contentEn: string;
+};
+
+export type PageContentMock = {
+  slug: string;
+  titleTh: string;
+  titleEn: string;
+  updatedAt: string;
+  sections: PageContentSection[];
+};
+
+export const MOCK_PAGE_CONTENT: PageContentMock[] = [
+  {
+    slug: "privacy-policy",
+    titleTh: "นโยบายความเป็นส่วนตัว",
+    titleEn: "Privacy Policy",
+    updatedAt: "2024-10-15",
+    sections: [
+      {
+        id: "introduction",
+        titleTh: "บทนำ",
+        titleEn: "Introduction",
+        contentTh:
+          '<div class="rounded-r-radius-lg border-l-4 border-primary bg-primary-light p-6"><p class="font-sarabun text-body-md leading-relaxed text-surface-navy">ยินดีต้อนรับสู่ Thai EduData Insight เราให้ความสำคัญสูงสุดกับการคุ้มครองข้อมูลส่วนบุคคลของผู้ใช้งานทุกท่าน นโยบายนี้จัดทำขึ้นเพื่อชี้แจงรายละเอียดเกี่ยวกับการเก็บรวบรวม การใช้ และการคุ้มครองข้อมูลของคุณตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)</p></div>',
+        contentEn:
+          '<div class="rounded-r-radius-lg border-l-4 border-primary bg-primary-light p-6"><p class="font-sarabun text-body-md leading-relaxed text-surface-navy">Welcome to Thai EduData Insight. We are committed to protecting your personal data. This policy explains how we collect, use, and safeguard your information under Thailand\'s Personal Data Protection Act (PDPA).</p></div>',
+      },
+      {
+        id: "data-collection",
+        titleTh: "ข้อมูลที่เก็บรวบรวม",
+        titleEn: "Data Collection",
+        contentTh:
+          '<p class="mb-4 font-sarabun text-body-md text-text-secondary">เราอาจมีการเก็บรวบรวมข้อมูลส่วนบุคคลดังต่อไปนี้ เพื่อการปรับปรุงการให้บริการ:</p><ul class="space-y-3"><li class="flex items-start gap-3"><span class="mt-1 shrink-0 text-primary" aria-hidden="true">✓</span><span class="font-sarabun text-body-md text-text-secondary">ข้อมูลระบุตัวตน (เช่น ชื่อ นามสกุล และหน่วยงานต้นสังกัด)</span></li><li class="flex items-start gap-3"><span class="mt-1 shrink-0 text-primary" aria-hidden="true">✓</span><span class="font-sarabun text-body-md text-text-secondary">ข้อมูลการติดต่อ (เช่น อีเมล และหมายเลขโทรศัพท์)</span></li><li class="flex items-start gap-3"><span class="mt-1 shrink-0 text-primary" aria-hidden="true">✓</span><span class="font-sarabun text-body-md text-text-secondary">ข้อมูลทางเทคนิค (เช่น เลขที่อยู่ไอพี คุกกี้ และประวัติการเข้าใช้งานระบบ)</span></li></ul>',
+        contentEn:
+          '<p class="mb-4 font-sarabun text-body-md text-text-secondary">We may collect the following personal data to improve our services:</p><ul class="space-y-3"><li class="flex items-start gap-3"><span class="mt-1 shrink-0 text-primary" aria-hidden="true">✓</span><span class="font-sarabun text-body-md text-text-secondary">Identity data (e.g. name and affiliated agency)</span></li><li class="flex items-start gap-3"><span class="mt-1 shrink-0 text-primary" aria-hidden="true">✓</span><span class="font-sarabun text-body-md text-text-secondary">Contact data (e.g. email and phone number)</span></li><li class="flex items-start gap-3"><span class="mt-1 shrink-0 text-primary" aria-hidden="true">✓</span><span class="font-sarabun text-body-md text-text-secondary">Technical data (e.g. IP address, cookies, and usage history)</span></li></ul>',
+      },
+      {
+        id: "data-usage",
+        titleTh: "วัตถุประสงค์การใช้ข้อมูล",
+        titleEn: "Data Usage",
+        contentTh:
+          '<div class="space-y-4"><div class="flex gap-4"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-radius-full bg-surface-navy font-kanit text-label font-bold text-white">1</span><p class="pt-1 font-sarabun text-body-md text-text-secondary">เพื่อยืนยันตัวตนในการเข้าใช้ฐานข้อมูลการศึกษาและบริหารจัดการสิทธิ์การเข้าถึงข้อมูลตามระดับชั้นความลับ</p></div><div class="flex gap-4"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-radius-full bg-surface-navy font-kanit text-label font-bold text-white">2</span><p class="pt-1 font-sarabun text-body-md text-text-secondary">เพื่อวิเคราะห์พฤติกรรมการใช้งานและนำมาปรับปรุงประสิทธิภาพของระบบการสืบค้นข้อมูลให้ดียิ่งขึ้น</p></div><div class="flex gap-4"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-radius-full bg-surface-navy font-kanit text-label font-bold text-white">3</span><p class="pt-1 font-sarabun text-body-md text-text-secondary">เพื่อการติดต่อสื่อสาร แจ้งข่าวสารเกี่ยวกับการอัปเดตชุดข้อมูลใหม่ หรือการเปลี่ยนแปลงนโยบายต่างๆ</p></div></div>',
+        contentEn:
+          '<div class="space-y-4"><div class="flex gap-4"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-radius-full bg-surface-navy font-kanit text-label font-bold text-white">1</span><p class="pt-1 font-sarabun text-body-md text-text-secondary">To verify identity and manage data access according to classification levels.</p></div><div class="flex gap-4"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-radius-full bg-surface-navy font-kanit text-label font-bold text-white">2</span><p class="pt-1 font-sarabun text-body-md text-text-secondary">To analyze usage and improve search performance.</p></div><div class="flex gap-4"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-radius-full bg-surface-navy font-kanit text-label font-bold text-white">3</span><p class="pt-1 font-sarabun text-body-md text-text-secondary">To communicate updates about new datasets or policy changes.</p></div></div>',
+      },
+      {
+        id: "data-disclosure",
+        titleTh: "การเปิดเผยข้อมูล",
+        titleEn: "Data Disclosure",
+        contentTh:
+          '<p class="font-sarabun text-body-md leading-relaxed text-text-secondary">เราจะไม่มีการเปิดเผยข้อมูลส่วนบุคคลของคุณให้แก่บุคคลภายนอก เว้นแต่จะเป็นไปตามฐานอำนาจทางกฎหมาย หรือได้รับการยินยอมอย่างชัดแจ้งจากท่าน โดยหน่วยงานที่เราอาจเปิดเผยข้อมูลให้รวมถึงหน่วยงานรัฐที่มีอำนาจตามกฎหมาย หรือผู้ให้บริการประมวลผลข้อมูลที่ทำสัญญากับเราภายใต้มาตรการความปลอดภัยที่เข้มงวด</p>',
+        contentEn:
+          '<p class="font-sarabun text-body-md leading-relaxed text-text-secondary">We do not disclose your personal data to third parties except as required by law or with your explicit consent, including government authorities or contracted processors under strict security measures.</p>',
+      },
+      {
+        id: "user-rights",
+        titleTh: "สิทธิของเจ้าของข้อมูล",
+        titleEn: "User Rights",
+        contentTh:
+          '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2"><div class="rounded-radius-lg border border-border-default/80 bg-surface-container/50 p-5"><h3 class="mb-2 font-kanit text-label font-bold text-surface-navy">สิทธิในการเข้าถึง</h3><p class="font-sarabun text-caption text-text-muted">ขอเข้าถึงและขอรับสำเนาข้อมูลส่วนบุคคลที่เกี่ยวกับท่าน</p></div><div class="rounded-radius-lg border border-border-default/80 bg-surface-container/50 p-5"><h3 class="mb-2 font-kanit text-label font-bold text-surface-navy">สิทธิในการแก้ไข</h3><p class="font-sarabun text-caption text-text-muted">ขอให้ดำเนินการแก้ไขข้อมูลที่ไม่ถูกต้องหรือไม่สมบูรณ์</p></div><div class="rounded-radius-lg border border-border-default/80 bg-surface-container/50 p-5"><h3 class="mb-2 font-kanit text-label font-bold text-surface-navy">สิทธิในการลบข้อมูล</h3><p class="font-sarabun text-caption text-text-muted">ขอให้ลบหรือทำลายข้อมูลส่วนบุคคลในบางกรณี</p></div><div class="rounded-radius-lg border border-border-default/80 bg-surface-container/50 p-5"><h3 class="mb-2 font-kanit text-label font-bold text-surface-navy">สิทธิในการคัดค้าน</h3><p class="font-sarabun text-caption text-text-muted">คัดค้านการเก็บรวบรวม ใช้ หรือเปิดเผยข้อมูลส่วนบุคคล</p></div><div class="rounded-radius-lg border border-border-default/80 bg-surface-container/50 p-5"><h3 class="mb-2 font-kanit text-label font-bold text-surface-navy">สิทธิในการโอนย้าย</h3><p class="font-sarabun text-caption text-text-muted">ขอรับข้อมูลในรูปแบบที่สามารถอ่านหรือใช้งานได้โดยเครื่องมืออัตโนมัติ</p></div><div class="rounded-radius-lg border border-border-default/80 bg-surface-container/50 p-5"><h3 class="mb-2 font-kanit text-label font-bold text-surface-navy">สิทธิในการถอนความยินยอม</h3><p class="font-sarabun text-caption text-text-muted">ถอนความยินยอมที่ได้ให้ไว้ได้ตลอดระยะเวลาที่ข้อมูลยังถูกเก็บรักษา</p></div></div>',
+        contentEn:
+          '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2"><div class="rounded-radius-lg border border-border-default/80 bg-surface-container/50 p-5"><h3 class="mb-2 font-kanit text-label font-bold text-surface-navy">Right of access</h3><p class="font-sarabun text-caption text-text-muted">Request access to and copies of your personal data.</p></div><div class="rounded-radius-lg border border-border-default/80 bg-surface-container/50 p-5"><h3 class="mb-2 font-kanit text-label font-bold text-surface-navy">Right to rectification</h3><p class="font-sarabun text-caption text-text-muted">Request correction of inaccurate or incomplete data.</p></div><div class="rounded-radius-lg border border-border-default/80 bg-surface-container/50 p-5"><h3 class="mb-2 font-kanit text-label font-bold text-surface-navy">Right to erasure</h3><p class="font-sarabun text-caption text-text-muted">Request deletion or destruction of personal data in certain cases.</p></div><div class="rounded-radius-lg border border-border-default/80 bg-surface-container/50 p-5"><h3 class="mb-2 font-kanit text-label font-bold text-surface-navy">Right to object</h3><p class="font-sarabun text-caption text-text-muted">Object to collection, use, or disclosure of personal data.</p></div><div class="rounded-radius-lg border border-border-default/80 bg-surface-container/50 p-5"><h3 class="mb-2 font-kanit text-label font-bold text-surface-navy">Right to data portability</h3><p class="font-sarabun text-caption text-text-muted">Receive data in a machine-readable format.</p></div><div class="rounded-radius-lg border border-border-default/80 bg-surface-container/50 p-5"><h3 class="mb-2 font-kanit text-label font-bold text-surface-navy">Right to withdraw consent</h3><p class="font-sarabun text-caption text-text-muted">Withdraw consent at any time while data is retained.</p></div></div>',
+      },
+      {
+        id: "data-security",
+        titleTh: "ความปลอดภัยของข้อมูล",
+        titleEn: "Data Security",
+        contentTh:
+          '<p class="font-sarabun text-body-md leading-relaxed text-text-secondary">เราใช้เทคโนโลยีความปลอดภัยมาตรฐานระดับสากล เช่น การเข้ารหัสข้อมูลแบบ SSL/TLS ระบบ Firewall ป้องกันการบุกรุก และการจำกัดสิทธิ์การเข้าถึงข้อมูลเฉพาะเจ้าหน้าที่ที่เกี่ยวข้องเท่านั้น เพื่อให้มั่นใจว่าข้อมูลของคุณจะถูกเก็บรักษาอย่างปลอดภัยและไม่ถูกเข้าถึงโดยมิชอบ</p>',
+        contentEn:
+          '<p class="font-sarabun text-body-md leading-relaxed text-text-secondary">We use industry-standard security including SSL/TLS encryption, firewalls, and role-based access controls to protect your data from unauthorized access.</p>',
+      },
+      {
+        id: "contact",
+        titleTh: "การติดต่อ",
+        titleEn: "Contact",
+        contentTh:
+          '<div class="flex flex-col gap-6 rounded-radius-lg bg-surface-navy p-8 text-white md:flex-row md:items-center"><div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-radius-full bg-white/10"><span class="text-3xl" aria-hidden="true">☎</span></div><div class="space-y-3"><h3 class="font-kanit text-heading-3-mobile font-bold">เจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล (DPO)</h3><p class="font-sarabun text-body-md text-white/80">privacy@edudata.go.th</p><p class="font-sarabun text-body-md text-white/80">02-123-4567 ต่อ 888</p><p class="font-sarabun text-body-md text-white/80">ศูนย์ข้อมูลการศึกษาแห่งชาติ เลขที่ 319 วังจันทรเกษม ถนนราชดำเนินนอก เขตดุสิต กรุงเทพฯ 10300</p></div></div>',
+        contentEn:
+          '<div class="flex flex-col gap-6 rounded-radius-lg bg-surface-navy p-8 text-white md:flex-row md:items-center"><div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-radius-full bg-white/10"><span class="text-3xl" aria-hidden="true">☎</span></div><div class="space-y-3"><h3 class="font-kanit text-heading-3-mobile font-bold">Data Protection Officer (DPO)</h3><p class="font-sarabun text-body-md text-white/80">privacy@edudata.go.th</p><p class="font-sarabun text-body-md text-white/80">02-123-4567 ext. 888</p><p class="font-sarabun text-body-md text-white/80">National Education Data Center, 319 Wang Chankasem, Ratchadaphisek Road, Dusit, Bangkok 10300</p></div></div>',
+      },
+    ],
+  },
+  {
+    slug: "terms",
+    titleTh: "เงื่อนไขการใช้งาน",
+    titleEn: "Terms of Service",
+    updatedAt: "2024-01-01",
+    sections: [],
+  },
+  {
+    slug: "api-docs",
+    titleTh: "เอกสาร API",
+    titleEn: "API Documentation",
+    updatedAt: "2024-01-01",
+    sections: [],
+  },
+];
+
+export function getPageContentBySlug(slug: string): PageContentMock | null {
+  return MOCK_PAGE_CONTENT.find((page) => page.slug === slug) ?? null;
+}
+
 export const MOCK_STATS_DATA: StatsDataMock = {
   overview: {
     totalDatasets: 1234,
