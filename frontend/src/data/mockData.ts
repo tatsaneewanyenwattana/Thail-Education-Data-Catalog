@@ -1932,6 +1932,263 @@ export const mockFileAnalysisResult: FileAnalysisResult = {
 
 export const mockCategories = MOCK_CATEGORIES;
 
+// — Agency category management (mutable in-memory for UI-only phase) —
+
+export type AgencyCategoryL1 = {
+  id: string;
+  nameTh: string;
+  nameEn: string;
+  slug: string;
+  datasetCount: number;
+};
+
+export type AgencyCategoryL2 = {
+  id: string;
+  nameTh: string;
+  nameEn: string;
+  slug: string;
+  parentId: string;
+  parentNameTh: string;
+  parentNameEn: string;
+  datasetCount: number;
+};
+
+export type AgencyCategoryInput = {
+  nameTh: string;
+  nameEn: string;
+  slug: string;
+  parentId?: string;
+};
+
+export const mockCategoriesL1: AgencyCategoryL1[] = [
+  {
+    id: "cat-1",
+    nameTh: "สถิตินักเรียน",
+    nameEn: "Student Statistics",
+    slug: "student-statistics",
+    datasetCount: 12,
+  },
+  {
+    id: "cat-2",
+    nameTh: "จำนวนครู",
+    nameEn: "Teacher Statistics",
+    slug: "teacher-statistics",
+    datasetCount: 8,
+  },
+  {
+    id: "cat-3",
+    nameTh: "โรงเรียน",
+    nameEn: "Schools",
+    slug: "schools",
+    datasetCount: 0,
+  },
+  {
+    id: "cat-4",
+    nameTh: "ข้อมูลบุคลากรทางการศึกษา",
+    nameEn: "Personnel Data",
+    slug: "personnel-data",
+    datasetCount: 18,
+  },
+  {
+    id: "cat-5",
+    nameTh: "งบประมาณรายจ่าย",
+    nameEn: "Budgeting",
+    slug: "budgeting",
+    datasetCount: 12,
+  },
+  {
+    id: "cat-6",
+    nameTh: "อาคารและสถานที่",
+    nameEn: "Facilities",
+    slug: "facilities",
+    datasetCount: 7,
+  },
+];
+
+export const mockCategoriesL2: AgencyCategoryL2[] = [
+  {
+    id: "sub-1",
+    nameTh: "รายจังหวัด",
+    nameEn: "By Province",
+    slug: "by-province",
+    parentId: "cat-1",
+    parentNameTh: "สถิตินักเรียน",
+    parentNameEn: "Student Statistics",
+    datasetCount: 6,
+  },
+  {
+    id: "sub-2",
+    nameTh: "รายปี",
+    nameEn: "By Year",
+    slug: "by-year",
+    parentId: "cat-1",
+    parentNameTh: "สถิตินักเรียน",
+    parentNameEn: "Student Statistics",
+    datasetCount: 4,
+  },
+  {
+    id: "sub-3",
+    nameTh: "รายวิชา",
+    nameEn: "By Subject",
+    slug: "by-subject",
+    parentId: "cat-2",
+    parentNameTh: "จำนวนครู",
+    parentNameEn: "Teacher Statistics",
+    datasetCount: 0,
+  },
+];
+
+let agencyCategoriesL1: AgencyCategoryL1[] = mockCategoriesL1.map((c) => ({
+  ...c,
+}));
+let agencyCategoriesL2: AgencyCategoryL2[] = mockCategoriesL2.map((c) => ({
+  ...c,
+}));
+
+export type AgencyCategoriesResponse = {
+  data: AgencyCategoryL1[] | AgencyCategoryL2[];
+  total: number;
+  page: number;
+  totalPages: number;
+};
+
+const AGENCY_CATEGORY_PAGE_SIZE = 4;
+
+export function fetchAgencyCategoriesMock(
+  level: 1 | 2,
+  page: number
+): AgencyCategoriesResponse {
+  const list =
+    level === 1
+      ? ([...agencyCategoriesL1] as AgencyCategoryL1[] | AgencyCategoryL2[])
+      : ([...agencyCategoriesL2] as AgencyCategoryL1[] | AgencyCategoryL2[]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(list.length / AGENCY_CATEGORY_PAGE_SIZE)
+  );
+  const currentPage = Math.min(Math.max(page, 1), totalPages);
+  const start = (currentPage - 1) * AGENCY_CATEGORY_PAGE_SIZE;
+
+  return {
+    data: list.slice(start, start + AGENCY_CATEGORY_PAGE_SIZE),
+    total: list.length,
+    page: currentPage,
+    totalPages,
+  };
+}
+
+export function getAgencyCategoriesL1Mock(): AgencyCategoryL1[] {
+  return [...agencyCategoriesL1];
+}
+
+export function createAgencyCategoryMock(
+  level: 1 | 2,
+  input: AgencyCategoryInput
+): AgencyCategoryL1 | AgencyCategoryL2 {
+  if (level === 1) {
+    const created: AgencyCategoryL1 = {
+      id: `cat-${Date.now()}`,
+      nameTh: input.nameTh,
+      nameEn: input.nameEn,
+      slug: input.slug,
+      datasetCount: 0,
+    };
+    agencyCategoriesL1 = [...agencyCategoriesL1, created];
+    return created;
+  }
+
+  const parent = agencyCategoriesL1.find((c) => c.id === input.parentId);
+  if (!parent) {
+    throw new Error("CATEGORY_PARENT_NOT_FOUND");
+  }
+
+  const created: AgencyCategoryL2 = {
+    id: `sub-${Date.now()}`,
+    nameTh: input.nameTh,
+    nameEn: input.nameEn,
+    slug: input.slug,
+    parentId: parent.id,
+    parentNameTh: parent.nameTh,
+    parentNameEn: parent.nameEn,
+    datasetCount: 0,
+  };
+  agencyCategoriesL2 = [...agencyCategoriesL2, created];
+  return created;
+}
+
+export function updateAgencyCategoryMock(
+  level: 1 | 2,
+  id: string,
+  input: AgencyCategoryInput
+): void {
+  if (level === 1) {
+    agencyCategoriesL1 = agencyCategoriesL1.map((c) =>
+      c.id === id
+        ? {
+            ...c,
+            nameTh: input.nameTh,
+            nameEn: input.nameEn,
+            slug: input.slug,
+          }
+        : c
+    );
+    agencyCategoriesL2 = agencyCategoriesL2.map((c) =>
+      c.parentId === id
+        ? {
+            ...c,
+            parentNameTh: input.nameTh,
+            parentNameEn: input.nameEn,
+          }
+        : c
+    );
+    return;
+  }
+
+  const parent = agencyCategoriesL1.find((c) => c.id === input.parentId);
+  if (!parent) {
+    throw new Error("CATEGORY_PARENT_NOT_FOUND");
+  }
+
+  agencyCategoriesL2 = agencyCategoriesL2.map((c) =>
+    c.id === id
+      ? {
+          ...c,
+          nameTh: input.nameTh,
+          nameEn: input.nameEn,
+          slug: input.slug,
+          parentId: parent.id,
+          parentNameTh: parent.nameTh,
+          parentNameEn: parent.nameEn,
+        }
+      : c
+  );
+}
+
+export function deleteAgencyCategoryMock(level: 1 | 2, id: string): void {
+  if (level === 1) {
+    const target = agencyCategoriesL1.find((c) => c.id === id);
+    if (!target) {
+      throw new Error("CATEGORY_NOT_FOUND");
+    }
+    if (target.datasetCount > 0) {
+      throw new Error("CATEGORY_HAS_DATASETS");
+    }
+    agencyCategoriesL1 = agencyCategoriesL1.filter((c) => c.id !== id);
+    agencyCategoriesL2 = agencyCategoriesL2.filter((c) => c.parentId !== id);
+    return;
+  }
+
+  const target = agencyCategoriesL2.find((c) => c.id === id);
+  if (!target) {
+    throw new Error("CATEGORY_NOT_FOUND");
+  }
+  if (target.datasetCount > 0) {
+    throw new Error("CATEGORY_HAS_DATASETS");
+  }
+  agencyCategoriesL2 = agencyCategoriesL2.filter((c) => c.id !== id);
+}
+
 export const mockProvinces = [
   {
     value: "all",
