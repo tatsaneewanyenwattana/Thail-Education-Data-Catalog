@@ -726,6 +726,37 @@
         "createdAt": "บันทึกเมื่อ: {date}",
         "filters": "เงื่อนไข"
       }
+    },
+    "customDashboard": {
+      "title": "Custom Dashboard",
+      "subtitle": "ปรับแต่งวิดเจ็ตและเลย์เอาต์ตามการใช้งานของคุณ",
+      "saveLayout": "บันทึก Layout",
+      "saveSuccess": "บันทึก Layout เรียบร้อยแล้ว",
+      "widgetPanelTitle": "Widget",
+      "widgetPanelHint": "ลากมาวางบน Grid เพื่อจัดหน้ากระดาษ",
+      "gridEmpty": "ลาก Widget จากแผงด้านขวามาวางที่นี่",
+      "gridSettings": "การตั้งค่า Grid",
+      "snapToGrid": "Snap to Grid",
+      "showGuides": "แสดงเส้นไกด์",
+      "palette": {
+        "bar": "กราฟแท่ง",
+        "barSub": "Bar Chart",
+        "line": "กราฟเส้น",
+        "lineSub": "Line Chart",
+        "pie": "กราฟวงกลม",
+        "pieSub": "Pie Chart",
+        "stat": "ตัวเลขสถิติ",
+        "statSub": "Stat Card"
+      },
+      "widgets": {
+        "barTitle": "สถิติจำนวนนักเรียนรายเขต",
+        "lineTitle": "แนวโน้มงบประมาณรายปี (2560 - 2567)",
+        "lineLegend": "งบประมาณที่ใช้จริง",
+        "pieTitle": "สัดส่วนนักเรียนตามระดับการศึกษา",
+        "statTitle": "สรุปยอดรวม",
+        "statTrend": "{trend} จากเดือนที่แล้ว",
+        "remove": "ลบ Widget"
+      }
     }
   },
   "admin": {

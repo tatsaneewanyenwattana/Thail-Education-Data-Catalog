@@ -2350,6 +2350,90 @@ export function buildSavedSearchUrl(
   return `/${locale}/search${query ? `?${query}` : ""}`;
 }
 
+// — Custom dashboard widgets —
+
+export type DashboardWidgetType = "bar" | "line" | "pie" | "stat";
+
+export type DashboardGridWidget = {
+  id: string;
+  type: DashboardWidgetType;
+  colSpan: 1 | 2 | 3;
+};
+
+export type WidgetChartPoint = {
+  name: string;
+  nameEn: string;
+  value: number;
+};
+
+export type WidgetStatData = {
+  value: number;
+  labelTh: string;
+  labelEn: string;
+  trend: string;
+  trendUp: boolean;
+};
+
+export const mockWidgetBarData: WidgetChartPoint[] = [
+  { name: "เขต 1", nameEn: "Zone 1", value: 1200 },
+  { name: "เขต 2", nameEn: "Zone 2", value: 1700 },
+  { name: "เขต 3", nameEn: "Zone 3", value: 900 },
+  { name: "เขต 4", nameEn: "Zone 4", value: 1900 },
+  { name: "เขต 5", nameEn: "Zone 5", value: 1400 },
+  { name: "เขต 6", nameEn: "Zone 6", value: 800 },
+];
+
+export const mockWidgetLineData: WidgetChartPoint[] = [
+  { name: "2560", nameEn: "2560", value: 250 },
+  { name: "2561", nameEn: "2561", value: 240 },
+  { name: "2562", nameEn: "2562", value: 200 },
+  { name: "2563", nameEn: "2563", value: 180 },
+  { name: "2564", nameEn: "2564", value: 100 },
+  { name: "2565", nameEn: "2565", value: 120 },
+  { name: "2566", nameEn: "2566", value: 80 },
+  { name: "2567", nameEn: "2567", value: 50 },
+];
+
+export const mockWidgetPieData: WidgetChartPoint[] = [
+  { name: "ประถมศึกษา", nameEn: "Primary", value: 420 },
+  { name: "มัธยมศึกษา", nameEn: "Secondary", value: 310 },
+  { name: "อาชีวศึกษา", nameEn: "Vocational", value: 180 },
+  { name: "อุดมศึกษา", nameEn: "Higher ed.", value: 90 },
+];
+
+export const mockWidgetStatData: WidgetStatData = {
+  value: 32450,
+  labelTh: "รวมจำนวนโรงเรียนทั้งหมด",
+  labelEn: "Total schools",
+  trend: "+2.4%",
+  trendUp: true,
+};
+
+export const DEFAULT_DASHBOARD_WIDGETS: DashboardGridWidget[] = [
+  { id: "widget-bar-default", type: "bar", colSpan: 2 },
+  { id: "widget-stat-default", type: "stat", colSpan: 1 },
+  { id: "widget-line-default", type: "line", colSpan: 3 },
+];
+
+export function createDashboardWidgetId(): string {
+  return `widget-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+export function defaultColSpanForWidgetType(
+  type: DashboardWidgetType
+): 1 | 2 | 3 {
+  switch (type) {
+    case "bar":
+      return 2;
+    case "line":
+      return 3;
+    case "pie":
+    case "stat":
+    default:
+      return 1;
+  }
+}
+
 export const mockProvinces = [
   {
     value: "all",

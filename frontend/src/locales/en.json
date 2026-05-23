@@ -726,6 +726,37 @@
         "createdAt": "Saved: {date}",
         "filters": "Filters"
       }
+    },
+    "customDashboard": {
+      "title": "Custom Dashboard",
+      "subtitle": "Customize widgets and layout for your workflow",
+      "saveLayout": "Save layout",
+      "saveSuccess": "Layout saved successfully",
+      "widgetPanelTitle": "Widget",
+      "widgetPanelHint": "Drag onto the grid to arrange your page",
+      "gridEmpty": "Drag a widget from the panel on the right",
+      "gridSettings": "Grid settings",
+      "snapToGrid": "Snap to grid",
+      "showGuides": "Show guide lines",
+      "palette": {
+        "bar": "Bar chart",
+        "barSub": "Bar Chart",
+        "line": "Line chart",
+        "lineSub": "Line Chart",
+        "pie": "Pie chart",
+        "pieSub": "Pie Chart",
+        "stat": "Stat card",
+        "statSub": "Stat Card"
+      },
+      "widgets": {
+        "barTitle": "Students by district",
+        "lineTitle": "Annual budget trend (2560–2567)",
+        "lineLegend": "Actual spending",
+        "pieTitle": "Students by education level",
+        "statTitle": "Summary",
+        "statTrend": "{trend} from last month",
+        "remove": "Remove widget"
+      }
     }
   },
   "admin": {
