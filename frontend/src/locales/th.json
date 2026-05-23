@@ -476,7 +476,9 @@
       "categories": "จัดการหมวดหมู่",
       "saved": "บันทึกของฉัน",
       "customDashboard": "Custom Dashboard",
-      "publishDataset": "Publish Dataset"
+      "publishDataset": "Publish Dataset",
+      "menu": "เมนู",
+      "closeMenu": "ปิดเมนู"
     },
     "status": {
       "published": "เผยแพร่แล้ว",

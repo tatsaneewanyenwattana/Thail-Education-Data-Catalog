@@ -476,7 +476,9 @@
       "categories": "Manage categories",
       "saved": "My saves",
       "customDashboard": "Custom dashboard",
-      "publishDataset": "Publish dataset"
+      "publishDataset": "Publish dataset",
+      "menu": "Menu",
+      "closeMenu": "Close menu"
     },
     "status": {
       "published": "Published",
