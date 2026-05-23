@@ -588,10 +588,7 @@ NEXT_PUBLIC_APP_ENV=development
 | | | active | ใช้งานได้ปกติ |
 | | | rejected | ถูกปฏิเสธ |
 | | | suspended | ถูกระงับ |
-| dataset_status | datasets.status | published | เผยแพร่สาธารณะ (ค่าเริ่มต้นหลังอัปโหลด) |
-| | | draft | ไม่ใช้ใน Flow ปัจจุบัน |
-| | | submitted | ไม่ใช้ใน Flow ปัจจุบัน |
-| | | rejected | ไม่ใช้ใน Flow ปัจจุบัน |
+| dataset_status | datasets.status | published | เผยแพร่สาธารณะ — ค่าเดียวใน Flow (upload → published) |
 | dataset_license | datasets.license | open | เปิดเผยสาธารณะ ใช้ได้เลย |
 | | | conditional | มีเงื่อนไขการใช้งาน |
 | | | cc | Creative Commons |
@@ -965,10 +962,7 @@ Enum user_status {
 }
 
 Enum dataset_status {
-  draft
-  submitted
   published
-  rejected
 }
 
 Enum dataset_license {

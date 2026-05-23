@@ -10,6 +10,7 @@ import pandas as pd
 from fastapi import BackgroundTasks, UploadFile
 
 import app.repositories.dataset_repository as dataset_repo
+import app.services.email_service as email_service
 from app.core.config import settings
 from app.core.errors import raise_app_error
 from app.core.logging import get_logger, log_request
@@ -24,7 +25,6 @@ from app.schemas.dataset_schema import (
 )
 from app.utils.pii_masking import scan_and_mask
 from app.utils.quality_score import calculate_quality_score
-from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 logger = get_logger(__name__)
@@ -143,68 +143,6 @@ def _build_dataset_index_document(db: Session, dataset) -> dict:
     }
 
 
-def _send_email_background(to: str, subject: str, body: str) -> None:
-    try:
-        import smtplib
-        if not settings.SMTP_HOST:
-            return
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            if settings.SMTP_USER:
-                server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            msg = (
-                f"Subject: {subject}\r\nFrom: {settings.SMTP_FROM}\r\n"
-                f"To: {to}\r\n\r\n{body}"
-            )
-            server.sendmail(settings.SMTP_FROM, to, msg)
-    except Exception as exc:
-        log_request(
-            logger, logging.ERROR, f"Email send failed: {exc}",
-            error_code="INTERNAL_SERVER_ERROR",
-        )
-
-
-def _get_subscriber_emails(
-    db: Session,
-    category_id: uuid.UUID | None,
-    agency_user_id: uuid.UUID,
-) -> list[str]:
-    from app.models.subscription_model import Subscription
-    from app.models.user_model import User
-
-    conditions = [Subscription.agency_user_id == agency_user_id]
-    if category_id is not None:
-        conditions.append(Subscription.category_id == category_id)
-
-    rows = (
-        db.query(User.email)
-        .join(Subscription, Subscription.user_id == User.id)
-        .filter(or_(*conditions))
-        .filter(User.is_deleted.is_(False))
-        .distinct()
-        .all()
-    )
-    return [row[0] for row in rows]
-
-
-def _notify_subscribers_background(
-    emails: list[str],
-    dataset_title: str,
-    dataset_id: str,
-) -> None:
-    subject = "มี Dataset ใหม่ในหมวดที่คุณติดตาม"
-    body = f"ชื่อ Dataset: {dataset_title}\nLink: /datasets/{dataset_id}"
-    for email in emails:
-        try:
-            _send_email_background(email, subject, body)
-        except Exception as exc:
-            log_request(
-                logger,
-                logging.ERROR,
-                f"Subscriber notification failed for {email}: {exc}",
-                error_code="INTERNAL_SERVER_ERROR",
-            )
-
-
 def _build_dataset_response(
     db: Session, dataset_id: uuid.UUID
 ) -> DatasetResponse:
@@ -302,21 +240,12 @@ def upload(
             _delete_from_minio(minio_client, object_name)
         raise_app_error("FILE_UPLOAD_FAILED", str(exc))
 
-    subscriber_emails = _get_subscriber_emails(
-        db, request.category_id, dataset.user_id
-    )
-
     from app.utils.elasticsearch_utils import index_dataset
 
     index_doc = _build_dataset_index_document(db, dataset)
     background_tasks.add_task(index_dataset, es_client, index_doc)
-    if subscriber_emails:
-        background_tasks.add_task(
-            _notify_subscribers_background,
-            subscriber_emails,
-            dataset.title,
-            str(dataset.id),
-        )
+    email_service.notify_subscribers_new_dataset(background_tasks, db, dataset)
+    email_service.notify_saved_search(background_tasks, db, dataset)
 
     return _build_dataset_response(db, dataset.id)
 
@@ -606,16 +535,10 @@ def bulk_upload(
             db.commit()
             success_count += 1
 
-            subscriber_emails = _get_subscriber_emails(
-                db, dataset.category_id, dataset.user_id
+            email_service.notify_subscribers_new_dataset(
+                background_tasks, db, dataset
             )
-            if subscriber_emails:
-                background_tasks.add_task(
-                    _notify_subscribers_background,
-                    subscriber_emails,
-                    dataset.title,
-                    str(dataset.id),
-                )
+            email_service.notify_saved_search(background_tasks, db, dataset)
         except Exception as exc:
             db.rollback()
             errors.append(BulkUploadRowError(row=row_num, error=str(exc)))

@@ -3,22 +3,16 @@
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "next/navigation";
 
-const LOCALES = ["th", "en"] as const;
-
 export default function LanguageSwitcher() {
   const router = useRouter();
   const pathname = usePathname();
   const currentLocale = useLocale();
 
   const switchLocale = (newLocale: string) => {
-    const basePath =
-      pathname.startsWith("/th") || pathname.startsWith("/en")
-        ? pathname
-        : `/${currentLocale}${pathname === "/" ? "" : pathname}`;
-
-    const segments = basePath.split("/");
+    const segments = pathname.split("/");
     segments[1] = newLocale;
     router.push(segments.join("/"));
+    router.refresh();
   };
 
   return (

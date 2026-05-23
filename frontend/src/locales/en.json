@@ -33,9 +33,12 @@
   "nav": {
     "home": "Home",
     "search": "Search",
+    "searchPlaceholder": "Search data, e.g. student statistics 2024",
     "stats": "Statistics",
     "categories": "Categories",
     "login": "Log in",
+    "menu": "Open menu",
+    "closeMenu": "Close menu",
     "register": "Register",
     "logout": "Log out",
     "dashboard": "Dashboard",
@@ -57,6 +60,100 @@
     "privacyPolicy": "Privacy policy",
     "compare": "Compare",
     "profile": "Profile"
+  },
+  "home": {
+    "banner": {
+      "label": "Announcement",
+      "message": "The system is now officially open with new datasets for academic year 2024.",
+      "close": "Dismiss announcement"
+    },
+    "hero": {
+      "heading": "Search Thai education data",
+      "subheading": "Centralized education data from multiple agencies for national planning and sustainable development.",
+      "searchPlaceholder": "Enter dataset name or topic to search...",
+      "searchButton": "Search",
+      "statsDatasets": "Total datasets",
+      "statsDownloads": "Downloads",
+      "statsAgencies": "Participating agencies"
+    },
+    "popular": {
+      "title": "Popular datasets",
+      "subtitle": "Most accessed and reused datasets",
+      "viewAll": "View all"
+    },
+    "latest": {
+      "title": "Latest datasets",
+      "subtitle": "Recently uploaded datasets",
+      "viewAll": "View all"
+    },
+    "cta": {
+      "title": "Have a dataset to share?",
+      "subtitle": "Government agencies can request to publish education data for public access.",
+      "register": "Register agency",
+      "manual": "User guide"
+    }
+  },
+  "megamenu": {
+    "categories": "Popular categories",
+    "year": "Fiscal / academic year",
+    "agency": "Key agencies",
+    "close": "Close"
+  },
+  "footer": {
+    "tagline": "Thailand's open education data hub supporting research and digital-era education development.",
+    "exploreTitle": "Data & services",
+    "aboutTitle": "About",
+    "agenciesTitle": "Related agencies",
+    "catalog": "Dataset catalog",
+    "dashboard": "Statistics dashboard",
+    "apiDocs": "API documentation",
+    "dataStandards": "Data standards",
+    "openDataPolicy": "Open data policy",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "contact": "Contact us",
+    "moe": "Ministry of Education",
+    "budgetBureau": "Budget Bureau",
+    "dga": "DGA Thailand",
+    "nso": "National Statistical Office",
+    "socialFacebook": "Facebook",
+    "socialEmail": "Email",
+    "copyright": "© {year} Thai Education Data Catalog. All rights reserved. Digital Government Development Agency (DGA).",
+    "poweredBy": "Powered by Thai Government Open Data Infrastructure"
+  },
+  "stats": {
+    "pageTitle": "Thai education statistics overview",
+    "pageSubtitle": "Trends in students, teachers, and schools from published datasets",
+    "studentsChart": "Students (millions)",
+    "teachersChart": "Teachers (ten thousands)",
+    "schoolsChart": "Schools",
+    "regionChart": "Students by region",
+    "year": "Year (B.E.)",
+    "mockNote": "Sample data — will connect to API when backend is ready"
+  },
+  "compare": {
+    "pageTitle": "Compare datasets",
+    "selectSecond": "Select a second dataset",
+    "metricDownloads": "Downloads",
+    "metricViews": "Views",
+    "currentDataset": "Current dataset",
+    "compareWith": "Compare with"
+  },
+  "privacy": {
+    "pageTitle": "Privacy policy (PDPA)",
+    "lastUpdated": "Last updated: 1 January 2025",
+    "section1Title": "Data we collect",
+    "section1Body": "We collect data necessary to provide the service, such as email, agency name, and download logs with the purpose you specify.",
+    "section2Title": "How we use data",
+    "section2Body": "Data is used to provide search, download, and dataset management services, and to comply with applicable laws.",
+    "section3Title": "Your rights",
+    "section3Body": "You have the right to access, correct, or delete personal data under the Personal Data Protection Act.",
+    "section4Title": "Contact",
+    "section4Body": "If you have questions about this policy, please contact the system administrator through the channels listed on this site."
+  },
+  "category": {
+    "datasetsIn": "Datasets in category",
+    "notFound": "Category not found"
   },
   "auth": {
     "login": {
@@ -213,7 +310,11 @@
     "noResults": "No results found",
     "keywordTooShort": "Keyword is too short",
     "saveSearch": "Save search",
-    "savedSearchName": "Search name"
+    "savedSearchName": "Search name",
+    "submit": "Search",
+    "openFilters": "Filters",
+    "closeFilters": "Close filters",
+    "resultCount": "{count} results"
   },
   "agency": {
     "dashboardTitle": "Agency dashboard",

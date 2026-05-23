@@ -43,6 +43,21 @@ class Settings(BaseSettings):
 
     @property
     def cors_allowed_origins(self) -> list[str]:
+        if self.APP_ENV == "development":
+            origins = [
+                "http://localhost",
+                "http://localhost:3000",
+                "http://localhost:3001",
+                "http://localhost:3002",
+                "http://localhost:3007",
+                "http://127.0.0.1:3000",
+            ]
+            if self.ALLOWED_ORIGINS.strip():
+                for origin in self.ALLOWED_ORIGINS.split(","):
+                    value = origin.strip()
+                    if value and value not in origins:
+                        origins.append(value)
+            return origins
         if self.ALLOWED_ORIGINS.strip():
             origins = [
                 origin.strip()
@@ -52,15 +67,13 @@ class Settings(BaseSettings):
             if self.is_production:
                 origins = [origin for origin in origins if origin != "*"]
             return origins
-        if self.APP_ENV == "development":
-            return [
-                "http://localhost",
-                "http://localhost:3000",
-            ]
         if self.APP_ENV == "staging":
             return [
-                "http://localhost",
                 "http://localhost:3000",
+                "http://localhost:3001",
+                "http://localhost:3002",
+                "http://localhost:3007",
+                "http://127.0.0.1:3000",
             ]
         return []
 

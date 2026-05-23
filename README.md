@@ -3,7 +3,7 @@
 ## ภาพรวมระบบ
 
 คลังข้อมูลการศึกษาไทย (Data Catalog) สำหรับรวบรวมและเผยแพร่ Dataset จากหน่วยงานต่างๆ
-รองรับ PII Masking, มาตรฐาน DCAT-AP, Approval Workflow และ Public API
+รองรับ PII Masking, มาตรฐาน DCAT-AP, เผยแพร่ Dataset ทันทีหลังอัปโหลด (upload → published) และ Public API
 
 ## Tech Stack
 

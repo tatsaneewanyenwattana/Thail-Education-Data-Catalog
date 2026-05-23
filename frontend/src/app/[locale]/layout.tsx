@@ -11,12 +11,12 @@ export default async function LocaleLayout({
   params: { locale: string };
 }) {
   setRequestLocale(locale);
-  const messages = await getMessages();
+  const messages = await getMessages({ locale });
 
   return (
     <html lang={locale}>
       <body className="font-sarabun bg-surface-page">
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <AppProviders>
             {children}
           </AppProviders>

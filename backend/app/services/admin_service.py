@@ -1,7 +1,6 @@
 # Module: M6 Admin
 # Feature: Business Logic ตาม #5 #28 #33 #34 #56
 
-import logging
 import uuid
 
 from fastapi import BackgroundTasks
@@ -9,8 +8,8 @@ from redis import Redis
 from sqlalchemy.orm import Session
 
 import app.repositories.admin_repository as admin_repo
+import app.services.email_service as email_service
 from app.core.errors import raise_app_error
-from app.core.logging import get_logger, log_request
 from app.core.pagination import PaginationParams
 from app.schemas.admin_schema import (
     AdminStatsResponse,
@@ -22,35 +21,7 @@ from app.schemas.admin_schema import (
     UserUpdateRequest,
 )
 
-logger = get_logger(__name__)
-
 _SESSION_KEY_PREFIX = "session:"
-
-
-def _send_agency_email(email_to: str, subject: str, body: str) -> None:
-    try:
-        import smtplib
-
-        from app.core.config import settings
-
-        if not settings.SMTP_HOST:
-            return
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            if settings.SMTP_USER:
-                server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            message = (
-                f"Subject: {subject}\r\n"
-                f"From: {settings.SMTP_FROM}\r\n"
-                f"To: {email_to}\r\n\r\n{body}"
-            )
-            server.sendmail(settings.SMTP_FROM, email_to, message)
-    except Exception as exc:
-        log_request(
-            logger,
-            logging.ERROR,
-            f"Email send failed: {exc}",
-            error_code="INTERNAL_SERVER_ERROR",
-        )
 
 
 def get_admin_stats(db: Session) -> AdminStatsResponse:
@@ -81,15 +52,7 @@ def approve_user(
     db.commit()
     db.refresh(user)
 
-    background_tasks.add_task(
-        _send_agency_email,
-        email_to=user.email,
-        subject="บัญชีได้รับการอนุมัติแล้ว",
-        body=(
-            f"หน่วยงาน: {user.agency_name or '-'}\n"
-            "บัญชีของคุณได้รับการอนุมัติแล้ว สามารถ Login เข้าใช้งานได้"
-        ),
-    )
+    email_service.notify_agency_approved(background_tasks, db, user)
 
     return UserListResponse.model_validate(user)
 
@@ -110,15 +73,7 @@ def reject_user(
     db.commit()
     db.refresh(user)
 
-    background_tasks.add_task(
-        _send_agency_email,
-        email_to=user.email,
-        subject="บัญชีถูกปฏิเสธ",
-        body=(
-            f"หน่วยงาน: {user.agency_name or '-'}\n"
-            "บัญชีของคุณถูกปฏิเสธ กรุณาติดต่อผู้ดูแลระบบ"
-        ),
-    )
+    email_service.notify_agency_rejected(background_tasks, db, user)
 
     return UserListResponse.model_validate(user)
 

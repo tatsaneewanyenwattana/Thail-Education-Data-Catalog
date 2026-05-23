@@ -9,6 +9,7 @@ from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
 
 import app.repositories.auth_repository as auth_repo
+import app.services.email_service as email_service
 from app.core.errors import raise_app_error
 from app.core.logging import get_logger, log_request
 from app.core.pagination import PaginationParams
@@ -32,30 +33,6 @@ from app.schemas.auth_schema import (
 )
 
 logger = get_logger(__name__)
-
-
-def _send_admin_notification(email_to: str, subject: str, body: str) -> None:
-    try:
-        import smtplib
-        from app.core.config import settings
-        if not settings.SMTP_HOST:
-            return
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            if settings.SMTP_USER:
-                server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            message = (
-                f"Subject: {subject}\r\n"
-                f"From: {settings.SMTP_FROM}\r\n"
-                f"To: {email_to}\r\n\r\n{body}"
-            )
-            server.sendmail(settings.SMTP_FROM, email_to, message)
-    except Exception as exc:
-        log_request(
-            logger,
-            logging.ERROR,
-            f"Email send failed: {exc}",
-            error_code="INTERNAL_SERVER_ERROR",
-        )
 
 
 def register(
@@ -90,16 +67,8 @@ def register(
     db.commit()
     db.refresh(user)
 
-    background_tasks.add_task(
-        _send_admin_notification,
-        email_to="admin@datacatalog.local",
-        subject="มีบัญชีใหม่รอการอนุมัติ",
-        body=(
-            f"หน่วยงาน: {request.agency_name}\n"
-            f"Email: {request.email}\n"
-            "กรุณาเข้าสู่ระบบเพื่ออนุมัติ"
-        ),
-    )
+    email_service.notify_admin_new_register(background_tasks, db, user)
+    email_service.notify_agency_register_success(background_tasks, user)
 
     return UserResponse.model_validate(user)
 
