@@ -1373,16 +1373,283 @@ export const MOCK_PAGE_CONTENT: PageContentMock[] = [
     slug: "api-docs",
     titleTh: "เอกสาร API",
     titleEn: "API Documentation",
-    updatedAt: "2024-01-01",
+    updatedAt: "2024-03-28",
     sections: [],
+  },
+  {
+    slug: "help-center",
+    titleTh: "Help Center",
+    titleEn: "Help Center",
+    updatedAt: "2024-04-14",
+    sections: [
+      {
+        id: "intro",
+        titleTh: "ศูนย์ช่วยเหลือ",
+        titleEn: "Help Center",
+        contentTh:
+          '<p class="font-sarabun text-body-md text-text-secondary">เนื้อหากำลังจัดทำ กรุณากลับมาตรวจสอบอีกครั้งในภายหลัง</p>',
+        contentEn:
+          '<p class="font-sarabun text-body-md text-text-secondary">Content is being prepared. Please check back later.</p>',
+      },
+    ],
   },
 ];
 
+let pageContentState: PageContentMock[] = MOCK_PAGE_CONTENT.map((page) => ({
+  ...page,
+  sections: page.sections.map((section) => ({ ...section })),
+}));
+
 export function getPageContentBySlug(slug: string): PageContentMock | null {
-  return MOCK_PAGE_CONTENT.find((page) => page.slug === slug) ?? null;
+  const page = pageContentState.find((item) => item.slug === slug);
+  if (!page) {
+    return null;
+  }
+  return {
+    ...page,
+    sections: page.sections.map((section) => ({ ...section })),
+  };
 }
 
 export { MOCK_PAGE_CONTENT as mockPageContent };
+
+export type StaticPageIcon = "policy" | "gavel" | "api" | "help";
+export type StaticPageStatus = "published" | "draft";
+
+export type AdminStaticPageMeta = {
+  slug: string;
+  titleTh: string;
+  titleEn: string;
+  route: string;
+  icon: StaticPageIcon;
+  status: StaticPageStatus;
+  updatedAt: string;
+};
+
+export type AdminPageEditorContent = PageContentMock & {
+  contentTh: string;
+  contentEn: string;
+};
+
+export type AdminPageUpdateInput = {
+  contentTh: string;
+  contentEn: string;
+  titleTh?: string;
+  titleEn?: string;
+};
+
+const INITIAL_STATIC_PAGES: AdminStaticPageMeta[] = [
+  {
+    slug: "privacy-policy",
+    titleTh: "นโยบายความเป็นส่วนตัว",
+    titleEn: "Privacy Policy",
+    route: "/privacy-policy",
+    icon: "policy",
+    status: "published",
+    updatedAt: "2023-10-12",
+  },
+  {
+    slug: "terms",
+    titleTh: "เงื่อนไขการใช้งาน",
+    titleEn: "Terms of Service",
+    route: "/terms",
+    icon: "gavel",
+    status: "published",
+    updatedAt: "2024-01-05",
+  },
+  {
+    slug: "api-docs",
+    titleTh: "เอกสาร API",
+    titleEn: "API Documentation",
+    route: "/api-docs",
+    icon: "api",
+    status: "published",
+    updatedAt: "2024-03-28",
+  },
+  {
+    slug: "help-center",
+    titleTh: "Help Center",
+    titleEn: "Help Center",
+    route: "/help-center",
+    icon: "help",
+    status: "draft",
+    updatedAt: "2024-04-14",
+  },
+];
+
+let staticPagesMetaState: AdminStaticPageMeta[] = INITIAL_STATIC_PAGES.map(
+  (page) => ({ ...page })
+);
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function serializeSectionContent(
+  section: PageContentSection,
+  lang: "th" | "en"
+): string {
+  if (section.type === "rights") {
+    const allowed = lang === "th" ? section.allowedTh : section.allowedEn;
+    const prohibited =
+      lang === "th" ? section.prohibitedTh : section.prohibitedEn;
+    return [...allowed, ...prohibited].join("\n");
+  }
+
+  const content = lang === "th" ? section.contentTh : section.contentEn;
+  const body =
+    section.type === "warning"
+      ? lang === "th"
+        ? section.bodyTh
+        : section.bodyEn
+      : undefined;
+
+  return [stripHtml(content), body?.trim()].filter(Boolean).join("\n\n");
+}
+
+function serializePageContent(page: PageContentMock, lang: "th" | "en"): string {
+  if (page.sections.length === 0) {
+    return "";
+  }
+  return page.sections
+    .map((section) => serializeSectionContent(section, lang))
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function wrapEditorContent(text: string): string {
+  const escaped = escapeHtml(text).replace(/\n/g, "<br/>");
+  return `<p class="font-sarabun text-body-md text-text-secondary">${escaped}</p>`;
+}
+
+export function getAdminStaticPagesMock(): AdminStaticPageMeta[] {
+  return staticPagesMetaState.map((page) => ({ ...page }));
+}
+
+export function getAdminPageContentMock(
+  slug: string
+): AdminPageEditorContent | null {
+  const page = pageContentState.find((item) => item.slug === slug);
+  if (!page) {
+    return null;
+  }
+
+  return {
+    ...page,
+    sections: page.sections.map((section) => ({ ...section })),
+    contentTh: serializePageContent(page, "th"),
+    contentEn: serializePageContent(page, "en"),
+  };
+}
+
+export function updateAdminPageContentMock(
+  slug: string,
+  input: AdminPageUpdateInput
+): AdminPageEditorContent {
+  const index = pageContentState.findIndex((item) => item.slug === slug);
+  if (index === -1) {
+    throw new Error("PAGE_NOT_FOUND");
+  }
+
+  const current = pageContentState[index];
+  const updatedAt = new Date().toISOString().slice(0, 10);
+  const nextPage: PageContentMock = {
+    ...current,
+    titleTh: input.titleTh ?? current.titleTh,
+    titleEn: input.titleEn ?? current.titleEn,
+    updatedAt,
+    sections: [
+      {
+        id: "main-content",
+        titleTh: input.titleTh ?? current.titleTh,
+        titleEn: input.titleEn ?? current.titleEn,
+        type: "text",
+        contentTh: wrapEditorContent(input.contentTh),
+        contentEn: wrapEditorContent(input.contentEn),
+      },
+    ],
+  };
+
+  pageContentState = pageContentState.map((item, itemIndex) =>
+    itemIndex === index ? nextPage : item
+  );
+
+  staticPagesMetaState = staticPagesMetaState.map((item) =>
+    item.slug === slug
+      ? {
+          ...item,
+          titleTh: nextPage.titleTh,
+          titleEn: nextPage.titleEn,
+          updatedAt,
+        }
+      : item
+  );
+
+  return getAdminPageContentMock(slug)!;
+}
+
+export type HeroImageMock = {
+  imageUrl: string | null;
+};
+
+let heroImageUrl: string | null = null;
+
+export function getHeroImageMock(): HeroImageMock {
+  return { imageUrl: heroImageUrl };
+}
+
+export async function uploadHeroImageMock(file: File): Promise<HeroImageMock> {
+  const maxSize = 5 * 1024 * 1024;
+  const allowedTypes = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+  ];
+
+  if (file.size > maxSize) {
+    throw new Error("FILE_TOO_LARGE");
+  }
+
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error("FILE_INVALID_FORMAT");
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  if (heroImageUrl?.startsWith("blob:")) {
+    URL.revokeObjectURL(heroImageUrl);
+  }
+
+  heroImageUrl = URL.createObjectURL(file);
+  return { imageUrl: heroImageUrl };
+}
+
+export async function deleteHeroImageMock(): Promise<HeroImageMock> {
+  await new Promise((resolve) => setTimeout(resolve, 300));
+
+  if (heroImageUrl?.startsWith("blob:")) {
+    URL.revokeObjectURL(heroImageUrl);
+  }
+
+  heroImageUrl = null;
+  return { imageUrl: null };
+}
 
 export type ApiDocParam = {
   name: string;

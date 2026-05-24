@@ -1030,6 +1030,38 @@
       "paginationSummary": "Showing {start}-{end} of {total} announcements",
       "prevPage": "Previous",
       "nextPage": "Next"
+    },
+    "pages": {
+      "title": "จัดการหน้า Static",
+      "subtitle": "แก้ไขเนื้อหาหน้าต่างๆ ในระบบ",
+      "heroTitle": "Hero Background",
+      "heroSubtitle": "รูปภาพพื้นหลังส่วน Hero หน้าหลัก",
+      "heroUpload": "อัปโหลดรูปภาพ",
+      "heroHint": ".jpg, .jpeg, .png, .webp ไม่เกิน 5MB แนะนำขนาด 1920x600px",
+      "heroReset": "Reset เป็นสี Gradient",
+      "heroPreview": "ตัวอย่างการแสดงผล",
+      "pagesTitle": "รายการหน้าทั้งหมด",
+      "pagesHint": "เลือกหน้าเพื่อเริ่มแก้ไขเนื้อหา",
+      "editContent": "แก้ไขเนื้อหา",
+      "editTab": {
+        "th": "TH",
+        "en": "EN"
+      },
+      "save": "บันทึก",
+      "saving": "กำลังบันทึก...",
+      "cancel": "ยกเลิก",
+      "savedSuccess": "บันทึกเนื้อหาสำเร็จ",
+      "saveError": "บันทึกไม่สำเร็จ กรุณาลองใหม่",
+      "uploadSuccess": "อัปโหลดรูปภาพสำเร็จ",
+      "uploadError": "อัปโหลดไม่สำเร็จ กรุณาตรวจสอบไฟล์",
+      "resetSuccess": "รีเซ็ตเป็นสี Gradient แล้ว",
+      "published": "PUBLISHED",
+      "draft": "DRAFT",
+      "updatedAt": "อัปเดตล่าสุด: {date}",
+      "editTitle": "แก้ไขเนื้อหา — {title}",
+      "contentPlaceholder": "พิมพ์เนื้อหาหน้านี้...",
+      "loading": "กำลังโหลด...",
+      "notFound": "ไม่พบหน้าที่ต้องการ"
     }
   }
 }

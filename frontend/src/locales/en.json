@@ -1030,6 +1030,38 @@
       "paginationSummary": "Showing {start}-{end} of {total} announcements",
       "prevPage": "Previous",
       "nextPage": "Next"
+    },
+    "pages": {
+      "title": "Manage static pages",
+      "subtitle": "Edit content for system pages",
+      "heroTitle": "Hero background",
+      "heroSubtitle": "Background image for the home page hero section",
+      "heroUpload": "Upload image",
+      "heroHint": ".jpg, .jpeg, .png, .webp up to 5MB. Recommended 1920x600px",
+      "heroReset": "Reset to gradient",
+      "heroPreview": "Preview",
+      "pagesTitle": "All pages",
+      "pagesHint": "Select a page to start editing content",
+      "editContent": "Edit content",
+      "editTab": {
+        "th": "TH",
+        "en": "EN"
+      },
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "savedSuccess": "Content saved successfully",
+      "saveError": "Save failed. Please try again.",
+      "uploadSuccess": "Image uploaded successfully",
+      "uploadError": "Upload failed. Please check the file.",
+      "resetSuccess": "Reset to gradient",
+      "published": "PUBLISHED",
+      "draft": "DRAFT",
+      "updatedAt": "Last updated: {date}",
+      "editTitle": "Edit content — {title}",
+      "contentPlaceholder": "Enter page content...",
+      "loading": "Loading...",
+      "notFound": "Page not found"
     }
   }
 }
