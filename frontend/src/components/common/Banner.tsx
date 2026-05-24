@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useAnnouncements } from "@/hooks/useAnnouncements";
 
 function CampaignIcon() {
   return (
@@ -43,9 +44,12 @@ function CloseIcon() {
 
 export default function Banner() {
   const t = useTranslations("home.banner");
-  const [visible, setVisible] = useState(true);
+  const { data: announcements = [], isLoading } = useAnnouncements();
+  const [dismissed, setDismissed] = useState(false);
 
-  if (!visible) {
+  const activeAnnouncement = announcements[0];
+
+  if (isLoading || dismissed || !activeAnnouncement) {
     return null;
   }
 
@@ -59,12 +63,14 @@ export default function Banner() {
         <div className="flex min-w-0 items-center gap-3">
           <CampaignIcon />
           <p className="font-sarabun text-label font-medium text-status-published">
-            {t("message")}
+            <span className="font-semibold">{activeAnnouncement.title}</span>
+            {" — "}
+            {activeAnnouncement.content}
           </p>
         </div>
         <button
           type="button"
-          onClick={() => setVisible(false)}
+          onClick={() => setDismissed(true)}
           className="shrink-0 rounded-radius-full p-1 text-status-published transition-colors hover:bg-surface-card/50"
           aria-label={t("close")}
         >

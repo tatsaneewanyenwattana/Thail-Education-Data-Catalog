@@ -3412,3 +3412,143 @@ export function deleteAdminTagMock(id: string): void {
   }
   adminTagsState = adminTagsState.filter((tag) => tag.id !== id);
 }
+
+// — Announcements (mutable in-memory for UI-only phase) —
+
+export type Announcement = {
+  id: string;
+  title: string;
+  content: string;
+  isActive: boolean;
+  createdAt: string;
+};
+
+export type AnnouncementInput = {
+  title: string;
+  content: string;
+  isActive: boolean;
+};
+
+export const mockAnnouncements: Announcement[] = [
+  {
+    id: "ann-1",
+    title: "ระบบเปิดให้บริการอย่างเป็นทางการ",
+    content:
+      "ยินดีต้อนรับสู่ Thai EduData Insight ระบบเปิดให้บริการแล้ว",
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "ann-2",
+    title: "อัปเดตข้อมูลประจำปี 2566",
+    content: "ข้อมูลสถิติการศึกษาปี 2566 พร้อมให้ดาวน์โหลดแล้ว",
+    isActive: false,
+    createdAt: "2024-02-01T00:00:00Z",
+  },
+  {
+    id: "ann-3",
+    title: "แจ้งปิดระบบชั่วคราว",
+    content: "ระบบจะปิดปรับปรุงในวันที่ 30 มีนาคม 2567",
+    isActive: false,
+    createdAt: "2024-03-01T00:00:00Z",
+  },
+];
+
+let announcementsState: Announcement[] = mockAnnouncements.map((item) => ({
+  ...item,
+}));
+
+const ADMIN_ANNOUNCEMENTS_PAGE_SIZE = 10;
+
+export type AdminAnnouncementsResult = {
+  data: Announcement[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export function getAdminAnnouncementsMock(
+  page = 1
+): AdminAnnouncementsResult {
+  const sorted = [...announcementsState].sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  const total = sorted.length;
+  const totalPages = Math.max(
+    1,
+    Math.ceil(total / ADMIN_ANNOUNCEMENTS_PAGE_SIZE)
+  );
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const start = (safePage - 1) * ADMIN_ANNOUNCEMENTS_PAGE_SIZE;
+
+  return {
+    data: sorted.slice(start, start + ADMIN_ANNOUNCEMENTS_PAGE_SIZE),
+    total,
+    page: safePage,
+    pageSize: ADMIN_ANNOUNCEMENTS_PAGE_SIZE,
+    totalPages,
+  };
+}
+
+export function getActiveAnnouncementsMock(): Announcement[] {
+  return [...announcementsState]
+    .filter((item) => item.isActive)
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+}
+
+export function createAnnouncementMock(
+  input: AnnouncementInput
+): Announcement {
+  const created: Announcement = {
+    id: `ann-${Date.now()}`,
+    title: input.title,
+    content: input.content,
+    isActive: input.isActive,
+    createdAt: new Date().toISOString(),
+  };
+  announcementsState = [created, ...announcementsState];
+  return created;
+}
+
+export function updateAnnouncementMock(
+  id: string,
+  input: AnnouncementInput
+): Announcement {
+  const index = announcementsState.findIndex((item) => item.id === id);
+  if (index === -1) {
+    throw new Error("ANNOUNCEMENT_NOT_FOUND");
+  }
+  const updated: Announcement = {
+    ...announcementsState[index],
+    title: input.title,
+    content: input.content,
+    isActive: input.isActive,
+  };
+  announcementsState = announcementsState.map((item) =>
+    item.id === id ? updated : item
+  );
+  return updated;
+}
+
+export function deleteAnnouncementMock(id: string): void {
+  const exists = announcementsState.some((item) => item.id === id);
+  if (!exists) {
+    throw new Error("ANNOUNCEMENT_NOT_FOUND");
+  }
+  announcementsState = announcementsState.filter((item) => item.id !== id);
+}
+
+export function toggleAnnouncementMock(id: string, isActive: boolean): void {
+  const index = announcementsState.findIndex((item) => item.id === id);
+  if (index === -1) {
+    throw new Error("ANNOUNCEMENT_NOT_FOUND");
+  }
+  announcementsState = announcementsState.map((item) =>
+    item.id === id ? { ...item, isActive } : item
+  );
+}
