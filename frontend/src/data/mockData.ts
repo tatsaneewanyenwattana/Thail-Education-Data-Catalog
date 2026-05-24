@@ -3099,3 +3099,316 @@ export function deleteAdminDatasetMock(datasetId: string): void {
   }
   adminDatasetsState = adminDatasetsState.filter((item) => item.id !== datasetId);
 }
+
+// — Admin category & tag management (mutable in-memory for UI-only phase) —
+
+export type AdminSubcategory = {
+  id: string;
+  nameTh: string;
+  nameEn: string;
+  slug: string;
+  agencyName: string;
+  datasetCount: number;
+};
+
+export type AdminCategory = {
+  id: string;
+  nameTh: string;
+  nameEn: string;
+  slug: string;
+  datasetCount: number;
+  subcategories: AdminSubcategory[];
+};
+
+export type AdminCategoryInput = {
+  nameTh: string;
+  nameEn: string;
+  slug: string;
+};
+
+export type AdminTag = {
+  id: string;
+  name: string;
+  datasetCount: number;
+};
+
+export const mockAdminCategories: AdminCategory[] = [
+  {
+    id: "cat-1",
+    nameTh: "สถิตินักเรียน",
+    nameEn: "Student Statistics",
+    slug: "student-statistics",
+    datasetCount: 45,
+    subcategories: [
+      {
+        id: "sub-1",
+        nameTh: "รายจังหวัด",
+        nameEn: "By Province",
+        slug: "by-province",
+        agencyName: "สพฐ.",
+        datasetCount: 12,
+      },
+      {
+        id: "sub-2",
+        nameTh: "รายปี",
+        nameEn: "By Year",
+        slug: "by-year",
+        agencyName: "สพฐ.",
+        datasetCount: 8,
+      },
+    ],
+  },
+  {
+    id: "cat-2",
+    nameTh: "จำนวนครู",
+    nameEn: "Teacher Statistics",
+    slug: "teacher-statistics",
+    datasetCount: 28,
+    subcategories: [
+      {
+        id: "sub-3",
+        nameTh: "รายวิชา",
+        nameEn: "By Subject",
+        slug: "by-subject",
+        agencyName: "สพฐ.",
+        datasetCount: 10,
+      },
+    ],
+  },
+  {
+    id: "cat-3",
+    nameTh: "โรงเรียน",
+    nameEn: "Schools",
+    slug: "schools",
+    datasetCount: 0,
+    subcategories: [],
+  },
+];
+
+export const mockAdminTags: AdminTag[] = [
+  { id: "tag-1", name: "นักเรียน", datasetCount: 23 },
+  { id: "tag-2", name: "ครู", datasetCount: 15 },
+  { id: "tag-3", name: "2566", datasetCount: 45 },
+  { id: "tag-4", name: "จังหวัด", datasetCount: 18 },
+  { id: "tag-5", name: "CSV", datasetCount: 32 },
+];
+
+let adminCategoriesState: AdminCategory[] = mockAdminCategories.map((c) => ({
+  ...c,
+  subcategories: c.subcategories.map((s) => ({ ...s })),
+}));
+let adminTagsState: AdminTag[] = mockAdminTags.map((t) => ({ ...t }));
+
+const ADMIN_CATEGORY_PAGE_SIZE = 4;
+
+export type AdminCategoriesResult = {
+  data: AdminCategory[];
+  totalL1: number;
+  totalL2: number;
+  page: number;
+  totalPages: number;
+};
+
+function recalcAdminCategoryDatasetCount(category: AdminCategory): AdminCategory {
+  const subTotal = category.subcategories.reduce(
+    (sum, sub) => sum + sub.datasetCount,
+    0
+  );
+  return {
+    ...category,
+    datasetCount: Math.max(category.datasetCount, subTotal),
+  };
+}
+
+export function getAdminCategoriesMock(
+  search?: string,
+  page = 1
+): AdminCategoriesResult {
+  const keyword = search?.trim().toLowerCase() ?? "";
+  let filtered = [...adminCategoriesState];
+
+  if (keyword) {
+    filtered = filtered.filter((category) => {
+      const l1Match =
+        category.nameTh.toLowerCase().includes(keyword) ||
+        category.nameEn.toLowerCase().includes(keyword) ||
+        category.slug.toLowerCase().includes(keyword);
+      const l2Match = category.subcategories.some(
+        (sub) =>
+          sub.nameTh.toLowerCase().includes(keyword) ||
+          sub.nameEn.toLowerCase().includes(keyword) ||
+          sub.slug.toLowerCase().includes(keyword) ||
+          sub.agencyName.toLowerCase().includes(keyword)
+      );
+      return l1Match || l2Match;
+    });
+  }
+
+  const totalL1 = filtered.length;
+  const totalL2 = filtered.reduce(
+    (sum, category) => sum + category.subcategories.length,
+    0
+  );
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalL1 / ADMIN_CATEGORY_PAGE_SIZE)
+  );
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const start = (safePage - 1) * ADMIN_CATEGORY_PAGE_SIZE;
+
+  return {
+    data: filtered.slice(start, start + ADMIN_CATEGORY_PAGE_SIZE),
+    totalL1,
+    totalL2,
+    page: safePage,
+    totalPages,
+  };
+}
+
+export function createAdminCategoryMock(
+  input: AdminCategoryInput
+): AdminCategory {
+  const created: AdminCategory = {
+    id: `cat-${Date.now()}`,
+    nameTh: input.nameTh,
+    nameEn: input.nameEn,
+    slug: input.slug,
+    datasetCount: 0,
+    subcategories: [],
+  };
+  adminCategoriesState = [...adminCategoriesState, created];
+  return created;
+}
+
+export function updateAdminCategoryMock(
+  level: 1 | 2,
+  id: string,
+  input: AdminCategoryInput
+): void {
+  if (level === 1) {
+    adminCategoriesState = adminCategoriesState.map((category) =>
+      category.id === id
+        ? {
+            ...category,
+            nameTh: input.nameTh,
+            nameEn: input.nameEn,
+            slug: input.slug,
+          }
+        : category
+    );
+    return;
+  }
+
+  adminCategoriesState = adminCategoriesState.map((category) => ({
+    ...category,
+    subcategories: category.subcategories.map((sub) =>
+      sub.id === id
+        ? {
+            ...sub,
+            nameTh: input.nameTh,
+            nameEn: input.nameEn,
+            slug: input.slug,
+          }
+        : sub
+    ),
+  }));
+}
+
+export function deleteAdminCategoryMock(level: 1 | 2, id: string): void {
+  if (level === 1) {
+    const target = adminCategoriesState.find((category) => category.id === id);
+    if (!target) {
+      throw new Error("CATEGORY_NOT_FOUND");
+    }
+  const hasDatasets =
+    target.datasetCount > 0 ||
+    target.subcategories.some((sub) => sub.datasetCount > 0);
+    if (hasDatasets) {
+      throw new Error("CATEGORY_HAS_DATASETS");
+    }
+    adminCategoriesState = adminCategoriesState.filter(
+      (category) => category.id !== id
+    );
+    return;
+  }
+
+  let found = false;
+  adminCategoriesState = adminCategoriesState.map((category) => {
+    const sub = category.subcategories.find((item) => item.id === id);
+    if (!sub) {
+      return category;
+    }
+    found = true;
+    if (sub.datasetCount > 0) {
+      throw new Error("CATEGORY_HAS_DATASETS");
+    }
+    const nextSubcategories = category.subcategories.filter(
+      (item) => item.id !== id
+    );
+    return recalcAdminCategoryDatasetCount({
+      ...category,
+      subcategories: nextSubcategories,
+      datasetCount: nextSubcategories.reduce(
+        (sum, item) => sum + item.datasetCount,
+        0
+      ),
+    });
+  });
+
+  if (!found) {
+    throw new Error("CATEGORY_NOT_FOUND");
+  }
+}
+
+export function getAdminTagsMock(search?: string): AdminTag[] {
+  const keyword = search?.trim().toLowerCase() ?? "";
+  if (!keyword) {
+    return [...adminTagsState];
+  }
+  return adminTagsState.filter((tag) =>
+    tag.name.toLowerCase().includes(keyword)
+  );
+}
+
+export function createAdminTagMock(name: string): AdminTag {
+  const exists = adminTagsState.some(
+    (tag) => tag.name.toLowerCase() === name.toLowerCase()
+  );
+  if (exists) {
+    throw new Error("TAG_NAME_EXISTS");
+  }
+  const created: AdminTag = {
+    id: `tag-${Date.now()}`,
+    name,
+    datasetCount: 0,
+  };
+  adminTagsState = [...adminTagsState, created];
+  return created;
+}
+
+export function updateAdminTagMock(id: string, name: string): void {
+  const exists = adminTagsState.some(
+    (tag) => tag.id !== id && tag.name.toLowerCase() === name.toLowerCase()
+  );
+  if (exists) {
+    throw new Error("TAG_NAME_EXISTS");
+  }
+  const index = adminTagsState.findIndex((tag) => tag.id === id);
+  if (index === -1) {
+    throw new Error("TAG_NOT_FOUND");
+  }
+  adminTagsState = adminTagsState.map((tag) =>
+    tag.id === id ? { ...tag, name } : tag
+  );
+}
+
+export function deleteAdminTagMock(id: string): void {
+  const target = adminTagsState.find((tag) => tag.id === id);
+  if (!target) {
+    throw new Error("TAG_NOT_FOUND");
+  }
+  if (target.datasetCount > 0) {
+    throw new Error("TAG_HAS_DATASETS");
+  }
+  adminTagsState = adminTagsState.filter((tag) => tag.id !== id);
+}
