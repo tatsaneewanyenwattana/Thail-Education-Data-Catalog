@@ -97,7 +97,7 @@ NEXT_PUBLIC_APP_ENV=development
 | 12 | useBookmarks | GET/POST/DELETE /bookmarks | ✅ |
 | 13 | useSubscriptions | GET/DELETE /subscriptions | ✅ |
 | 14 | useSavedSearches | GET/POST/DELETE /saved-searches | ✅ |
-| 15 | useDashboardLayout | GET/PUT /dashboard-layouts | ⏳ |
+| 15 | useDashboardLayout | GET/PUT /dashboard-layouts | ✅ |
 
 **⚠️ จุดสำคัญตาม claude.md #5 M2**
 - Agency ส่งได้แค่ status = `submitted`
@@ -111,7 +111,7 @@ NEXT_PUBLIC_APP_ENV=development
 - [ ] Bulk Upload ทำงาน
 - [ ] จัดการหมวดหมู่ได้
 - [ ] Bookmark/Subscription ทำงาน
-- [ ] บันทึก Dashboard Layout แล้ว Refresh ยังอยู่
+- [x] บันทึก Dashboard Layout แล้ว Refresh ยังอยู่
 
 ---
 

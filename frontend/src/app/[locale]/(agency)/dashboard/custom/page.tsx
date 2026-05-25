@@ -4,35 +4,60 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import DashboardGrid from "@/components/dashboard/DashboardGrid";
 import WidgetPanel from "@/components/dashboard/WidgetPanel";
-import type { DashboardGridWidget } from "@/data/mockData";
-import { useDashboardLayout } from "@/hooks/useDashboardLayout";
+import {
+  DEFAULT_DASHBOARD_WIDGETS,
+  type DashboardGridWidget,
+} from "@/data/mockData";
+import {
+  useGetDashboardLayout,
+  useSaveDashboardLayout,
+} from "@/hooks/useDashboardLayout";
 
 export default function CustomDashboardPage() {
   const t = useTranslations("agency.customDashboard");
-  const { save, load } = useDashboardLayout();
+  const { data: loadedWidgets, isLoading, isError, isSuccess } =
+    useGetDashboardLayout();
+  const saveMutation = useSaveDashboardLayout();
 
-  const [widgets, setWidgets] = useState<DashboardGridWidget[]>([]);
+  const [widgets, setWidgets] = useState<DashboardGridWidget[]>(
+    DEFAULT_DASHBOARD_WIDGETS
+  );
   const [initialized, setInitialized] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [showGuides, setShowGuides] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setWidgets(load());
-    setInitialized(true);
-  }, [load]);
+    if (isSuccess && loadedWidgets) {
+      setWidgets(loadedWidgets);
+      setInitialized(true);
+    }
+  }, [isSuccess, loadedWidgets]);
 
-  const handleSave = () => {
-    save(widgets);
-    setToastMessage(t("saveSuccess"));
-    window.setTimeout(() => setToastMessage(null), 3000);
+  const handleSave = async () => {
+    try {
+      await saveMutation.mutateAsync(widgets);
+      setToastMessage(t("saveSuccess"));
+      window.setTimeout(() => setToastMessage(null), 3000);
+    } catch {
+      setToastMessage(t("saveError"));
+      window.setTimeout(() => setToastMessage(null), 3000);
+    }
   };
 
-  if (!initialized) {
+  if (isLoading || !initialized) {
     return (
       <div className="space-y-6">
         <div className="h-10 w-64 animate-pulse rounded-radius-md bg-surface-container" />
         <div className="min-h-[600px] animate-pulse rounded-radius-lg bg-surface-container" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-radius-md border border-status-error bg-status-error-bg px-4 py-3 font-sarabun text-label text-status-error">
+        {t("loadError")}
       </div>
     );
   }
@@ -51,10 +76,11 @@ export default function CustomDashboardPage() {
         <button
           type="button"
           onClick={handleSave}
-          className="inline-flex items-center justify-center gap-2 rounded-radius-lg bg-primary px-6 py-2.5 font-sarabun text-label font-bold text-surface-card shadow-level-1 transition-opacity hover:bg-primary-hover"
+          disabled={saveMutation.isPending}
+          className="inline-flex items-center justify-center gap-2 rounded-radius-lg bg-primary px-6 py-2.5 font-sarabun text-label font-bold text-surface-card shadow-level-1 transition-opacity hover:bg-primary-hover disabled:opacity-50"
         >
           <SaveIcon />
-          {t("saveLayout")}
+          {saveMutation.isPending ? t("saving") : t("saveLayout")}
         </button>
       </header>
 
