@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
+import app.services.admin_service as admin_service
 import app.services.download_service as download_service
 import app.services.public_service as public_service
 from app.core.config import settings
@@ -35,6 +36,16 @@ def _get_redis():
     import redis
 
     return redis.from_url(settings.redis_url, decode_responses=True)
+
+
+@router.get("/announcements", status_code=200)
+def public_list_announcements(db: Session = Depends(get_db)):
+    """
+    ประกาศที่เปิดใช้งานสำหรับ Banner หน้าหลัก
+    - Auth ❌
+    """
+    items = admin_service.get_active_announcements(db)
+    return success_response([i.model_dump(mode="json") for i in items])
 
 
 @router.get("/datasets", status_code=200)

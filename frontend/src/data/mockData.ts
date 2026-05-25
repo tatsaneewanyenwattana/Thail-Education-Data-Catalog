@@ -3809,7 +3809,7 @@ let announcementsState: Announcement[] = mockAnnouncements.map((item) => ({
   ...item,
 }));
 
-const ADMIN_ANNOUNCEMENTS_PAGE_SIZE = 10;
+export const ADMIN_ANNOUNCEMENTS_PAGE_SIZE = 10;
 
 export type AdminAnnouncementsResult = {
   data: Announcement[];

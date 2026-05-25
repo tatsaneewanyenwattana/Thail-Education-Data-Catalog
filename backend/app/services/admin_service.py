@@ -162,6 +162,11 @@ def get_announcements(
     return [AnnouncementResponse.model_validate(a) for a in items], total
 
 
+def get_active_announcements(db: Session) -> list[AnnouncementResponse]:
+    items = admin_repo.get_active_announcements(db)
+    return [AnnouncementResponse.model_validate(a) for a in items]
+
+
 def update_announcement(
     db: Session,
     announcement_id: uuid.UUID,

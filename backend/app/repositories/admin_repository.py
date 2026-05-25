@@ -195,6 +195,19 @@ def create_announcement(
     return announcement
 
 
+def get_active_announcements(db: Session, limit: int = 20) -> list[Announcement]:
+    return (
+        db.query(Announcement)
+        .filter(
+            Announcement.is_deleted.is_(False),
+            Announcement.is_active.is_(True),
+        )
+        .order_by(Announcement.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+
 def get_announcements(
     db: Session, pagination: PaginationParams
 ) -> tuple[list[Announcement], int]:

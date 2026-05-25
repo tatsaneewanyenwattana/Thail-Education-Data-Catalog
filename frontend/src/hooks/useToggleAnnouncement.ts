@@ -1,22 +1,32 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toggleAnnouncementMock } from "@/data/mockData";
+import apiClient from "@/services/api";
+import type { Announcement } from "@/data/mockData";
+import { mapAnnouncement, type ApiAnnouncement } from "@/utils/announcementApi";
 
 type ToggleAnnouncementVariables = {
   id: string;
   isActive: boolean;
 };
 
+type ToggleResponse = {
+  success: boolean;
+  data: ApiAnnouncement;
+};
+
 async function toggleAnnouncement({
   id,
   isActive,
-}: ToggleAnnouncementVariables): Promise<void> {
-  // TODO: PUT /api/v1/admin/announcements/{id}
-  await Promise.resolve();
-  toggleAnnouncementMock(id, isActive);
+}: ToggleAnnouncementVariables): Promise<Announcement> {
+  const res = await apiClient.patch<ToggleResponse>(
+    `/admin/announcements/${id}`,
+    { is_active: isActive }
+  );
+  return mapAnnouncement(res.data.data);
 }
 
+/** PATCH /api/v1/admin/announcements/{id} — toggle is_active */
 export function useToggleAnnouncement() {
   const queryClient = useQueryClient();
 
@@ -28,3 +38,5 @@ export function useToggleAnnouncement() {
     },
   });
 }
+
+export const useAdminToggleAnnouncement = useToggleAnnouncement;

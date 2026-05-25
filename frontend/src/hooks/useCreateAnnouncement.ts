@@ -1,17 +1,30 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import apiClient from "@/services/api";
+import type { Announcement, AnnouncementInput } from "@/data/mockData";
 import {
-  createAnnouncementMock,
-  type AnnouncementInput,
-} from "@/data/mockData";
+  mapAnnouncement,
+  toAnnouncementCreateBody,
+  type ApiAnnouncement,
+} from "@/utils/announcementApi";
 
-async function createAnnouncement(data: AnnouncementInput): Promise<void> {
-  // TODO: POST /api/v1/admin/announcements
-  await Promise.resolve();
-  createAnnouncementMock(data);
+type CreateResponse = {
+  success: boolean;
+  data: ApiAnnouncement;
+};
+
+async function createAnnouncement(
+  data: AnnouncementInput
+): Promise<Announcement> {
+  const res = await apiClient.post<CreateResponse>(
+    "/admin/announcements",
+    toAnnouncementCreateBody(data)
+  );
+  return mapAnnouncement(res.data.data);
 }
 
+/** POST /api/v1/admin/announcements */
 export function useCreateAnnouncement() {
   const queryClient = useQueryClient();
 
@@ -23,3 +36,5 @@ export function useCreateAnnouncement() {
     },
   });
 }
+
+export const useAdminCreateAnnouncement = useCreateAnnouncement;
