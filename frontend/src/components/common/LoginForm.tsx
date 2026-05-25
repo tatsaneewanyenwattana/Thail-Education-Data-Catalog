@@ -165,14 +165,23 @@ export default function LoginForm() {
     },
     onSuccess: ({ token, user }) => {
       setToastMessage(null);
-      login(token, {
+      const authUser = {
         id: String(user.id),
         email: user.email,
         role: user.role,
         status: user.status,
         agency_name: user.agency_name,
-      });
-      router.push(`/${locale}/dashboard`);
+      };
+      login(token, authUser);
+
+      const redirectByRole = (role: User["role"]) => {
+        if (role === "admin") {
+          router.push(`/${locale}/admin`);
+        } else {
+          router.push(`/${locale}/dashboard`);
+        }
+      };
+      redirectByRole(authUser.role);
     },
     onError: (error: Error) => {
       setToastMessage(error.message || t("errorInvalid"));

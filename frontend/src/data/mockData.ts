@@ -1994,7 +1994,7 @@ export type AgencyDatasetRow = {
   categoryEn: string;
   subcategory: string;
   subcategoryEn: string;
-  status: "draft" | "published";
+  status: "draft" | "published" | "submitted";
   qualityScore: number;
   downloadCount: number;
   updatedAt: string;
@@ -2909,6 +2909,86 @@ export async function fetchMockVersionHistory(
 
 export function getAgencyDatasetById(id: string): AgencyDatasetRow | undefined {
   return mockAgencyDatasets.find((dataset) => dataset.id === id);
+}
+
+export type UploadDatasetMockResult = {
+  id: string;
+  status: "draft" | "submitted";
+};
+
+function parseDatasetSubmitStatus(
+  formData: FormData
+): "draft" | "submitted" {
+  const raw = formData.get("status");
+  return raw === "submitted" ? "submitted" : "draft";
+}
+
+export function uploadDatasetMock(
+  formData: FormData
+): UploadDatasetMockResult {
+  const status = parseDatasetSubmitStatus(formData);
+  const title = String(formData.get("title") ?? "ชุดข้อมูลใหม่");
+  const id = String(mockAgencyDatasets.length + 1);
+
+  mockAgencyDatasets.unshift({
+    id,
+    title,
+    titleEn: title,
+    category: "การศึกษาพื้นฐาน",
+    categoryEn: "Basic education",
+    subcategory: "สถิติ",
+    subcategoryEn: "Statistics",
+    status,
+    qualityScore: mockFileAnalysisResult.qualityScore,
+    downloadCount: 0,
+    updatedAt: new Date().toISOString().slice(0, 10),
+  });
+
+  mockAgencyStats.totalDatasets += 1;
+  if (status === "draft") {
+    mockAgencyStats.draftDatasets += 1;
+  }
+
+  return { id, status };
+}
+
+export function updateDatasetMock(
+  id: string,
+  formData: FormData
+): UploadDatasetMockResult {
+  const status = parseDatasetSubmitStatus(formData);
+  const index = mockAgencyDatasets.findIndex((dataset) => dataset.id === id);
+  if (index === -1) {
+    throw new Error("DATASET_NOT_FOUND");
+  }
+
+  const current = mockAgencyDatasets[index];
+  const previousStatus = current.status;
+  const nextStatus = status;
+
+  if (previousStatus === "published" && nextStatus === "draft") {
+    mockAgencyStats.publishedDatasets = Math.max(
+      0,
+      mockAgencyStats.publishedDatasets - 1
+    );
+    mockAgencyStats.draftDatasets += 1;
+  }
+
+  mockAgencyDatasets[index] = {
+    ...current,
+    title: String(formData.get("title") ?? current.title),
+    status: nextStatus,
+    updatedAt: new Date().toISOString().slice(0, 10),
+  };
+
+  if (previousStatus === "published" && nextStatus === "submitted") {
+    mockAgencyStats.publishedDatasets = Math.max(
+      0,
+      mockAgencyStats.publishedDatasets - 1
+    );
+  }
+
+  return { id, status: nextStatus };
 }
 
 export async function fetchMockRestoreVersion(

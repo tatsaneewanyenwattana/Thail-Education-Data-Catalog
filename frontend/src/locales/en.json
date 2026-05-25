@@ -525,6 +525,7 @@
       "fieldProvince": "Province",
       "cancel": "Cancel",
       "saveDraft": "Save draft",
+      "submitForApproval": "Submit for approval",
       "publish": "Publish",
       "fileInvalidType": "Only CSV, Excel, or JSON files are allowed",
       "fileTooLarge": "File exceeds 100MB",

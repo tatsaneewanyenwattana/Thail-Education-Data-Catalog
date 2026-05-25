@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import apiClient from "@/services/api";
 
 export type User = {
   id: string;
@@ -14,34 +15,52 @@ type AuthState = {
   token: string | null;
   login: (token: string, user: User) => void;
   logout: () => void;
-  initAuth: () => void;
-};
-
-// TODO: ลบ mock user ออกเมื่อ Backend พร้อม
-const MOCK_AGENCY_USER: User = {
-  id: "1",
-  email: "agency@test.com",
-  role: "agency",
-  status: "active",
-  agency_name: "สพฐ. (ทดสอบ)",
+  initAuth: () => Promise<void>;
 };
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      // Mock user ชั่วคราว — ลบออกเมื่อ Backend พร้อม
-      token: "mock-token-agency",
-      user: MOCK_AGENCY_USER,
+      token: null,
+      user: null,
       login: (token, user) => {
         localStorage.setItem("token", token);
         set({ token, user });
       },
       logout: () => {
         localStorage.removeItem("token");
+        localStorage.removeItem("auth");
         set({ token: null, user: null });
       },
-      // TODO: เปิด initAuth จริงเมื่อ Backend พร้อม
-      initAuth: () => {},
+      initAuth: async () => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          set({ token: null, user: null });
+          return;
+        }
+        set({ token });
+        try {
+          const res = await apiClient.get("/auth/me");
+          const me = (res.data as { data?: User }).data;
+          if (!me) {
+            throw new Error("no user");
+          }
+          set({
+            token,
+            user: {
+              id: String(me.id),
+              email: me.email,
+              role: me.role,
+              status: me.status,
+              agency_name: me.agency_name,
+            },
+          });
+        } catch {
+          localStorage.removeItem("token");
+          localStorage.removeItem("auth");
+          set({ token: null, user: null });
+        }
+      },
     }),
     { name: "auth" }
   )

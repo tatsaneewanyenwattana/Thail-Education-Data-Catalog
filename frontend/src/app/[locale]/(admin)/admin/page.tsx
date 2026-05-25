@@ -40,14 +40,6 @@ function DownloadIcon() {
   );
 }
 
-function ExportIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M19 9h-4V3H9v6H5l7 7 7-7ZM5 18v2h14v-2H5Z" />
-    </svg>
-  );
-}
-
 function StatsSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-spacing-6 md:grid-cols-2 xl:grid-cols-4">
@@ -84,23 +76,13 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="mx-auto max-w-container-max space-y-spacing-8 pb-24">
-      <header className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <div>
-          <h1 className="font-kanit text-[32px] font-bold leading-tight text-text-primary">
-            {t("title")}
-          </h1>
-          <p className="mt-1 font-sarabun text-body-md text-text-muted">
-            {t("subtitle")}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => showToast(t("exportSoon"))}
-          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-radius-sm bg-primary-dark px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-colors hover:bg-primary-hover"
-        >
-          <ExportIcon />
-          {t("exportReport")}
-        </button>
+      <header>
+        <h1 className="font-kanit text-[32px] font-bold leading-tight text-text-primary">
+          {t("title")}
+        </h1>
+        <p className="mt-1 font-sarabun text-body-md text-text-muted">
+          {t("subtitle")}
+        </p>
       </header>
 
       {isLoading && !data ? (

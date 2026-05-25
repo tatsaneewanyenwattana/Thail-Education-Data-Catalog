@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect } from "react";
+import apiClient from "@/services/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUIStore } from "@/stores/useUIStore";
 
@@ -126,12 +127,17 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
   const base = `/${locale}`;
   const tNav = useTranslations("nav");
-  const logout = useAuthStore((state) => state.logout);
-
-  const handleLogout = () => {
-    logout();
-    onNavigate?.();
-    router.push(`${base}/login`);
+  const handleLogout = async () => {
+    try {
+      await apiClient.post("/auth/logout");
+    } catch {
+      // still clear local session
+    } finally {
+      localStorage.removeItem("token");
+      useAuthStore.getState().logout();
+      onNavigate?.();
+      router.push(`${base}/login`);
+    }
   };
 
   return (

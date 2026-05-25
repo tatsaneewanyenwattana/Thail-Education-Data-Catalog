@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import AgencySidebar from "@/components/common/AgencySidebar";
 import Navbar from "@/components/common/Navbar";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -10,32 +11,32 @@ export default function AgencyLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { initAuth } = useAuthStore();
+  const router = useRouter();
+  const params = useParams();
+  const locale = (params.locale as string) || "th";
+  const { token, user, initAuth } = useAuthStore();
 
   useEffect(() => {
-    initAuth();
+    void initAuth();
   }, [initAuth]);
 
-  // TODO: เปิด Auth Guard เมื่อ Backend พร้อม
-  // ตอนนี้ bypass ไว้ก่อนเพื่อทดสอบ UI
-  // useEffect(() => {
-  //   if (!token) {
-  //     router.replace(`/${locale}/login`);
-  //     return;
-  //   }
-  //
-  //   if (user && user.role !== "agency" && user.role !== "admin") {
-  //     router.replace(`/${locale}`);
-  //   }
-  // }, [token, user, router, locale]);
+  useEffect(() => {
+    if (!token) {
+      router.push(`/${locale}/login`);
+      return;
+    }
+    if (user && user.role !== "agency" && user.role !== "admin") {
+      router.push(`/${locale}`);
+    }
+  }, [token, user, router, locale]);
 
-  // if (!token) {
-  //   return null;
-  // }
+  if (!token) {
+    return null;
+  }
 
-  // if (user && user.role !== "agency" && user.role !== "admin") {
-  //   return null;
-  // }
+  if (user && user.role !== "agency" && user.role !== "admin") {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen flex-col">

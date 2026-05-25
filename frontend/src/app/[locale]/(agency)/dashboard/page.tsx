@@ -77,7 +77,7 @@ export default function AgencyDashboardPage() {
   const locale = useLocale();
   const base = `/${locale}`;
   const { user } = useAuthStore();
-  const { data: stats, isLoading } = useAgencyDashboard();
+  const { data: stats, isLoading, isError, error } = useAgencyDashboard();
 
   const publishedPercent =
     stats && stats.totalDatasets > 0
@@ -97,6 +97,14 @@ export default function AgencyDashboardPage() {
           {user?.agency_name ?? t("agencyFallback")}
         </p>
       </header>
+
+      {isError ? (
+        <p className="rounded-radius-lg border border-status-error/30 bg-status-error/5 px-4 py-3 font-sarabun text-body-md text-status-error">
+          {error instanceof Error
+            ? error.message
+            : "โหลดข้อมูล Dashboard ไม่สำเร็จ"}
+        </p>
+      ) : null}
 
       {isLoading && !stats ? (
         <StatsSkeleton />

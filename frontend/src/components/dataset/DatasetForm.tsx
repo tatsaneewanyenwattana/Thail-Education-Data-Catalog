@@ -52,7 +52,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     mode === "edit" ? mockFileAnalysisResult : null
   );
   const [fileError, setFileError] = useState<string | null>(null);
-  const [submitStatus, setSubmitStatus] = useState<"draft" | "published" | null>(
+  const [submitStatus, setSubmitStatus] = useState<"draft" | "submitted" | null>(
     null
   );
 
@@ -80,6 +80,8 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     formState: { errors },
   } = useForm<DatasetFormValues>({
     resolver: zodResolver(datasetFormSchema),
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
     defaultValues: initialData ?? emptyDefaults,
   });
 
@@ -112,7 +114,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
 
   const buildFormData = (
     values: DatasetFormValues,
-    status: "draft" | "published"
+    status: "draft" | "submitted"
   ) => {
     const formData = new FormData();
     formData.append("title", values.title);
@@ -136,7 +138,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
 
   const onSubmit = async (
     values: DatasetFormValues,
-    status: "draft" | "published"
+    status: "draft" | "submitted"
   ) => {
     if (mode === "create" && !selectedFile && !analysis) {
       setFileError(t("fileRequired"));
@@ -147,12 +149,12 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     const formData = buildFormData(values, status);
 
     if (mode === "create") {
-      await uploadMutation.mutateAsync({ formData, status });
+      await uploadMutation.mutateAsync(formData);
       return;
     }
 
     if (datasetId) {
-      await updateMutation.mutateAsync({ id: datasetId, formData, status });
+      await updateMutation.mutateAsync({ id: datasetId, formData });
     }
   };
 
@@ -353,11 +355,11 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
           <button
             type="submit"
             disabled={isSubmitting}
-            onClick={() => setSubmitStatus("published")}
+            onClick={() => setSubmitStatus("submitted")}
             className="inline-flex items-center justify-center gap-2 rounded-radius-xl bg-primary px-10 py-2.5 font-sarabun text-label font-medium text-surface-card shadow-level-1 transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {isSubmitting && submitStatus === "published" && <Spinner />}
-            {t("publish")}
+            {isSubmitting && submitStatus === "submitted" && <Spinner />}
+            {t("submitForApproval")}
           </button>
         </div>
       </form>

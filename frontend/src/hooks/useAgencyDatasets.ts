@@ -1,10 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  mockAgencyDatasets,
-  type AgencyDatasetRow,
-} from "@/data/mockData";
+import apiClient from "@/services/api";
+import type { AgencyDatasetRow } from "@/data/mockData";
 
 export type AgencyDatasetStatusFilter = "all" | "draft" | "published";
 
@@ -15,45 +13,85 @@ export type AgencyDatasetsResponse = {
   totalPages: number;
 };
 
+type ApiAgencyDataset = {
+  id: string;
+  title: string;
+  titleEn?: string;
+  title_en?: string;
+  category: string;
+  categoryEn?: string;
+  category_en?: string;
+  subcategory: string;
+  subcategoryEn?: string;
+  subcategory_en?: string;
+  status: string;
+  qualityScore?: number;
+  quality_score?: number;
+  downloadCount?: number;
+  download_count?: number;
+  updatedAt?: string;
+  updated_at?: string;
+};
+
+type ListResponse = {
+  success: boolean;
+  data: ApiAgencyDataset[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total_items: number;
+    total_pages: number;
+  };
+};
+
 const PAGE_SIZE = 10;
+
+function mapDataset(item: ApiAgencyDataset): AgencyDatasetRow {
+  const status = item.status as AgencyDatasetRow["status"];
+  return {
+    id: String(item.id),
+    title: item.title,
+    titleEn: item.titleEn ?? item.title_en ?? item.title,
+    category: item.category,
+    categoryEn: item.categoryEn ?? item.category_en ?? item.category,
+    subcategory: item.subcategory,
+    subcategoryEn: item.subcategoryEn ?? item.subcategory_en ?? item.subcategory,
+    status:
+      status === "published" || status === "draft" || status === "submitted"
+        ? status
+        : "draft",
+    qualityScore: item.qualityScore ?? item.quality_score ?? 0,
+    downloadCount: item.downloadCount ?? item.download_count ?? 0,
+    updatedAt: item.updatedAt ?? item.updated_at ?? new Date().toISOString(),
+  };
+}
 
 async function fetchAgencyDatasets(
   status: AgencyDatasetStatusFilter,
   page: number,
   limit?: number
 ): Promise<AgencyDatasetsResponse> {
-  // TODO: เปลี่ยนเป็น API จริงเมื่อ Backend พร้อม
-  // const response = await apiClient.get<{ data: AgencyDatasetsResponse }>(
-  //   "/agency/datasets",
-  //   { params: { status: status === "all" ? undefined : status, page, limit: limit ?? PAGE_SIZE } }
-  // );
-  // return response.data.data;
+  const pageSize = limit ?? PAGE_SIZE;
+  const res = await apiClient.get<ListResponse>("/agency/datasets", {
+    params: {
+      page,
+      page_size: pageSize,
+      sort: "updated_at",
+      order: "desc",
+      ...(status !== "all" ? { status } : {}),
+    },
+  });
 
-  await Promise.resolve();
-
-  const filtered =
-    status === "all"
-      ? mockAgencyDatasets
-      : mockAgencyDatasets.filter((dataset) => dataset.status === status);
-
-  if (limit) {
-    return {
-      data: filtered.slice(0, limit),
-      total: filtered.length,
-      page: 1,
-      totalPages: 1,
-    };
+  const body = res.data;
+  if (!body?.data || !body.pagination) {
+    throw new Error("โหลดรายการ Dataset ไม่สำเร็จ");
   }
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(Math.max(page, 1), totalPages);
-  const start = (currentPage - 1) * PAGE_SIZE;
-
   return {
-    data: filtered.slice(start, start + PAGE_SIZE),
-    total: filtered.length,
-    page: currentPage,
-    totalPages,
+    data: body.data.map(mapDataset),
+    total: body.pagination.total_items,
+    page: body.pagination.page,
+    totalPages: body.pagination.total_pages,
   };
 }
 
@@ -66,5 +104,6 @@ export function useAgencyDatasets(
     queryKey: ["agency", "datasets", status, page, limit ?? PAGE_SIZE],
     queryFn: () => fetchAgencyDatasets(status, page, limit),
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 }

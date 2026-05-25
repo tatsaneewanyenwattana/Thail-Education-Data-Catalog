@@ -47,7 +47,7 @@ export default function CascadingCategorySelect({
               className={selectClass}
               onChange={(event) => {
                 field.onChange(event.target.value);
-                setValue("categoryLevel2", "", { shouldValidate: true });
+                setValue("categoryLevel2", "", { shouldValidate: false });
               }}
             >
               <option value="">{t("fieldCategoryL1Placeholder")}</option>

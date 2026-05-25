@@ -48,9 +48,11 @@ apiClient.interceptors.response.use(
 
       if (!isLoginRequest && typeof window !== "undefined") {
         localStorage.removeItem("token");
-        const segments = window.location.pathname.split("/");
-        const locale = segments[1] === "en" ? "en" : "th";
-        window.location.href = `/${locale}/login`;
+        localStorage.removeItem("auth");
+        const locale = localStorage.getItem("locale") || "th";
+        const pathLocale =
+          window.location.pathname.split("/")[1] === "en" ? "en" : locale;
+        window.location.href = `/${pathLocale}/login`;
       }
     }
 

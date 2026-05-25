@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { rejectAdminUserMock } from "@/data/mockData";
+// import apiClient from "@/services/api";
 
 type RejectUserInput = {
   userId: string;
@@ -12,7 +13,6 @@ async function rejectUser({ userId, reason }: RejectUserInput): Promise<void> {
   // TODO: เปลี่ยนเป็น API จริงเมื่อ Backend พร้อม
   // await apiClient.post(`/admin/users/${userId}/reject`, { reason });
   await Promise.resolve();
-  void reason;
   rejectAdminUserMock(userId, reason);
 }
 

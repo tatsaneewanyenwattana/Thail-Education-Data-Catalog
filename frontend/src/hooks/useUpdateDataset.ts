@@ -3,20 +3,29 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
+import {
+  updateDatasetMock,
+  type UploadDatasetMockResult,
+} from "@/data/mockData";
+// import apiClient from "@/services/api";
 
 export type UpdateDatasetPayload = {
   id: string;
   formData: FormData;
-  status: "draft" | "published";
 };
 
 async function updateDataset(
   payload: UpdateDatasetPayload
-): Promise<{ id: string; status: "draft" | "published" }> {
+): Promise<UploadDatasetMockResult> {
   // TODO: เปลี่ยนเป็น API จริงเมื่อ Backend พร้อม
-  // await apiClient.put(`/agency/datasets/${payload.id}`, payload.formData);
+  // const res = await apiClient.patch(
+  //   `/datasets/${payload.id}`,
+  //   payload.formData,
+  //   { headers: { "Content-Type": "multipart/form-data" } }
+  // );
+  // return res.data.data;
   await Promise.resolve();
-  return { id: payload.id, status: payload.status };
+  return updateDatasetMock(payload.id, payload.formData);
 }
 
 export function useUpdateDataset() {

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.routers.admin_router import router as admin_router
+from app.api.v1.routers.agency_router import router as agency_router
 from app.api.v1.routers.auth_router import router as auth_router
 from app.api.v1.routers.category_router import router as category_router
 from app.api.v1.routers.dataset_router import router as dataset_router
@@ -12,6 +13,7 @@ from app.api.v1.routers.visualization_router import router as visualization_rout
 
 api_router = APIRouter()
 api_router.include_router(auth_router, tags=["Auth"])
+api_router.include_router(agency_router)
 api_router.include_router(admin_router, tags=["Admin"])
 api_router.include_router(dataset_router, tags=["Dataset"])
 api_router.include_router(category_router, tags=["Category"])

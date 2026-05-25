@@ -91,7 +91,7 @@ export default function AgencyDatasetTable({
   const tStatus = useTranslations("agency.status");
   const locale = useLocale();
   const base = `/${locale}`;
-  const { data, isLoading } = useAgencyDatasets(status, page);
+  const { data, isLoading, isError, error } = useAgencyDatasets(status, page);
 
   const rows = data?.data ?? [];
   const total = data?.total ?? 0;
@@ -100,6 +100,18 @@ export default function AgencyDatasetTable({
   const pageSize = 10;
   const from = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const to = Math.min(currentPage * pageSize, total);
+
+  if (isError) {
+    return (
+      <div className="rounded-radius-lg border border-status-error/30 bg-status-error/5 px-6 py-8 text-center shadow-level-1">
+        <p className="font-sarabun text-body-md text-status-error">
+          {error instanceof Error
+            ? error.message
+            : "โหลดรายการ Dataset ไม่สำเร็จ"}
+        </p>
+      </div>
+    );
+  }
 
   if (isLoading && rows.length === 0) {
     return (

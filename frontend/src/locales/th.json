@@ -525,6 +525,7 @@
       "fieldProvince": "จังหวัด",
       "cancel": "ยกเลิก",
       "saveDraft": "บันทึก Draft",
+      "submitForApproval": "ส่งขอ Approve",
       "publish": "เผยแพร่",
       "fileInvalidType": "ไฟล์ต้องเป็น CSV, Excel หรือ JSON เท่านั้น",
       "fileTooLarge": "ไฟล์ใหญ่เกิน 100MB",
