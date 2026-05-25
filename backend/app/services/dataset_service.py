@@ -215,8 +215,13 @@ def upload(
         if request.tags:
             dataset_repo.create_dataset_tags(db, dataset.id, request.tags)
 
-        dataset.status = "published"
-        dataset.published_at = datetime.now(timezone.utc)
+        role = current_user.get("role")
+        if role == "agency":
+            dataset.status = "draft"
+            dataset.published_at = None
+        else:
+            dataset.status = "published"
+            dataset.published_at = datetime.now(timezone.utc)
 
         dataset_repo.create_audit_log(
             db,
@@ -240,14 +245,60 @@ def upload(
             _delete_from_minio(minio_client, object_name)
         raise_app_error("FILE_UPLOAD_FAILED", str(exc))
 
-    from app.utils.elasticsearch_utils import index_dataset
+    if dataset.status == "published":
+        from app.utils.elasticsearch_utils import index_dataset
 
-    index_doc = _build_dataset_index_document(db, dataset)
-    background_tasks.add_task(index_dataset, es_client, index_doc)
-    email_service.notify_subscribers_new_dataset(background_tasks, db, dataset)
-    email_service.notify_saved_search(background_tasks, db, dataset)
-
+        index_doc = _build_dataset_index_document(db, dataset)
+        background_tasks.add_task(index_dataset, es_client, index_doc)
+        email_service.notify_subscribers_new_dataset(background_tasks, db, dataset)
+        email_service.notify_saved_search(background_tasks, db, dataset)
     return _build_dataset_response(db, dataset.id)
+
+
+def submit_dataset(
+    db: Session,
+    dataset_id: uuid.UUID,
+    current_user: dict,
+    ip_address: str,
+    background_tasks: BackgroundTasks | None = None,
+) -> DatasetResponse:
+    dataset = dataset_repo.get_dataset_by_id(db, dataset_id)
+    if dataset is None:
+        raise_app_error("DATASET_NOT_FOUND")
+
+    if current_user.get("role") != "admin":
+        if str(dataset.user_id) != current_user["sub"]:
+            raise_app_error("DATASET_PERMISSION_DENIED")
+
+    if current_user.get("role") == "agency" and dataset.status != "draft":
+        raise_app_error("DATASET_INVALID_STATUS")
+
+    dataset_repo.update_dataset(
+        db,
+        dataset_id,
+        status="submitted",
+        published_at=None,
+    )
+
+    dataset_repo.create_audit_log(
+        db,
+        user_id=uuid.UUID(current_user["sub"]),
+        action="dataset.submit",
+        target_type="dataset",
+        target_id=dataset_id,
+        detail=None,
+        ip_address=ip_address,
+    )
+    db.commit()
+
+    if background_tasks is not None:
+        refreshed = dataset_repo.get_dataset_by_id(db, dataset_id)
+        if refreshed is not None:
+            email_service.notify_admin_dataset_submitted(
+                background_tasks, db, refreshed
+            )
+
+    return _build_dataset_response(db, dataset_id)
 
 
 def get_dataset(db: Session, dataset_id: uuid.UUID) -> DatasetResponse:
@@ -284,6 +335,7 @@ def update_dataset(
     request: DatasetUpdateRequest,
     current_user: dict,
     ip_address: str,
+    background_tasks: BackgroundTasks | None = None,
 ) -> DatasetResponse:
     dataset = dataset_repo.get_dataset_by_id(db, dataset_id)
     if dataset is None:
@@ -303,7 +355,7 @@ def update_dataset(
     if request.category_id is not None:
         fields["category_id"] = request.category_id
     if request.metadata is not None:
-        fields["metadata"] = request.metadata
+        fields["dataset_metadata"] = request.metadata
 
     if fields:
         dataset_repo.update_dataset(db, dataset_id, **fields)

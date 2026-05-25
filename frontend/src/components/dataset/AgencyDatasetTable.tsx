@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
+import { useState } from "react";
+import DownloadModal from "@/components/dataset/DownloadModal";
 import type { AgencyDatasetRow } from "@/data/mockData";
 import {
   useAgencyDatasets,
@@ -18,16 +20,26 @@ type AgencyDatasetTableProps = {
 function StatusBadge({
   status,
   publishedLabel,
+  submittedLabel,
   draftLabel,
 }: {
   status: AgencyDatasetRow["status"];
   publishedLabel: string;
+  submittedLabel: string;
   draftLabel: string;
 }) {
   if (status === "published") {
     return (
       <span className="inline-flex rounded-radius-full bg-status-published-bg px-3 py-1 font-sarabun text-caption font-semibold text-status-published">
         {publishedLabel}
+      </span>
+    );
+  }
+
+  if (status === "submitted") {
+    return (
+      <span className="inline-flex rounded-radius-full bg-status-info/15 px-3 py-1 font-sarabun text-caption font-semibold text-status-info">
+        {submittedLabel}
       </span>
     );
   }
@@ -92,6 +104,7 @@ export default function AgencyDatasetTable({
   const locale = useLocale();
   const base = `/${locale}`;
   const { data, isLoading, isError, error } = useAgencyDatasets(status, page);
+  const [downloadTargetId, setDownloadTargetId] = useState<string | null>(null);
 
   const rows = data?.data ?? [];
   const total = data?.total ?? 0;
@@ -184,6 +197,7 @@ export default function AgencyDatasetTable({
                       <StatusBadge
                         status={row.status}
                         publishedLabel={tStatus("published")}
+                        submittedLabel={tStatus("submitted")}
                         draftLabel={tStatus("draft")}
                       />
                     </td>
@@ -211,6 +225,15 @@ export default function AgencyDatasetTable({
                         >
                           <HistoryIcon />
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => setDownloadTargetId(row.id)}
+                          className="text-text-muted transition-colors hover:text-primary-dark"
+                          aria-label={t("download")}
+                          title={t("download")}
+                        >
+                          <DownloadIcon />
+                        </button>
                         <button
                           type="button"
                           onClick={() => onDelete(row, title)}
@@ -281,7 +304,21 @@ export default function AgencyDatasetTable({
           </nav>
         </div>
       )}
+
+      <DownloadModal
+        open={Boolean(downloadTargetId)}
+        datasetId={downloadTargetId ?? ""}
+        onClose={() => setDownloadTargetId(null)}
+      />
     </>
+  );
+}
+
+function DownloadIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M19 9h-4V3H9v6H5l7 7 7-7ZM5 18v2h14v-2H5Z" />
+    </svg>
   );
 }
 

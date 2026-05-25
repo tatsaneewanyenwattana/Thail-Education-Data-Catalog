@@ -5,6 +5,10 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import {
+  useDownloadDataset,
+  type DownloadFormat,
+} from "@/hooks/useDownloadDataset";
 
 const downloadFormats = ["csv", "excel", "json", "xml"] as const;
 
@@ -29,8 +33,7 @@ export default function DownloadModal({
   const t = useTranslations("dataset.download");
   const tCommon = useTranslations("common");
   const [mounted, setMounted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const downloadMutation = useDownloadDataset();
 
   useEffect(() => {
     setMounted(true);
@@ -49,9 +52,9 @@ export default function DownloadModal({
   useEffect(() => {
     if (!open) {
       reset({ format: "csv", purpose: "" });
-      setSubmitting(false);
-      setSuccess(false);
+      downloadMutation.reset();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset mutation when modal closes
   }, [open, reset]);
 
   useEffect(() => {
@@ -66,15 +69,16 @@ export default function DownloadModal({
   if (!open || !mounted) return null;
 
   const onSubmit = async (values: DownloadFormValues) => {
-    setSubmitting(true);
-    console.log("Download request", { datasetId, ...values });
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setSubmitting(false);
-    setSuccess(true);
-    window.setTimeout(() => {
-      setSuccess(false);
+    try {
+      await downloadMutation.mutateAsync({
+        datasetId,
+        purpose: values.purpose,
+        format: values.format as DownloadFormat,
+      });
       onClose();
-    }, 1000);
+    } catch {
+      // Error shown via downloadMutation.error
+    }
   };
 
   const formatLabels: Record<(typeof downloadFormats)[number], string> = {
@@ -83,6 +87,12 @@ export default function DownloadModal({
     json: "JSON",
     xml: "XML",
   };
+
+  const isSubmitting = downloadMutation.isPending;
+  const apiError =
+    downloadMutation.error instanceof Error
+      ? downloadMutation.error.message
+      : null;
 
   return (
     <div
@@ -132,6 +142,7 @@ export default function DownloadModal({
                     type="radio"
                     value={format}
                     className="accent-primary-dark"
+                    disabled={isSubmitting}
                     {...register("format")}
                   />
                   <span className="font-sarabun text-label">{formatLabels[format]}</span>
@@ -151,7 +162,8 @@ export default function DownloadModal({
               id="download-purpose"
               rows={4}
               placeholder={t("purposePlaceholder")}
-              className="min-h-[100px] w-full rounded-radius-md border border-border-input p-3 font-sarabun text-label text-text-primary outline-none focus:border-border-focus focus:ring-2 focus:ring-primary-dark/20"
+              disabled={isSubmitting}
+              className="min-h-[100px] w-full rounded-radius-md border border-border-input p-3 font-sarabun text-label text-text-primary outline-none focus:border-border-focus focus:ring-2 focus:ring-primary-dark/20 disabled:opacity-70"
               {...register("purpose")}
             />
             {errors.purpose && (
@@ -161,18 +173,25 @@ export default function DownloadModal({
             )}
           </div>
 
+          {apiError && (
+            <p className="font-sarabun text-caption text-status-error" role="alert">
+              {apiError}
+            </p>
+          )}
+
           <div className="flex gap-3 pt-2">
             <button
               type="submit"
-              disabled={submitting || success}
+              disabled={isSubmitting}
               className="flex-1 rounded-radius-md bg-primary py-3 font-sarabun text-label font-medium text-white transition-all hover:bg-primary-hover disabled:opacity-70"
             >
-              {success ? t("success") : submitting ? t("processing") : t("submit")}
+              {isSubmitting ? t("processing") : t("submit")}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-radius-md border border-border-input px-6 py-3 font-sarabun text-label text-text-secondary transition-colors hover:bg-surface-container"
+              disabled={isSubmitting}
+              className="rounded-radius-md border border-border-input px-6 py-3 font-sarabun text-label text-text-secondary transition-colors hover:bg-surface-container disabled:opacity-70"
             >
               {tCommon("cancel")}
             </button>

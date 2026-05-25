@@ -15,6 +15,10 @@ class DatasetCreateRequest(BaseModel):
     category_id: uuid.UUID | None = None
     tags: list[uuid.UUID] = Field(default_factory=list, max_length=10)
     metadata: dict[str, Any] | None = None
+    status: str | None = Field(
+        default=None,
+        pattern="^(draft|submitted|published)$",
+    )
 
 
 class DatasetUpdateRequest(BaseModel):
@@ -24,6 +28,10 @@ class DatasetUpdateRequest(BaseModel):
     category_id: uuid.UUID | None = None
     tags: list[uuid.UUID] | None = Field(default=None, max_length=10)
     metadata: dict[str, Any] | None = None
+    status: str | None = Field(
+        default=None,
+        pattern="^(draft|submitted|published)$",
+    )
 
 
 class DatasetResponse(BaseModel):

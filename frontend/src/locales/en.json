@@ -482,6 +482,7 @@
     },
     "status": {
       "published": "Published",
+      "submitted": "Pending approval",
       "draft": "Draft"
     },
     "upload": {
@@ -604,6 +605,7 @@
       "colAction": "Actions",
       "edit": "Edit",
       "versions": "Version history",
+      "download": "Download",
       "delete": "Delete",
       "deleteConfirmTitle": "Confirm deletion",
       "deleteConfirmMsg": "Delete [{title}]?",

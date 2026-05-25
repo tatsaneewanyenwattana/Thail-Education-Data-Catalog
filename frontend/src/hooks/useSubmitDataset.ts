@@ -2,35 +2,25 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/services/api";
-import { toUpdateApiBody } from "@/utils/datasetFormApi";
 
-export type UpdateDatasetPayload = {
-  id: string;
-  formData: FormData;
-};
-
-type UpdatedDataset = {
+type SubmittedDataset = {
   id: string;
   title: string;
   status: string;
 };
 
-async function updateDataset(
-  payload: UpdateDatasetPayload
-): Promise<UpdatedDataset> {
-  const body = await toUpdateApiBody(payload.formData);
-  const res = await apiClient.patch<{ data: UpdatedDataset }>(
-    `/datasets/${payload.id}`,
-    body
+async function submitDataset(datasetId: string): Promise<SubmittedDataset> {
+  const res = await apiClient.post<{ data: SubmittedDataset }>(
+    `/datasets/${datasetId}/submit`
   );
   return res.data.data;
 }
 
-export function useUpdateDataset() {
+export function useSubmitDataset() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: updateDataset,
+    mutationFn: submitDataset,
     retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agency", "datasets"] });

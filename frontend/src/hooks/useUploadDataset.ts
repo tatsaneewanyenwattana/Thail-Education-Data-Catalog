@@ -1,39 +1,37 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocale } from "next-intl";
-import { useRouter } from "next/navigation";
-import {
-  uploadDatasetMock,
-  type UploadDatasetMockResult,
-} from "@/data/mockData";
-// import apiClient from "@/services/api";
+import apiClient from "@/services/api";
+import { toUploadApiFormData } from "@/utils/datasetFormApi";
 
-async function uploadDataset(
-  formData: FormData
-): Promise<UploadDatasetMockResult> {
-  // TODO: เปลี่ยนเป็น API จริงเมื่อ Backend พร้อม
-  // const res = await apiClient.post(
-  //   "/datasets",
-  //   formData,
-  //   { headers: { "Content-Type": "multipart/form-data" } }
-  // );
-  // return res.data.data;
-  await Promise.resolve();
-  return uploadDatasetMock(formData);
+export type UploadedDataset = {
+  id: string;
+  title: string;
+  status: string;
+};
+
+async function uploadDataset(formData: FormData): Promise<UploadedDataset> {
+  const apiForm = await toUploadApiFormData(formData);
+  const res = await apiClient.post<{ data: UploadedDataset }>(
+    "/datasets",
+    apiForm,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 120000,
+    }
+  );
+  return res.data.data;
 }
 
 export function useUploadDataset() {
-  const router = useRouter();
-  const locale = useLocale();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: uploadDataset,
+    retry: 1,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agency", "datasets"] });
       queryClient.invalidateQueries({ queryKey: ["agency", "dashboard"] });
-      router.push(`/${locale}/datasets`);
     },
   });
 }

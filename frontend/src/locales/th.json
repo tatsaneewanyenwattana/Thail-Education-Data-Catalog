@@ -482,6 +482,7 @@
     },
     "status": {
       "published": "เผยแพร่แล้ว",
+      "submitted": "รออนุมัติ",
       "draft": "แบบร่าง"
     },
     "upload": {
@@ -604,6 +605,7 @@
       "colAction": "Action",
       "edit": "แก้ไข",
       "versions": "ประวัติเวอร์ชัน",
+      "download": "ดาวน์โหลด",
       "delete": "ลบ",
       "deleteConfirmTitle": "ยืนยันการลบ",
       "deleteConfirmMsg": "ต้องการลบ [{title}] ใช่หรือไม่?",

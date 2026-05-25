@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import CascadingCategorySelect from "@/components/dataset/CascadingCategorySelect";
@@ -17,14 +18,15 @@ import QualityScoreCard from "@/components/dataset/QualityScoreCard";
 import TagInput from "@/components/dataset/TagInput";
 import {
   fetchMockFileAnalysis,
-  getAgencyDatasetFormInitial,
   mockFileAnalysisResult,
   mockProvinces,
   type AgencyDatasetFormInitial,
   type FileAnalysisResult,
 } from "@/data/mockData";
+import { useSubmitDataset } from "@/hooks/useSubmitDataset";
 import { useUpdateDataset } from "@/hooks/useUpdateDataset";
 import { useUploadDataset } from "@/hooks/useUploadDataset";
+import { fetchDatasetFormInitial } from "@/utils/datasetFormApi";
 
 type DatasetFormProps = {
   mode: "create" | "edit";
@@ -36,16 +38,24 @@ const inputClass =
 
 export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
   const t = useTranslations("agency.upload");
+  const tCommon = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
   const base = `/${locale}`;
 
-  const initialData = useMemo(() => {
-    if (mode === "edit" && datasetId) {
-      return getAgencyDatasetFormInitial(datasetId);
+  const { data: initialFromApi, isLoading: isLoadingInitial } = useQuery({
+    queryKey: ["datasets", datasetId, "form"],
+    queryFn: () => fetchDatasetFormInitial(datasetId!),
+    enabled: mode === "edit" && !!datasetId,
+    retry: 1,
+  });
+
+  const initialData = useMemo((): AgencyDatasetFormInitial | null => {
+    if (mode !== "edit") {
+      return null;
     }
-    return null;
-  }, [mode, datasetId]);
+    return initialFromApi ?? null;
+  }, [mode, initialFromApi]);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [analysis, setAnalysis] = useState<FileAnalysisResult | null>(
@@ -58,7 +68,11 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
 
   const uploadMutation = useUploadDataset();
   const updateMutation = useUpdateDataset();
-  const isSubmitting = uploadMutation.isPending || updateMutation.isPending;
+  const submitMutation = useSubmitDataset();
+  const isSubmitting =
+    uploadMutation.isPending ||
+    updateMutation.isPending ||
+    submitMutation.isPending;
 
   const emptyDefaults: DatasetFormValues = {
     title: "",
@@ -90,6 +104,16 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
       reset(initialData);
     }
   }, [initialData, reset]);
+
+  if (mode === "edit" && datasetId && isLoadingInitial) {
+    return (
+      <div className="rounded-radius-lg border border-border-default bg-surface-card p-8 text-center">
+        <p className="font-sarabun text-body-md text-text-secondary">
+          {tCommon("loading")}
+        </p>
+      </div>
+    );
+  }
 
   if (mode === "edit" && datasetId && !initialData) {
     return (
@@ -146,15 +170,23 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     }
     setFileError(null);
     setSubmitStatus(status);
-    const formData = buildFormData(values, status);
+    const formData = buildFormData(values, "draft");
 
-    if (mode === "create") {
-      await uploadMutation.mutateAsync(formData);
-      return;
-    }
-
-    if (datasetId) {
-      await updateMutation.mutateAsync({ id: datasetId, formData });
+    try {
+      if (mode === "create") {
+        const created = await uploadMutation.mutateAsync(formData);
+        if (status === "submitted") {
+          await submitMutation.mutateAsync(created.id);
+        }
+      } else if (datasetId) {
+        await updateMutation.mutateAsync({ id: datasetId, formData });
+        if (status === "submitted") {
+          await submitMutation.mutateAsync(datasetId);
+        }
+      }
+      router.push(`${base}/datasets`);
+    } catch {
+      // Errors surfaced via mutation state / API interceptor
     }
   };
 

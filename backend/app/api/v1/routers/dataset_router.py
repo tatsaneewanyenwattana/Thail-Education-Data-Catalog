@@ -138,6 +138,7 @@ def update_dataset(
     dataset_id: uuid.UUID,
     request_body: DatasetUpdateRequest,
     request: Request,
+    background_tasks: BackgroundTasks,
     payload: dict = Depends(get_current_user_payload_with_status),
     db: Session = Depends(get_db),
 ):
@@ -151,6 +152,29 @@ def update_dataset(
         request=request_body,
         current_user=payload,
         ip_address=get_client_ip(request),
+        background_tasks=background_tasks,
+    )
+    return success_response(data=result.model_dump(mode="json"))
+
+
+@router.post("/datasets/{dataset_id}/submit", status_code=status.HTTP_200_OK)
+def submit_dataset(
+    dataset_id: uuid.UUID,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    payload: dict = Depends(require_roles("agency", "admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    ส่ง Dataset เพื่อขออนุมัติ (draft → submitted) ตาม #5 M2
+    - Auth ✅ Agency/Admin
+    """
+    result = dataset_service.submit_dataset(
+        db=db,
+        dataset_id=dataset_id,
+        current_user=payload,
+        ip_address=get_client_ip(request),
+        background_tasks=background_tasks,
     )
     return success_response(data=result.model_dump(mode="json"))
 

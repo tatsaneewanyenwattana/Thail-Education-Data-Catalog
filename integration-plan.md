@@ -84,8 +84,8 @@ NEXT_PUBLIC_APP_ENV=development
 |---|------|---------------------|-------|
 | 1 | useAgencyDashboard | GET /agency/dashboard | ✅ |
 | 2 | useAgencyDatasets | GET /agency/datasets | ✅ |
-| 3 | useUploadDataset | POST /datasets (multipart) | ⏳ |
-| 4 | useUpdateDataset | PATCH /datasets/{id} | ⏳ |
+| 3 | useUploadDataset | POST /datasets (multipart) | ✅ |
+| 4 | useUpdateDataset | PATCH /datasets/{id} | ✅ |
 | 5 | useVersionHistory | GET /datasets/{id}/versions | ⏳ |
 | 6 | useRestoreVersion | POST /datasets/{id}/versions/{v}/restore | ⏳ |
 | 7 | useBulkUpload | POST /datasets/bulk-upload | ⏳ |
