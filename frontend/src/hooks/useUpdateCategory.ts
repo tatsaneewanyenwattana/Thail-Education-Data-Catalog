@@ -1,27 +1,49 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import apiClient from "@/services/api";
+import type { AgencyCategoryInput } from "@/data/mockData";
 import {
-  updateAgencyCategoryMock,
-  type AgencyCategoryInput,
-} from "@/data/mockData";
+  toCategoryUpdateBody,
+  type ApiCategory,
+} from "@/utils/categoryApi";
 
 type UpdateCategoryVariables = AgencyCategoryInput & {
   id: string;
   level: 1 | 2;
+  originalNameTh?: string;
+  originalNameEn?: string;
 };
 
-async function updateCategory(variables: UpdateCategoryVariables): Promise<void> {
-  // TODO: เปลี่ยนเป็น API จริงเมื่อ Backend พร้อม
-  // await apiClient.put(`/agency/categories/${variables.id}`, {
-  //   name_th: variables.nameTh,
-  //   name_en: variables.nameEn,
-  //   slug: variables.slug,
-  //   parent_id: variables.parentId,
-  // });
+type CategoryMutationResponse = {
+  success: boolean;
+  data: ApiCategory;
+};
 
-  await Promise.resolve();
-  updateAgencyCategoryMock(variables.level, variables.id, variables);
+async function updateCategory(
+  variables: UpdateCategoryVariables
+): Promise<ApiCategory> {
+  const body = toCategoryUpdateBody(
+    { nameTh: variables.nameTh, nameEn: variables.nameEn },
+    variables.originalNameTh !== undefined &&
+      variables.originalNameEn !== undefined
+      ? {
+          nameTh: variables.originalNameTh,
+          nameEn: variables.originalNameEn,
+        }
+      : undefined
+  );
+
+  const res = await apiClient.patch<CategoryMutationResponse>(
+    `/categories/${variables.id}`,
+    body
+  );
+
+  if (!res.data.data) {
+    throw new Error("Invalid category update response");
+  }
+
+  return res.data.data;
 }
 
 export function useUpdateCategory() {

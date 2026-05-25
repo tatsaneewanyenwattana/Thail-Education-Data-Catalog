@@ -79,7 +79,10 @@ export default function CategoryForm({
     defaultValues: {
       nameTh: category?.nameTh ?? "",
       nameEn: category?.nameEn ?? "",
-      slug: category?.slug ?? "",
+      slug:
+        category?.slug ||
+        (category?.nameEn ? slugify(category.nameEn) : "") ||
+        "",
       parentId: defaultParentId,
     },
   });
@@ -95,7 +98,10 @@ export default function CategoryForm({
     reset({
       nameTh: category?.nameTh ?? "",
       nameEn: category?.nameEn ?? "",
-      slug: category?.slug ?? "",
+      slug:
+        category?.slug ||
+        (category?.nameEn ? slugify(category.nameEn) : "") ||
+        "category",
       parentId:
         category && "parentId" in category ? category.parentId : "",
     });
@@ -141,11 +147,17 @@ export default function CategoryForm({
           nameEn: values.nameEn,
           slug: values.slug,
           parentId: level === 2 ? values.parentId : undefined,
+          originalNameTh: category.nameTh,
+          originalNameEn: category.nameEn,
         });
       }
       onClose();
-    } catch {
-      onError(t("saveError"));
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : t("saveError");
+      onError(message);
     }
   };
 

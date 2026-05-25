@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteAgencyCategoryMock } from "@/data/mockData";
+import apiClient from "@/services/api";
 
 type DeleteCategoryVariables = {
   id: string;
@@ -9,18 +9,7 @@ type DeleteCategoryVariables = {
 };
 
 async function deleteCategory(variables: DeleteCategoryVariables): Promise<void> {
-  // TODO: เปลี่ยนเป็น API จริงเมื่อ Backend พร้อม
-  // await apiClient.delete(`/agency/categories/${variables.id}`);
-
-  await Promise.resolve();
-  try {
-    deleteAgencyCategoryMock(variables.level, variables.id);
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error("DELETE_FAILED");
-  }
+  await apiClient.delete(`/categories/${variables.id}`);
 }
 
 export function useDeleteCategory() {
@@ -28,6 +17,7 @@ export function useDeleteCategory() {
 
   return useMutation({
     mutationFn: deleteCategory,
+    retry: 0,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agency", "categories"] });
     },

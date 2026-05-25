@@ -90,10 +90,10 @@ NEXT_PUBLIC_APP_ENV=development
 | 6 | useRestoreVersion | POST /datasets/{id}/versions/{v}/restore | ✅ |
 | 6b | useDeleteDataset | DELETE /datasets/{id} (soft delete) | ✅ |
 | 7 | useBulkUpload | POST /datasets/bulk-upload | ⏳ |
-| 8 | useAgencyCategories | GET /categories | ⏳ |
-| 9 | useCreateCategory | POST /categories | ⏳ |
-| 10 | useUpdateCategory | PATCH /categories/{id} | ⏳ |
-| 11 | useDeleteCategory | DELETE /categories/{id} | ⏳ |
+| 8 | useAgencyCategories | GET /categories (filter ตาม agency) | ✅ |
+| 9 | useCreateCategory | POST /categories + subcategories | ✅ |
+| 10 | useUpdateCategory | PATCH /categories/{id} | ✅ |
+| 11 | useDeleteCategory | DELETE /categories/{id} | ✅ |
 | 12 | useBookmarks | GET/POST/DELETE /bookmarks | ⏳ |
 | 13 | useSubscriptions | GET/POST/DELETE /subscriptions | ⏳ |
 | 14 | useSavedSearches | GET/POST/DELETE /saved-searches | ⏳ |

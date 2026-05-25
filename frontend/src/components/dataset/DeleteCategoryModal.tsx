@@ -36,12 +36,12 @@ export default function DeleteCategoryModal({
       onClose();
     } catch (error) {
       const code =
-        error instanceof Error && "message" in error ? error.message : "";
-      if (code === "CATEGORY_HAS_DATASETS") {
-        onError(t("deleteError"));
-      } else {
-        onError(t("deleteError"));
-      }
+        error instanceof Error && "code" in error
+          ? (error as Error & { code?: string }).code
+          : "";
+      onError(
+        code === "CATEGORY_HAS_DATASETS" ? t("deleteError") : t("deleteError")
+      );
       onClose();
     }
   };

@@ -6,7 +6,7 @@ import CategoryForm from "@/components/dataset/CategoryForm";
 import CategoryTable from "@/components/dataset/CategoryTable";
 import DeleteCategoryModal from "@/components/dataset/DeleteCategoryModal";
 import type { AgencyCategoryL1, AgencyCategoryL2 } from "@/data/mockData";
-import { getAgencyCategoriesL1Mock } from "@/data/mockData";
+import { useAgencyCategoryParents } from "@/hooks/useAgencyCategories";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 type CategoryTab = "level1" | "level2";
@@ -30,7 +30,7 @@ export default function AgencyCategoriesPage() {
   const [toastError, setToastError] = useState<string | null>(null);
 
   const level = tab === "level1" ? 1 : 2;
-  const parentOptions = getAgencyCategoriesL1Mock();
+  const { data: parentOptions = [] } = useAgencyCategoryParents();
 
   useEffect(() => {
     setPage(1);
