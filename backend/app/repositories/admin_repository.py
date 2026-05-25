@@ -159,14 +159,66 @@ def update_user(db: Session, user_id: uuid.UUID, **fields: Any) -> User:
     return user
 
 
+def _audit_log_action_patterns(ui_action: str) -> list[str]:
+    patterns = {
+        "LOGIN": ["login"],
+        "UPLOAD": ["upload"],
+        "DOWNLOAD": ["download"],
+        "DELETE": ["delete"],
+        "APPROVE": ["approve"],
+        "REJECT": ["reject"],
+    }
+    return patterns.get(ui_action.upper(), [ui_action.lower()])
+
+
 def get_all_audit_logs(
-    db: Session, pagination: PaginationParams
-) -> tuple[list[AuditLog], int]:
-    query = db.query(AuditLog)
+    db: Session,
+    pagination: PaginationParams,
+    *,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    action: str | None = None,
+    search: str | None = None,
+) -> tuple[list[tuple[AuditLog, str | None]], int]:
+    from datetime import datetime, time, timezone
+
+    from sqlalchemy import or_
+
+    from app.models.user_model import User
+
+    query = (
+        db.query(AuditLog, User.email)
+        .outerjoin(User, AuditLog.user_id == User.id)
+    )
+
+    if date_from:
+        start = datetime.strptime(date_from, "%Y-%m-%d").replace(
+            hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc
+        )
+        query = query.filter(AuditLog.created_at >= start)
+
+    if date_to:
+        end = datetime.strptime(date_to, "%Y-%m-%d").replace(
+            hour=23,
+            minute=59,
+            second=59,
+            microsecond=999999,
+            tzinfo=timezone.utc,
+        )
+        query = query.filter(AuditLog.created_at <= end)
+
+    if action and action.lower() != "all":
+        patterns = _audit_log_action_patterns(action)
+        query = query.filter(
+            or_(*[AuditLog.action.ilike(f"%{pattern}%") for pattern in patterns])
+        )
+
+    if search and search.strip():
+        keyword = f"%{search.strip()}%"
+        query = query.filter(User.email.ilike(keyword))
+
     total = query.count()
     sort_col = AuditLog.created_at
-    if pagination.sort == "created_at":
-        sort_col = AuditLog.created_at
     order = sort_col.desc() if pagination.order == "desc" else sort_col.asc()
     items = (
         query.order_by(order)

@@ -57,13 +57,17 @@ export default function AdminAuditLogsPage() {
     setPage(1);
   };
 
-  const handleExport = () => {
-    exportAuditLogsCsv({
-      dateFrom: appliedFilters.dateFrom || undefined,
-      dateTo: appliedFilters.dateTo || undefined,
-      action: appliedFilters.action,
-      search: appliedFilters.search || undefined,
-    });
+  const handleExport = async () => {
+    try {
+      await exportAuditLogsCsv({
+        dateFrom: appliedFilters.dateFrom || undefined,
+        dateTo: appliedFilters.dateTo || undefined,
+        action: appliedFilters.action,
+        search: appliedFilters.search || undefined,
+      });
+    } catch {
+      // Export errors surface via browser download failure only
+    }
   };
 
   return (

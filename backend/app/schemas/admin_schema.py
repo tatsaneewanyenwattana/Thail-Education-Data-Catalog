@@ -87,9 +87,17 @@ class AnnouncementResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class AuditLogListFilters(BaseModel):
+    date_from: str | None = None
+    date_to: str | None = None
+    action: str | None = None
+    search: str | None = None
+
+
 class AuditLogResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID | None
+    email: str | None = None
     action: str
     target_type: str
     target_id: uuid.UUID | None

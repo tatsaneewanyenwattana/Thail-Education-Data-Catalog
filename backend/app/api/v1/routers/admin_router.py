@@ -17,6 +17,7 @@ from app.schemas.admin_schema import (
     AdminUserListFilters,
     AnnouncementCreateRequest,
     AnnouncementUpdateRequest,
+    AuditLogListFilters,
     UserRejectRequest,
     UserUpdateRequest,
 )
@@ -172,17 +173,33 @@ def admin_approve_dataset(
     return success_response(result.model_dump(mode="json"))
 
 
+def get_audit_log_filters(
+    date_from: str | None = Query(default=None, alias="date_from"),
+    date_to: str | None = Query(default=None, alias="date_to"),
+    action: str | None = Query(default=None),
+    search: str | None = Query(default=None),
+) -> AuditLogListFilters:
+    return AuditLogListFilters(
+        date_from=date_from,
+        date_to=date_to,
+        action=action,
+        search=search,
+    )
+
+
 @router.get("/audit-logs", status_code=status.HTTP_200_OK)
 def admin_audit_logs(
     pagination: PaginationParams = Depends(get_pagination_params),
+    filters: AuditLogListFilters = Depends(get_audit_log_filters),
     payload: dict = Depends(require_roles("admin")),
     db: Session = Depends(get_db),
 ):
     """
     ดู Audit Log ตาม #20
+    - Query: date_from, date_to, action, search, page, page_size
     - Auth ✅ Admin
     """
-    items, total = admin_service.get_audit_logs(db, pagination)
+    items, total = admin_service.get_audit_logs(db, pagination, filters)
     return list_response(
         data=[i.model_dump(mode="json") for i in items],
         page=pagination.page,

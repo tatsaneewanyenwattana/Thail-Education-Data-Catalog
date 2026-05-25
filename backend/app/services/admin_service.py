@@ -17,6 +17,7 @@ from app.schemas.admin_schema import (
     AnnouncementCreateRequest,
     AnnouncementResponse,
     AnnouncementUpdateRequest,
+    AuditLogListFilters,
     AuditLogResponse,
     UserListResponse,
     UserRejectRequest,
@@ -132,10 +133,24 @@ def update_user(
 
 
 def get_audit_logs(
-    db: Session, pagination: PaginationParams
+    db: Session,
+    pagination: PaginationParams,
+    filters: AuditLogListFilters | None = None,
 ) -> tuple[list[AuditLogResponse], int]:
-    items, total = admin_repo.get_all_audit_logs(db, pagination)
-    return [AuditLogResponse.model_validate(log) for log in items], total
+    f = filters or AuditLogListFilters()
+    rows, total = admin_repo.get_all_audit_logs(
+        db,
+        pagination,
+        date_from=f.date_from,
+        date_to=f.date_to,
+        action=f.action,
+        search=f.search,
+    )
+    results: list[AuditLogResponse] = []
+    for log, email in rows:
+        item = AuditLogResponse.model_validate(log)
+        results.append(item.model_copy(update={"email": email}))
+    return results, total
 
 
 def create_announcement(
