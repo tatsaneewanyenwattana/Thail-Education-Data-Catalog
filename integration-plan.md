@@ -131,7 +131,7 @@ NEXT_PUBLIC_APP_ENV=development
 | 10 | useAdminTags | GET/POST/PATCH/DELETE /admin/tags | ✅ |
 | 11 | useAdminAnnouncements | GET/POST/PATCH/DELETE /admin/announcements | ✅ |
 | 12 | useAuditLogs | GET /admin/audit-logs | ✅ |
-| 13 | useAdminPageContent | GET/PUT /admin/pages/{slug} | ⏳ |
+| 13 | useAdminPageContent | GET/PUT /admin/pages/{slug} | ✅ |
 | 14 | useHeroImage | GET/POST/DELETE /admin/settings/hero-image | ⏳ |
 
 **ทดสอบ Phase 2**

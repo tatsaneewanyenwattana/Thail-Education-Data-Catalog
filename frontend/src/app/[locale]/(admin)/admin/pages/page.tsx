@@ -1,7 +1,8 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import HeroImageUpload from "@/components/admin/HeroImageUpload";
 import StaticPageCard from "@/components/admin/StaticPageCard";
 import { useAdminStaticPages } from "@/hooks/useAdminPageContent";
@@ -27,10 +28,22 @@ function InfoIcon() {
 
 export default function AdminPagesPage() {
   const t = useTranslations("admin.pages");
+  const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastError, setToastError] = useState<string | null>(null);
 
   const { data: pages = [], isLoading } = useAdminStaticPages();
+
+  useEffect(() => {
+    if (searchParams.get("saved") === "1") {
+      setToastMessage(t("savedSuccess"));
+      setToastError(null);
+      router.replace(`/${locale}/admin/pages`);
+      window.setTimeout(() => setToastMessage(null), 3000);
+    }
+  }, [searchParams, router, t]);
 
   const showToast = (message: string) => {
     setToastMessage(message);

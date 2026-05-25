@@ -43,20 +43,24 @@ export default function AdminPageEditorPage() {
     window.setTimeout(() => setToastError(null), 3000);
   };
 
+  const goBackToPages = () => {
+    router.push(`/${locale}/admin/pages`);
+  };
+
   const handleSave = async () => {
     try {
       await updateMutation.mutateAsync({
         slug,
         data: { contentTh, contentEn },
       });
-      showToast(t("savedSuccess"));
+      router.push(`/${locale}/admin/pages?saved=1`);
     } catch {
       showError(t("saveError"));
     }
   };
 
   const handleCancel = () => {
-    router.push(`/${locale}/admin/pages`);
+    goBackToPages();
   };
 
   if (isLoading) {
@@ -88,6 +92,16 @@ export default function AdminPageEditorPage() {
 
   return (
     <div className="mx-auto max-w-container-max space-y-6 pb-24">
+      <button
+        type="button"
+        onClick={goBackToPages}
+        disabled={updateMutation.isPending}
+        className="inline-flex min-h-[44px] items-center gap-2 font-sarabun text-label font-semibold text-primary transition-colors hover:text-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <ChevronLeftIcon />
+        {t("backToPages")}
+      </button>
+
       <header className="rounded-radius-lg border border-border-default bg-surface-card px-6 py-5 shadow-sm">
         <p className="font-mono text-body-sm text-text-muted">/{slug}</p>
         <h1 className="mt-1 font-kanit text-[28px] font-bold text-text-primary">
@@ -110,7 +124,7 @@ export default function AdminPageEditorPage() {
           disabled={updateMutation.isPending}
           className="inline-flex min-h-[44px] items-center justify-center rounded-radius-md border border-border-default px-6 py-2 font-sarabun text-label font-semibold text-text-secondary transition-colors hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {t("cancel")}
+          {t("backToPages")}
         </button>
         <button
           type="button"
@@ -125,6 +139,25 @@ export default function AdminPageEditorPage() {
       {toastMessage ? <Toast message={toastMessage} variant="success" /> : null}
       {toastError ? <Toast message={toastError} variant="error" /> : null}
     </div>
+  );
+}
+
+function ChevronLeftIcon() {
+  return (
+    <svg
+      className="h-5 w-5 shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 19l-7-7 7-7"
+      />
+    </svg>
   );
 }
 

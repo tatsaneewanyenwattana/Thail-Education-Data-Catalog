@@ -87,6 +87,20 @@ class AnnouncementResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PageContentUpdateRequest(BaseModel):
+    content_th: str = ""
+    content_en: str = ""
+
+
+class PageContentResponse(BaseModel):
+    slug: str
+    title_th: str
+    title_en: str
+    content_th: str
+    content_en: str
+    updated_at: datetime
+
+
 class AuditLogListFilters(BaseModel):
     date_from: str | None = None
     date_to: str | None = None

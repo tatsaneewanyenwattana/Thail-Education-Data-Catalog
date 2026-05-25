@@ -1060,6 +1060,7 @@
       "save": "Save",
       "saving": "Saving...",
       "cancel": "Cancel",
+      "backToPages": "Back to static pages",
       "savedSuccess": "Content saved successfully",
       "saveError": "Save failed. Please try again.",
       "uploadSuccess": "Image uploaded successfully",

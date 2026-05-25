@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 import app.services.admin_service as admin_service
 import app.services.dataset_service as dataset_service
+import app.services.page_content_service as page_content_service
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.pagination import PaginationParams, get_pagination_params
@@ -18,6 +19,7 @@ from app.schemas.admin_schema import (
     AnnouncementCreateRequest,
     AnnouncementUpdateRequest,
     AuditLogListFilters,
+    PageContentUpdateRequest,
     UserRejectRequest,
     UserUpdateRequest,
 )
@@ -272,3 +274,49 @@ def admin_delete_announcement(
     """
     admin_service.delete_announcement(db, announcement_id=id)
     return delete_response()
+
+
+@router.get("/pages", status_code=status.HTTP_200_OK)
+def admin_list_pages(
+    payload: dict = Depends(require_roles("admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    รายการหน้า static สำหรับ Admin CMS
+    - Auth ✅ Admin
+    """
+    items = page_content_service.list_pages(db)
+    return success_response([i.model_dump(mode="json") for i in items])
+
+
+@router.get("/pages/{slug}", status_code=status.HTTP_200_OK)
+def admin_get_page(
+    slug: str,
+    payload: dict = Depends(require_roles("admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    ดูเนื้อหาหน้า static ตาม slug
+    - Auth ✅ Admin
+    - ไม่มีใน DB → คืน default เนื้อหาว่าง
+    """
+    result = page_content_service.get_page(db, slug)
+    return success_response(result.model_dump(mode="json"))
+
+
+@router.put("/pages/{slug}", status_code=status.HTTP_200_OK)
+def admin_update_page(
+    slug: str,
+    request_body: PageContentUpdateRequest,
+    payload: dict = Depends(require_roles("admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    บันทึกเนื้อหาหน้า static
+    - Auth ✅ Admin
+    - Body: content_th, content_en
+    """
+    result = page_content_service.update_page(
+        db, slug, request=request_body, current_user=payload
+    )
+    return success_response(result.model_dump(mode="json"))
