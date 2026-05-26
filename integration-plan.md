@@ -153,9 +153,9 @@ NEXT_PUBLIC_APP_ENV=development
 
 | # | หน้า / Hook | API (claude.md #20) | สถานะ |
 |---|------------|---------------------|-------|
-| 1 | หน้าหลัก Stats | GET /stats/overview | ⏳ |
-| 2 | หน้าหลัก Trending | GET /stats/trending | ⏳ |
-| 3 | หน้าหลัก New Releases | GET /stats/new-releases | ⏳ |
+| 1 | หน้าหลัก Stats | GET /stats/overview | ✅ |
+| 2 | หน้าหลัก Trending | GET /stats/trending | ✅ |
+| 3 | หน้าหลัก New Releases | GET /stats/new-releases | ✅ |
 | 4 | ค้นหา | GET /search | ⏳ |
 | 5 | Search Autocomplete | GET /search/autocomplete | ⏳ |
 | 6 | รายละเอียด Dataset | GET /datasets/{id} | ✅ |
@@ -163,7 +163,7 @@ NEXT_PUBLIC_APP_ENV=development
 | 8 | Download | GET /datasets/{id}/download | ✅ |
 | 9 | Citation | GET /datasets/{id}/citation | ✅ |
 | 10 | หมวดหมู่ | GET /categories | ✅ |
-| 11 | สถิติภาพรวม | GET /stats/overview | ⏳ |
+| 11 | สถิติภาพรวม | GET /stats/overview | ✅ |
 | 12 | เปรียบเทียบ | GET /stats/compare | ⏳ |
 | 13 | Static Pages | GET /pages/{slug} | ⏳ |
 

@@ -86,12 +86,16 @@
     "popular": {
       "title": "Popular datasets",
       "subtitle": "Most accessed and reused datasets",
-      "viewAll": "View all"
+      "viewAll": "View all",
+      "loadError": "Could not load popular datasets",
+      "empty": "No published datasets yet"
     },
     "latest": {
       "title": "Latest datasets",
       "subtitle": "Recently uploaded datasets",
-      "viewAll": "View all"
+      "viewAll": "View all",
+      "loadError": "Could not load new releases",
+      "empty": "No new datasets yet"
     },
     "cta": {
       "title": "Have a dataset to share?",
@@ -154,6 +158,7 @@
     "schoolsChart": "Schools",
     "regionChart": "Students by region",
     "year": "Year (B.E.)",
+    "loadError": "Could not load overview statistics. Please try again.",
     "mockNote": "Sample data — will connect to API when backend is ready"
   },
   "compare": {
