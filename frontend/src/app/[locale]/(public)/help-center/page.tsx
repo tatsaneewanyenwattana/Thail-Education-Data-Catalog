@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import StaticPageSection from "@/components/common/StaticPageSection";
 import TableOfContents from "@/components/common/TableOfContents";
 import { usePageContent } from "@/hooks/usePageContent";
 
-const PAGE_SLUG = "privacy-policy";
+const PAGE_SLUG = "help-center";
 
 function formatUpdatedAt(iso: string, locale: string): string {
   return new Date(iso).toLocaleDateString(locale === "th" ? "th-TH" : "en-US", {
@@ -16,33 +17,22 @@ function formatUpdatedAt(iso: string, locale: string): string {
   });
 }
 
-function PrivacyPageSkeleton() {
+function HelpCenterSkeleton() {
   return (
     <div className="mx-auto max-w-container-max animate-pulse px-4 py-spacing-12 md:px-spacing-10">
-      <div className="mb-spacing-6 h-10 w-72 rounded-radius-sm bg-surface-container" />
-      <div className="mb-spacing-8 h-4 w-48 rounded-radius-sm bg-surface-container" />
-      <div className="flex gap-spacing-6">
-        <div className="hidden h-80 w-[240px] rounded-radius-md bg-surface-container md:block" />
-        <div className="flex-1 space-y-6 rounded-radius-lg border border-border-default bg-surface-card p-10">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="space-y-3">
-              <div className="h-6 w-1/2 rounded-radius-sm bg-surface-container" />
-              <div className="h-24 w-full rounded-radius-sm bg-surface-container" />
-            </div>
-          ))}
-        </div>
-      </div>
+      <div className="mb-spacing-6 h-10 w-64 rounded-radius-sm bg-surface-container" />
+      <div className="h-48 w-full rounded-radius-lg bg-surface-container" />
     </div>
   );
 }
 
-export default function PrivacyPolicyPage() {
+export default function HelpCenterPage() {
   const t = useTranslations("privacy");
   const locale = useLocale();
+  const base = `/${locale}`;
   const [showBackToTop, setShowBackToTop] = useState(false);
 
-  const { data: page, isLoading, isError, isFetching } =
-    usePageContent(PAGE_SLUG);
+  const { data: page, isLoading, isError } = usePageContent(PAGE_SLUG);
 
   const tocSections = useMemo(() => {
     if (!page) return [];
@@ -59,66 +49,38 @@ export default function PrivacyPolicyPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  if (isLoading && !page) {
-    return <PrivacyPageSkeleton />;
+  if (isLoading) {
+    return <HelpCenterSkeleton />;
   }
 
-  if (!page) {
+  if (isError || !page) {
     return (
-      <div className="mx-auto max-w-container-max px-4 py-12 text-center font-sarabun text-body-md text-text-muted">
-        {t("notFound")}
+      <div className="mx-auto max-w-container-max px-4 py-12 text-center">
+        <p className="font-sarabun text-body-md text-text-muted">{t("notFound")}</p>
+        <Link
+          href={base}
+          className="mt-4 inline-block font-sarabun text-label text-primary hover:underline"
+        >
+          {locale === "th" ? "กลับหน้าหลัก" : "Back to home"}
+        </Link>
       </div>
     );
   }
 
   const title = locale === "th" ? page.titleTh : page.titleEn;
-  const updatedLabel = t("lastUpdated", {
-    date: formatUpdatedAt(page.updatedAt, locale),
-  });
 
   return (
     <main className="mx-auto max-w-container-max px-4 py-spacing-12 md:px-spacing-10">
       <header className="mb-spacing-6">
-        <h1 className="font-kanit text-heading-2 font-bold leading-tight text-surface-navy md:text-heading-1">
+        <h1 className="font-kanit text-heading-2 font-bold text-text-primary md:text-heading-1">
           {title}
         </h1>
         <p className="mt-2 font-sarabun text-label text-text-muted">
-          {updatedLabel}
+          {t("lastUpdated", {
+            date: formatUpdatedAt(page.updatedAt, locale),
+          })}
         </p>
       </header>
-
-      {isFetching && !isLoading && (
-        <p className="sr-only" aria-live="polite">
-          {t("jumpToSection")}
-        </p>
-      )}
-
-      {tocSections.length > 0 && (
-        <div className="sticky top-[72px] z-40 mb-spacing-6 md:hidden">
-          <label className="sr-only" htmlFor="privacy-toc-mobile">
-            {t("jumpToSection")}
-          </label>
-          <select
-            id="privacy-toc-mobile"
-            className="w-full rounded-radius-lg border border-border-input bg-surface-card p-4 font-sarabun text-label text-text-primary shadow-level-1 focus:border-border-focus focus:outline-none focus:ring-1 focus:ring-primary-dark/30"
-            defaultValue=""
-            onChange={(e) => {
-              if (e.target.value) {
-                document.getElementById(e.target.value)?.scrollIntoView({
-                  behavior: "smooth",
-                });
-              }
-            }}
-          >
-            <option value="">{t("jumpToSection")}</option>
-            {tocSections.map((section) => (
-              <option key={section.id} value={section.id}>
-                {section.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
 
       <div className="relative flex flex-col gap-spacing-6 md:flex-row">
         {tocSections.length > 0 && (
@@ -136,18 +98,14 @@ export default function PrivacyPolicyPage() {
             </p>
           ) : (
             page.sections.map((section, index) => (
-              <div
+              <StaticPageSection
                 key={section.id}
-                className={index < page.sections.length - 1 ? "mb-spacing-12" : ""}
-              >
-                <StaticPageSection
-                  section={section}
-                  index={index}
-                  locale={locale}
-                  allowedLabel={t("allowed")}
-                  prohibitedLabel={t("prohibited")}
-                />
-              </div>
+                section={section}
+                index={index}
+                locale={locale}
+                allowedLabel={t("allowed")}
+                prohibitedLabel={t("prohibited")}
+              />
             ))
           )}
         </article>

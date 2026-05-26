@@ -164,8 +164,8 @@ NEXT_PUBLIC_APP_ENV=development
 | 9 | Citation | GET /datasets/{id}/citation | ✅ |
 | 10 | หมวดหมู่ | GET /categories | ✅ |
 | 11 | สถิติภาพรวม | GET /stats/overview | ✅ |
-| 12 | เปรียบเทียบ | GET /stats/compare | ⏳ |
-| 13 | Static Pages | GET /pages/{slug} | ⏳ |
+| 12 | เปรียบเทียบ | GET /stats/compare | ✅ |
+| 13 | Static Pages | GET /public/pages/{slug} | ✅ |
 
 **⚠️ จุดสำคัญตาม claude.md #5 M4**
 - Download ต้องกรอก purpose ทุก Role รวม Visitor
@@ -245,7 +245,7 @@ Password: admintest12345
 | GET | /stats/overview | ❌ |
 | GET | /stats/trending | ❌ |
 | GET | /stats/new-releases | ❌ |
-| GET | /stats/compare | ❌ |
+| GET | /stats/compare | ✅ |
 | GET | /dashboard-layouts | ✅ |
 | PUT | /dashboard-layouts | ✅ |
 

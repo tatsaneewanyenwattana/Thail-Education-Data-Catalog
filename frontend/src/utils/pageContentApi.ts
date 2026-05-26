@@ -1,9 +1,11 @@
 import type {
   AdminPageEditorContent,
   AdminStaticPageMeta,
+  PageContentMock,
   StaticPageIcon,
   StaticPageStatus,
 } from "@/data/mockData";
+import { getPageContentBySlug } from "@/data/mockData";
 
 export type ApiPageContent = {
   slug: string;
@@ -44,6 +46,48 @@ export function mapPageContent(item: ApiPageContent): AdminPageEditorContent {
     updatedAt: formatUpdatedAt(item.updated_at),
     contentTh: item.content_th ?? "",
     contentEn: item.content_en ?? "",
+    sections: [],
+  };
+}
+
+/** Map public page API → PageContentMock for static pages */
+export function mapApiPageToPublicContent(item: ApiPageContent): PageContentMock {
+  const mockFallback = getPageContentBySlug(item.slug);
+  const hasApiBody =
+    Boolean(item.content_th?.trim()) || Boolean(item.content_en?.trim());
+
+  if (hasApiBody) {
+    return {
+      slug: item.slug,
+      titleTh: item.title_th,
+      titleEn: item.title_en,
+      updatedAt: formatUpdatedAt(item.updated_at),
+      sections: [
+        {
+          id: "main-content",
+          titleTh: item.title_th,
+          titleEn: item.title_en,
+          contentTh: item.content_th ?? "",
+          contentEn: item.content_en ?? "",
+        },
+      ],
+    };
+  }
+
+  if (mockFallback) {
+    return {
+      ...mockFallback,
+      titleTh: item.title_th || mockFallback.titleTh,
+      titleEn: item.title_en || mockFallback.titleEn,
+      updatedAt: formatUpdatedAt(item.updated_at),
+    };
+  }
+
+  return {
+    slug: item.slug,
+    titleTh: item.title_th,
+    titleEn: item.title_en,
+    updatedAt: formatUpdatedAt(item.updated_at),
     sections: [],
   };
 }

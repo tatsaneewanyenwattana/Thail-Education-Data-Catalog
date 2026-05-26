@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import StaticPageSection from "@/components/common/StaticPageSection";
 import TableOfContents from "@/components/common/TableOfContents";
-import { getPageContentBySlug } from "@/data/mockData";
 import { usePageContent } from "@/hooks/usePageContent";
 
 const PAGE_SLUG = "terms";
@@ -44,10 +43,7 @@ export default function TermsPage() {
   const locale = useLocale();
   const [showBackToTop, setShowBackToTop] = useState(false);
 
-  const { data, isLoading, isError } = usePageContent(PAGE_SLUG);
-  const fallback = getPageContentBySlug(PAGE_SLUG);
-  const page = !isError && data ? data : fallback;
-  const showFallbackNote = isError || !data;
+  const { data: page, isLoading, isError } = usePageContent(PAGE_SLUG);
 
   const tocSections = useMemo(() => {
     if (!page) return [];
@@ -91,12 +87,6 @@ export default function TermsPage() {
           {updatedLabel}
         </p>
       </header>
-
-      {showFallbackNote && (
-        <p className="mb-spacing-4 font-sarabun text-caption text-text-muted">
-          {t("fallbackNote")}
-        </p>
-      )}
 
       {tocSections.length > 0 && (
         <div className="sticky top-[72px] z-40 mb-spacing-6 md:hidden">

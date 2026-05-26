@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 import app.services.admin_service as admin_service
 import app.services.download_service as download_service
+import app.services.page_content_service as page_content_service
 import app.services.public_service as public_service
 from app.core.config import settings
 from app.core.database import get_db
@@ -36,6 +37,17 @@ def _get_redis():
     import redis
 
     return redis.from_url(settings.redis_url, decode_responses=True)
+
+
+@router.get("/pages/{slug}", status_code=200)
+def public_get_page(slug: str, db: Session = Depends(get_db)):
+    """
+    ดึงเนื้อหาหน้า Static (privacy-policy, terms, api-docs, help-center)
+    - Auth ❌
+    - คืน default content เมื่อยังไม่มีใน DB (ไม่ 404)
+    """
+    result = page_content_service.get_page(db, slug)
+    return success_response(result.model_dump(mode="json"))
 
 
 @router.get("/announcements", status_code=200)

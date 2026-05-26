@@ -1,26 +1,25 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getPageContentBySlug, type PageContentMock } from "@/data/mockData";
+import type { PageContentMock } from "@/data/mockData";
 import apiClient from "@/services/api";
+import {
+  mapApiPageToPublicContent,
+  type ApiPageContent,
+} from "@/utils/pageContentApi";
 
-async function fetchPageContent(slug: string): Promise<PageContentMock> {
-  const response = await apiClient.get<{ data: PageContentMock }>(
-    `/pages/${slug}`
-  );
-  const data = response.data?.data;
-  if (!data?.slug) {
-    throw new Error("Invalid page content");
-  }
-  return data;
-}
-
+/** GET /api/v1/public/pages/{slug} — ไม่ต้อง Auth */
 export function usePageContent(slug: string) {
-  return useQuery({
+  return useQuery<PageContentMock, Error>({
     queryKey: ["pages", slug],
-    queryFn: () => fetchPageContent(slug),
-    staleTime: 1000 * 60 * 10,
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: ApiPageContent }>(
+        `/public/pages/${slug}`
+      );
+      return mapApiPageToPublicContent(res.data.data);
+    },
+    enabled: Boolean(slug),
     retry: 1,
-    placeholderData: () => getPageContentBySlug(slug) ?? undefined,
+    staleTime: 1000 * 60 * 10,
   });
 }
