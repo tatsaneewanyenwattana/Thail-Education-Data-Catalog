@@ -175,7 +175,7 @@
     "jumpToSection": "Jump to section...",
     "backToTop": "Back to top",
     "notFound": "Page not found",
-    "emptyContent": "No content available for this page yet",
+    "emptyContent": "No content yet. Admins can edit this page at /admin/pages",
     "section1Title": "Data we collect",
     "section1Body": "We collect data necessary to provide the service, such as email, agency name, and download logs with the purpose you specify.",
     "section2Title": "How we use data",

@@ -2,17 +2,22 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  MOCK_MEGAMENU_AGENCIES,
-  MOCK_MEGAMENU_CATEGORIES,
-  MOCK_MEGAMENU_YEARS,
-} from "@/data/mockData";
+import { useMemo } from "react";
+import { MOCK_MEGAMENU_AGENCIES } from "@/data/mockData";
+import { useCategories } from "@/hooks/useCategories";
+
+// TODO: เชื่อม GET /api/v1/public/agencies เมื่อ Backend เพิ่ม endpoint นี้
 
 type MegaMenuProps = {
   open: boolean;
   onClose: () => void;
   variant?: "dropdown" | "drawer";
 };
+
+function buildMegamenuYears(): string[] {
+  const currentYear = new Date().getFullYear() + 543;
+  return Array.from({ length: 5 }, (_, i) => String(currentYear - i));
+}
 
 export default function MegaMenu({
   open,
@@ -23,6 +28,16 @@ export default function MegaMenu({
   const locale = useLocale();
   const isTh = locale === "th";
 
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useCategories();
+
+  const level1Categories = useMemo(
+    () => categories.filter((c) => c.level === 1),
+    [categories]
+  );
+
+  const years = useMemo(() => buildMegamenuYears(), []);
+
   if (!open) {
     return null;
   }
@@ -30,48 +45,42 @@ export default function MegaMenu({
   const label = (item: { labelTh: string; labelEn: string }) =>
     isTh ? item.labelTh : item.labelEn;
 
+  const yearLabel = (year: string) =>
+    isTh ? `ปี พ.ศ. ${year}` : `B.E. ${year}`;
+
   const content = (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-6">
       <div>
         <h4 className="mb-3 font-kanit text-label font-bold text-primary-dark">
           {t("categories")}
         </h4>
-        <ul className="space-y-2">
-          {MOCK_MEGAMENU_CATEGORIES.map((cat) => (
-            <li key={cat.id}>
-              <Link
-                href={
-                  cat.slug
-                    ? `/${locale}/categories/${cat.slug}`
-                    : `/${locale}/search`
-                }
-                className="font-sarabun text-label text-text-secondary transition-colors hover:text-primary-dark"
-                onClick={onClose}
-              >
-                {label(cat)}
-              </Link>
-              {cat.children && cat.children.length > 0 && (
-                <ul className="mt-1 space-y-1 border-l-2 border-primary-light pl-3">
-                  {cat.children.map((child) => (
-                    <li key={child.id}>
-                      <Link
-                        href={
-                          child.slug
-                            ? `/${locale}/categories/${child.slug}`
-                            : `/${locale}/search`
-                        }
-                        className="font-sarabun text-caption text-text-muted transition-colors hover:text-primary-dark"
-                        onClick={onClose}
-                      >
-                        {label(child)}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
+        {categoriesLoading ? (
+          <p className="font-sarabun text-caption text-text-muted">
+            {isTh ? "กำลังโหลด..." : "Loading..."}
+          </p>
+        ) : level1Categories.length === 0 ? (
+          <p className="font-sarabun text-caption text-text-muted">
+            {isTh ? "ยังไม่มีหมวดหมู่" : "No categories yet"}
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {level1Categories.map((cat) => (
+              <li key={cat.id}>
+                <Link
+                  href={
+                    cat.slug
+                      ? `/${locale}/categories/${cat.slug}`
+                      : `/${locale}/search`
+                  }
+                  className="font-sarabun text-label text-text-secondary transition-colors hover:text-primary-dark"
+                  onClick={onClose}
+                >
+                  {isTh ? cat.name_th : cat.name_en}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div>
@@ -79,14 +88,14 @@ export default function MegaMenu({
           {t("year")}
         </h4>
         <ul className="space-y-2">
-          {MOCK_MEGAMENU_YEARS.map((year) => (
-            <li key={year.id}>
+          {years.map((year) => (
+            <li key={year}>
               <Link
-                href={`/${locale}/search?year=${year.id.replace("y", "")}`}
+                href={`/${locale}/search?year=${year}`}
                 className="font-sarabun text-label text-text-secondary transition-colors hover:text-primary-dark"
                 onClick={onClose}
               >
-                {label(year)}
+                {yearLabel(year)}
               </Link>
             </li>
           ))}

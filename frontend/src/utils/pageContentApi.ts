@@ -5,7 +5,6 @@ import type {
   StaticPageIcon,
   StaticPageStatus,
 } from "@/data/mockData";
-import { getPageContentBySlug } from "@/data/mockData";
 
 export type ApiPageContent = {
   slug: string;
@@ -50,9 +49,8 @@ export function mapPageContent(item: ApiPageContent): AdminPageEditorContent {
   };
 }
 
-/** Map public page API → PageContentMock for static pages */
+/** Map public page API → PageContentMock for static pages (no mock fallback) */
 export function mapApiPageToPublicContent(item: ApiPageContent): PageContentMock {
-  const mockFallback = getPageContentBySlug(item.slug);
   const hasApiBody =
     Boolean(item.content_th?.trim()) || Boolean(item.content_en?.trim());
 
@@ -71,15 +69,6 @@ export function mapApiPageToPublicContent(item: ApiPageContent): PageContentMock
           contentEn: item.content_en ?? "",
         },
       ],
-    };
-  }
-
-  if (mockFallback) {
-    return {
-      ...mockFallback,
-      titleTh: item.title_th || mockFallback.titleTh,
-      titleEn: item.title_en || mockFallback.titleEn,
-      updatedAt: formatUpdatedAt(item.updated_at),
     };
   }
 

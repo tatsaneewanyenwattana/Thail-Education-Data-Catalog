@@ -64,6 +64,7 @@ export default function FileUploadZone({
     }, 100);
 
     try {
+      // TODO: เชื่อม POST /api/v1/datasets/analyze เมื่อ Backend เพิ่ม endpoint นี้
       const result = await fetchMockFileAnalysis();
       setProgress(100);
       onAnalyzed(result, file);
