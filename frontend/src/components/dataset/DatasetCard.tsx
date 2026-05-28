@@ -6,6 +6,7 @@ import type { DatasetLicense, DatasetStatus, HomeDatasetMock } from "@/data/mock
 
 type DatasetCardProps = HomeDatasetMock & {
   variant?: "popular" | "latest";
+  createdAt?: string;
 };
 
 function DomainIcon() {
@@ -88,6 +89,15 @@ function formatRelativeDate(iso: string, locale: string): string {
   });
 }
 
+function formatAbsoluteDate(iso: string, locale: string): string {
+  const date = new Date(iso);
+  return date.toLocaleDateString(locale === "th" ? "th-TH" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 function licenseLabel(
   license: DatasetLicense,
   t: ReturnType<typeof useTranslations<"dataset">>
@@ -114,11 +124,18 @@ export default function DatasetCard({
   status,
   downloadCount,
   updatedAt,
+  createdAt,
   license,
   variant = "popular",
 }: DatasetCardProps) {
   const t = useTranslations("dataset");
   const locale = useLocale();
+
+  // ถ้า updated_at != created_at → "อัปเดตล่าสุด" ถ้าเหมือนกัน → "เผยแพร่เมื่อ"
+  const isUpdated =
+    createdAt && updatedAt
+      ? new Date(updatedAt).getTime() !== new Date(createdAt).getTime()
+      : false;
 
   const isPublished = status === "published";
   const surfaceClass =
@@ -154,13 +171,22 @@ export default function DatasetCard({
         )}
       </div>
 
-      <h3 className="mb-3 font-kanit text-heading-3-mobile text-text-primary transition-colors group-hover:text-primary-dark md:text-heading-3">
+      <h3 className="mb-2 font-kanit text-heading-3-mobile text-text-primary transition-colors group-hover:text-primary-dark md:text-heading-3">
         {title}
       </h3>
 
+      <div className="mb-3 flex items-center gap-1.5 font-sarabun text-caption text-text-muted">
+        <DownloadIcon />
+        <span>
+          {formatDownloadCount(downloadCount, locale)} {t("downloadsUnit")}
+        </span>
+      </div>
+
       <div className="mb-6 flex items-start gap-2 font-sarabun text-label text-text-secondary">
         <DomainIcon />
-        <span className="line-clamp-2">{agency}</span>
+        <span className="line-clamp-2">
+          {t("agency")}: {agency}
+        </span>
       </div>
 
       {variant === "popular" ? (
@@ -170,7 +196,11 @@ export default function DatasetCard({
               <DownloadIcon />
               {formatDownloadCount(downloadCount, locale)}
             </span>
-            <span>{formatRelativeDate(updatedAt, locale)}</span>
+            <span>
+              {isUpdated
+                ? t("updatedLatest", { date: formatAbsoluteDate(updatedAt, locale) })
+                : t("publishedAt", { date: formatAbsoluteDate(createdAt ?? updatedAt, locale) })}
+            </span>
           </div>
           <svg
             className="h-5 w-5 text-primary opacity-0 transition-opacity group-hover:opacity-100"

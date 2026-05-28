@@ -34,6 +34,29 @@ _PII_COLUMN_KEYWORDS = (
 )
 
 
+def check_preview_permission(dataset, current_user: dict | None) -> bool:
+    if dataset.status == "published":
+        return True
+    if current_user and current_user.get("role") == "admin":
+        return True
+    if current_user:
+        current_user_id = current_user.get("sub") or current_user.get("id")
+        if current_user_id and str(dataset.user_id) == str(current_user_id):
+            return True
+    return False
+
+
+def _get_dataset_with_preview_permission(
+    db: Session, dataset_id: uuid.UUID, current_user: dict | None
+):
+    dataset = dataset_repo.get_dataset_by_id(db, dataset_id)
+    if dataset is None:
+        raise_app_error("DATASET_NOT_FOUND")
+    if not check_preview_permission(dataset, current_user):
+        raise_app_error("DATASET_NOT_FOUND")
+    return dataset
+
+
 def _get_published_dataset(db: Session, dataset_id: uuid.UUID):
     dataset = dataset_repo.get_dataset_by_id(db, dataset_id)
     if dataset is None or dataset.status != "published":
@@ -178,8 +201,9 @@ def preview(
     minio_client: Minio,
     redis_client: Redis,
     dataset_id: uuid.UUID,
+    current_user: dict | None = None,
 ) -> PreviewResponse:
-    _get_published_dataset(db, dataset_id)
+    _get_dataset_with_preview_permission(db, dataset_id, current_user)
     cache_key = f"{PREVIEW_CACHE_PREFIX}{dataset_id}"
     cached = redis_client.get(cache_key)
     if cached:
@@ -207,10 +231,12 @@ def preview(
     return response
 
 
-def get_citation(db: Session, dataset_id: uuid.UUID) -> CitationResponse:
+def get_citation(
+    db: Session, dataset_id: uuid.UUID, current_user: dict | None = None
+) -> CitationResponse:
     from app.models.user_model import User
 
-    dataset = _get_published_dataset(db, dataset_id)
+    dataset = _get_dataset_with_preview_permission(db, dataset_id, current_user)
     owner = db.query(User).filter(User.id == dataset.user_id).first()
     agency_name = owner.agency_name if owner else None
     author = agency_name or "Unknown Agency"

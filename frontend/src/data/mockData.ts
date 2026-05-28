@@ -1,4 +1,4 @@
-export type DatasetStatus = "published" | "draft" | "submitted" | "rejected";
+export type DatasetStatus = "published" | "draft";
 
 export type DatasetLicense = "open" | "conditional" | "cc";
 
@@ -10,6 +10,7 @@ export type HomeDatasetMock = {
   status: DatasetStatus;
   downloadCount: number;
   updatedAt: string;
+  createdAt?: string;
   license: DatasetLicense;
 };
 
@@ -312,6 +313,7 @@ export type SearchResultMock = {
   agencyId: string;
   status: DatasetStatus;
   downloadCount: number;
+  createdAt?: string;
   updatedAt: string;
   license: DatasetLicense;
   fileFormats: SearchFileFormat[];
@@ -1984,8 +1986,15 @@ export type AgencyDashboardStats = {
   totalDatasets: number;
   publishedDatasets: number;
   draftDatasets: number;
+  submittedDatasets: number;
   totalDownloads: number;
   monthlyDownloads: AgencyMonthlyDownload[];
+  datasetsCreatedThisMonth: number;
+  datasetsCreatedLastMonth: number;
+  datasetsMonthChangePercent: number | null;
+  downloadsThisMonth: number;
+  topDownloadFormat: string | null;
+  topDownloadFormatPercent: number | null;
 };
 
 export type AgencyDatasetRow = {
@@ -1996,7 +2005,7 @@ export type AgencyDatasetRow = {
   categoryEn: string;
   subcategory: string;
   subcategoryEn: string;
-  status: "draft" | "published" | "submitted";
+  status: "draft" | "published";
   qualityScore: number;
   downloadCount: number;
   updatedAt: string;
@@ -2006,7 +2015,14 @@ export const mockAgencyStats: AgencyDashboardStats = {
   totalDatasets: 24,
   publishedDatasets: 18,
   draftDatasets: 6,
+  submittedDatasets: 0,
   totalDownloads: 12456,
+  datasetsCreatedThisMonth: 2,
+  datasetsCreatedLastMonth: 1,
+  datasetsMonthChangePercent: 100,
+  downloadsThisMonth: 1980,
+  topDownloadFormat: "csv",
+  topDownloadFormatPercent: 72,
   monthlyDownloads: [
     { month: "ม.ค.", monthEn: "Jan", count: 1200 },
     { month: "ก.พ.", monthEn: "Feb", count: 1450 },
@@ -2183,7 +2199,8 @@ export type AgencyDatasetFormInitial = {
   categoryLevel2: string;
   license: DatasetLicense;
   tags: string[];
-  year?: number;
+  yearStart?: number;
+  yearEnd?: number;
   province?: string;
 };
 
@@ -2723,7 +2740,8 @@ const mockAgencyDatasetFormById: Record<string, AgencyDatasetFormInitial> = {
     categoryLevel2: "student-by-province",
     license: "open",
     tags: ["การศึกษา", "สถิติปี 2566"],
-    year: 2567,
+    yearStart: 2566,
+    yearEnd: 2567,
     province: "all",
   },
   "2": {
@@ -2734,7 +2752,7 @@ const mockAgencyDatasetFormById: Record<string, AgencyDatasetFormInitial> = {
     categoryLevel2: "teacher-by-subject",
     license: "conditional",
     tags: ["งบประมาณ", "วิจัย"],
-    year: 2567,
+    yearStart: 2567,
     province: "bangkok",
   },
 };
@@ -2791,7 +2809,7 @@ export function getAgencyDatasetFormInitial(
     categoryLevel2,
     license: "open",
     tags: ["การศึกษา"],
-    year: 2567,
+    yearStart: 2567,
     province: "all",
   };
 }
@@ -2915,14 +2933,14 @@ export function getAgencyDatasetById(id: string): AgencyDatasetRow | undefined {
 
 export type UploadDatasetMockResult = {
   id: string;
-  status: "draft" | "submitted";
+  status: "draft" | "published";
 };
 
 function parseDatasetSubmitStatus(
   formData: FormData
-): "draft" | "submitted" {
+): "draft" | "published" {
   const raw = formData.get("status");
-  return raw === "submitted" ? "submitted" : "draft";
+  return raw === "published" ? "published" : "draft";
 }
 
 export function uploadDatasetMock(
@@ -3297,11 +3315,7 @@ export function unsuspendAdminUserMock(userId: string): void {
   user.status = "active";
 }
 
-export type AdminDatasetStatus =
-  | "published"
-  | "draft"
-  | "submitted"
-  | "rejected";
+export type AdminDatasetStatus = "published" | "draft";
 
 export type AdminDataset = {
   id: string;

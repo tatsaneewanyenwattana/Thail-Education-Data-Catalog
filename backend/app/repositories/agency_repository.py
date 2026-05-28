@@ -9,12 +9,48 @@ from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 
 from app.core.pagination import PaginationParams
+from app.models.audit_log_model import AuditLog
 from app.models.category_model import Category
 from app.models.dataset_model import Dataset
 from app.models.download_log_model import DownloadLog
 
 _UNCATEGORIZED_TH = "ไม่ระบุหมวดหมู่"
 _UNCATEGORIZED_EN = "Uncategorized"
+
+def _month_start(year: int, month: int) -> datetime:
+    return datetime(year, month, 1, tzinfo=timezone.utc)
+
+
+def _previous_month(year: int, month: int) -> tuple[int, int]:
+    if month == 1:
+        return year - 1, 12
+    return year, month - 1
+
+
+def _month_change_percent(current: int, previous: int) -> float | None:
+    if previous == 0:
+        return 100.0 if current > 0 else 0.0 if current == 0 else None
+    return round(((current - previous) / previous) * 100, 1)
+
+
+def _count_user_datasets_between(
+    db: Session,
+    user_id: uuid.UUID,
+    start: datetime,
+    end: datetime,
+) -> int:
+    return int(
+        db.query(func.count(Dataset.id))
+        .filter(
+            Dataset.user_id == user_id,
+            Dataset.is_deleted.is_(False),
+            Dataset.created_at >= start,
+            Dataset.created_at < end,
+        )
+        .scalar()
+        or 0
+    )
+
 
 _TH_MONTHS = {
     1: "ม.ค.",
@@ -59,11 +95,27 @@ def _dataset_count(
 
 
 def get_dataset_stats(db: Session, user_id: uuid.UUID) -> dict[str, int]:
+    now = datetime.now(timezone.utc)
+    this_month_start = _month_start(now.year, now.month)
+    prev_year, prev_month = _previous_month(now.year, now.month)
+    prev_month_start = _month_start(prev_year, prev_month)
+
+    datasets_this_month = _count_user_datasets_between(
+        db, user_id, this_month_start, now
+    )
+    datasets_last_month = _count_user_datasets_between(
+        db, user_id, prev_month_start, this_month_start
+    )
+
     return {
         "total_datasets": _dataset_count(db, user_id),
         "published_datasets": _dataset_count(db, user_id, "published"),
         "draft_datasets": _dataset_count(db, user_id, "draft"),
-        "submitted_datasets": _dataset_count(db, user_id, "submitted"),
+        "datasets_created_this_month": datasets_this_month,
+        "datasets_created_last_month": datasets_last_month,
+        "datasets_month_change_percent": _month_change_percent(
+            datasets_this_month, datasets_last_month
+        ),
     }
 
 
@@ -77,6 +129,59 @@ def get_total_downloads(db: Session, user_id: uuid.UUID) -> int:
         .scalar()
     )
     return int(total or 0)
+
+
+def get_downloads_this_month(db: Session, user_id: uuid.UUID) -> int:
+    now = datetime.now(timezone.utc)
+    this_month_start = _month_start(now.year, now.month)
+    return int(
+        db.query(func.count(DownloadLog.id))
+        .join(Dataset, DownloadLog.dataset_id == Dataset.id)
+        .filter(
+            Dataset.user_id == user_id,
+            Dataset.is_deleted.is_(False),
+            DownloadLog.created_at >= this_month_start,
+            DownloadLog.created_at <= now,
+        )
+        .scalar()
+        or 0
+    )
+
+
+def get_top_download_format(
+    db: Session, user_id: uuid.UUID
+) -> tuple[str | None, int | None]:
+    format_row = (
+        db.query(
+            DownloadLog.file_format,
+            func.count(DownloadLog.id).label("cnt"),
+        )
+        .join(Dataset, DownloadLog.dataset_id == Dataset.id)
+        .filter(
+            Dataset.user_id == user_id,
+            Dataset.is_deleted.is_(False),
+        )
+        .group_by(DownloadLog.file_format)
+        .order_by(func.count(DownloadLog.id).desc())
+        .first()
+    )
+    if format_row is None:
+        return None, None
+
+    total = int(
+        db.query(func.count(DownloadLog.id))
+        .join(Dataset, DownloadLog.dataset_id == Dataset.id)
+        .filter(
+            Dataset.user_id == user_id,
+            Dataset.is_deleted.is_(False),
+        )
+        .scalar()
+        or 0
+    )
+    if total == 0:
+        return None, None
+
+    return str(format_row.file_format), round((int(format_row.cnt) / total) * 100)
 
 
 def get_monthly_downloads(
@@ -184,6 +289,42 @@ def list_agency_datasets(
                 "quality_score": dataset.quality_score if dataset.quality_score is not None else 0,
                 "download_count": dataset.download_count,
                 "updated_at": dataset.updated_at,
+            }
+        )
+    return items, total
+
+
+def list_agency_activity_logs(
+    db: Session,
+    user_id: uuid.UUID,
+    pagination: PaginationParams,
+) -> tuple[list[dict[str, Any]], int]:
+    query = (
+        db.query(AuditLog, Dataset.title)
+        .outerjoin(
+            Dataset,
+            (AuditLog.target_type == "dataset") & (AuditLog.target_id == Dataset.id),
+        )
+        .filter(AuditLog.user_id == user_id)
+    )
+    total = query.count()
+    rows = (
+        query.order_by(AuditLog.created_at.desc())
+        .offset(pagination.offset)
+        .limit(pagination.page_size)
+        .all()
+    )
+
+    items: list[dict[str, Any]] = []
+    for log, dataset_title in rows:
+        items.append(
+            {
+                "created_at": log.created_at,
+                "action": log.action,
+                "target_type": log.target_type,
+                "target_id": log.target_id,
+                "dataset_title": dataset_title,
+                "status": "success",
             }
         )
     return items, total

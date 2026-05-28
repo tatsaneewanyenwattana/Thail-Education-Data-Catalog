@@ -19,9 +19,14 @@ class AgencyDashboardStats(BaseModel):
     total_datasets: int
     published_datasets: int
     draft_datasets: int
-    submitted_datasets: int
     total_downloads: int
     monthly_downloads: list[MonthlyDownloadItem]
+    datasets_created_this_month: int
+    datasets_created_last_month: int
+    datasets_month_change_percent: float | None = None
+    downloads_this_month: int
+    top_download_format: str | None = None
+    top_download_format_percent: int | None = None
 
 
 class AgencyDashboardResponse(BaseModel):
@@ -46,3 +51,17 @@ class AgencyDatasetListItem(BaseModel):
     updated_at: datetime = Field(serialization_alias="updatedAt")
 
     model_config = {"populate_by_name": True}
+
+
+class AgencyActivityLogItem(BaseModel):
+    created_at: datetime
+    action: str
+    target_type: str
+    target_id: uuid.UUID | None
+    dataset_title: str | None = None
+    status: str
+
+
+class AgencyActivityLogListResponse(BaseModel):
+    items: list[AgencyActivityLogItem]
+    total: int

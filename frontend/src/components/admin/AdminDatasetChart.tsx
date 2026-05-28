@@ -13,11 +13,9 @@ import {
   YAxis,
 } from "recharts";
 import { CHART_COLORS } from "@/constants/chartColors";
-import type { AdminMonthlyCount } from "@/data/mockData";
+import { toChartData, useAdminMonthlyStats, useAdminStatsYears } from "@/hooks/useAdminMonthlyStats";
 
-type AdminDatasetChartProps = {
-  data: AdminMonthlyCount[];
-};
+const CURRENT_YEAR = new Date().getFullYear();
 
 function ChartTooltip({
   active,
@@ -39,17 +37,24 @@ function ChartTooltip({
   );
 }
 
-export default function AdminDatasetChart({ data }: AdminDatasetChartProps) {
+export default function AdminDatasetChart() {
   const t = useTranslations("admin.dashboard");
   const locale = useLocale();
-  const [year, setYear] = useState("2024");
+  const { data: availableYears = [] } = useAdminStatsYears();
+  const defaultYear = availableYears[0] ?? CURRENT_YEAR;
+  const [year, setYear] = useState<number | null>(null);
+  const selectedYear = year ?? defaultYear;
 
-  const chartData = data.map((point) => ({
-    month: locale === "th" ? point.month : point.monthEn,
-    count: point.count,
-  }));
+  const { data, isLoading, isError } = useAdminMonthlyStats(selectedYear);
 
-  const maxCount = Math.max(...chartData.map((item) => item.count));
+  const chartData = data
+    ? toChartData(data.datasets_by_month, locale)
+    : Array.from({ length: 12 }, (_, i) => ({
+        month: ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."][i],
+        count: 0,
+      }));
+
+  const maxCount = Math.max(...chartData.map((item) => item.count), 1);
 
   return (
     <section className="rounded-radius-lg border border-border-default/80 bg-surface-card p-6 shadow-level-1">
@@ -58,16 +63,26 @@ export default function AdminDatasetChart({ data }: AdminDatasetChartProps) {
           {t("datasetChart")}
         </h2>
         <select
-          value={year}
-          onChange={(event) => setYear(event.target.value)}
+          value={selectedYear}
+          onChange={(e) => setYear(Number(e.target.value))}
           className="h-9 rounded-radius-sm border border-border-input bg-surface-container px-3 font-sarabun text-label text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
           aria-label={t("yearLabel")}
         >
-          <option value="2023">{t("year2023")}</option>
-          <option value="2024">{t("year2024")}</option>
+          {availableYears.map((y) => (
+            <option key={y} value={y}>
+              {t("yearPrefix")} {y}
+            </option>
+          ))}
         </select>
       </div>
-      <div className="h-64 w-full min-w-0">
+
+      {isError && (
+        <p className="py-8 text-center font-sarabun text-caption text-status-error">
+          โหลดข้อมูลไม่สำเร็จ
+        </p>
+      )}
+
+      <div className={`h-64 w-full min-w-0 transition-opacity ${isLoading ? "opacity-40" : "opacity-100"}`}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid stroke={CHART_COLORS.grid} strokeDasharray="3 3" vertical={false} />
@@ -84,9 +99,9 @@ export default function AdminDatasetChart({ data }: AdminDatasetChartProps) {
                 <Cell
                   key={entry.month}
                   fill={
-                    entry.count === maxCount
+                    entry.count === maxCount && maxCount > 0
                       ? CHART_COLORS.student
-                      : `${CHART_COLORS.student}33`
+                      : `${CHART_COLORS.student}55`
                   }
                 />
               ))}

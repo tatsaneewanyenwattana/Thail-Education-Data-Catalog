@@ -7,7 +7,7 @@ import AdminDatasetTable from "@/components/admin/AdminDatasetTable";
 import type { AdminDatasetsFilters } from "@/data/mockData";
 import { useAdminDatasets } from "@/hooks/useAdminDatasets";
 
-type StatusFilter = "all" | "published" | "draft" | "submitted";
+type StatusFilter = "all" | "published" | "draft";
 
 export default function AdminDatasetsPage() {
   const t = useTranslations("admin.datasets");
@@ -120,7 +120,6 @@ export default function AdminDatasetsPage() {
             <option value="all">{t("filterAllStatus")}</option>
             <option value="published">{t("status.published")}</option>
             <option value="draft">{t("status.draft")}</option>
-            <option value="submitted">{t("status.submitted")}</option>
           </select>
 
           <Link

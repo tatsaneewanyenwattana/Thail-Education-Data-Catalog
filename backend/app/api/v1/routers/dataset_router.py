@@ -56,6 +56,9 @@ def upload_dataset(
     category_id: str | None = Form(None),
     tags: str | None = Form(None),
     metadata: str | None = Form(None),
+    year_start: int | None = Form(None),
+    year_end: int | None = Form(None),
+    status: str | None = Form(None, description="draft หรือ published"),
     payload: dict = Depends(require_roles("agency", "admin")),
     db: Session = Depends(get_db),
 ):
@@ -73,11 +76,32 @@ def upload_dataset(
     cat_id = uuid.UUID(category_id) if category_id else None
 
     tag_list: list[uuid.UUID] = []
+    tag_names: list[str] = []
     if tags:
         try:
-            tag_list = [uuid.UUID(t) for t in json.loads(tags)]
+            parsed_tags = json.loads(tags)
+            if isinstance(parsed_tags, list):
+                for value in parsed_tags:
+                    try:
+                        tag_list.append(uuid.UUID(str(value)))
+                    except Exception:
+                        text = str(value).strip()
+                        if text:
+                            tag_names.append(text)
         except Exception:
-            tag_list = []
+            raw_tags = (
+                str(tags)
+                .replace("[", "")
+                .replace("]", "")
+                .replace('"', "")
+                .replace("'", "")
+            )
+            parsed_fallback = [chunk.strip() for chunk in raw_tags.split(",") if chunk.strip()]
+            for value in parsed_fallback:
+                try:
+                    tag_list.append(uuid.UUID(str(value)))
+                except Exception:
+                    tag_names.append(str(value))
 
     meta_dict = None
     if metadata:
@@ -85,6 +109,14 @@ def upload_dataset(
             meta_dict = json.loads(metadata)
         except Exception:
             meta_dict = None
+    if meta_dict is None:
+        meta_dict = {}
+    if year_start is not None:
+        meta_dict["year_start"] = year_start
+    if year_end is not None:
+        meta_dict["year_end"] = year_end
+    if not meta_dict:
+        meta_dict = None
 
     req = DatasetCreateRequest(
         title=title,
@@ -92,7 +124,11 @@ def upload_dataset(
         license=license,
         category_id=cat_id,
         tags=tag_list,
+        tag_names=tag_names,
         metadata=meta_dict,
+        year_start=year_start,
+        year_end=year_end,
+        status=status if status in ("draft", "published") else None,
     )
     result = dataset_service.upload(
         db=db,
@@ -122,6 +158,23 @@ def _require_admin_payload(
     if payload.get("role") != "admin":
         raise_app_error("AUTH_PERMISSION_DENIED")
     return payload
+
+
+def _get_optional_user_payload(
+    credentials: HTTPAuthorizationCredentials | None,
+) -> dict | None:
+    if credentials is None:
+        return None
+    if credentials.scheme.lower() != "bearer":
+        return None
+    token = credentials.credentials
+    try:
+        payload = decode_access_token(token)
+        if payload.get("sub"):
+            return payload
+    except Exception:
+        return None
+    return None
 
 
 @router.get("/datasets", status_code=status.HTTP_200_OK)
@@ -170,13 +223,18 @@ def list_datasets(
 @router.get("/datasets/{dataset_id}", status_code=status.HTTP_200_OK)
 def get_dataset(
     dataset_id: uuid.UUID,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_optional),
     db: Session = Depends(get_db),
 ):
     """
     ดู Dataset ชิ้นเดียว
     - Auth ❌
     """
-    result = dataset_service.get_dataset(db=db, dataset_id=dataset_id)
+    result = dataset_service.get_dataset(
+        db=db,
+        dataset_id=dataset_id,
+        current_user=_get_optional_user_payload(credentials),
+    )
     return success_response(data=result.model_dump(mode="json"))
 
 
@@ -204,8 +262,8 @@ def update_dataset(
     return success_response(data=result.model_dump(mode="json"))
 
 
-@router.post("/datasets/{dataset_id}/submit", status_code=status.HTTP_200_OK)
-def submit_dataset(
+@router.post("/datasets/{dataset_id}/publish", status_code=status.HTTP_200_OK)
+def publish_dataset(
     dataset_id: uuid.UUID,
     request: Request,
     background_tasks: BackgroundTasks,
@@ -213,10 +271,10 @@ def submit_dataset(
     db: Session = Depends(get_db),
 ):
     """
-    ส่ง Dataset เพื่อขออนุมัติ (draft → submitted) ตาม #5 M2
+    เผยแพร่ Dataset (draft → published) ตาม #5 M2
     - Auth ✅ Agency/Admin
     """
-    result = dataset_service.submit_dataset(
+    result = dataset_service.publish_dataset_directly(
         db=db,
         dataset_id=dataset_id,
         current_user=payload,

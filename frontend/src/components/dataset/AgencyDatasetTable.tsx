@@ -20,26 +20,16 @@ type AgencyDatasetTableProps = {
 function StatusBadge({
   status,
   publishedLabel,
-  submittedLabel,
   draftLabel,
 }: {
   status: AgencyDatasetRow["status"];
   publishedLabel: string;
-  submittedLabel: string;
   draftLabel: string;
 }) {
   if (status === "published") {
     return (
       <span className="inline-flex rounded-radius-full bg-status-published-bg px-3 py-1 font-sarabun text-caption font-semibold text-status-published">
         {publishedLabel}
-      </span>
-    );
-  }
-
-  if (status === "submitted") {
-    return (
-      <span className="inline-flex rounded-radius-full bg-status-info/15 px-3 py-1 font-sarabun text-caption font-semibold text-status-info">
-        {submittedLabel}
       </span>
     );
   }
@@ -197,7 +187,6 @@ export default function AgencyDatasetTable({
                       <StatusBadge
                         status={row.status}
                         publishedLabel={tStatus("published")}
-                        submittedLabel={tStatus("submitted")}
                         draftLabel={tStatus("draft")}
                       />
                     </td>

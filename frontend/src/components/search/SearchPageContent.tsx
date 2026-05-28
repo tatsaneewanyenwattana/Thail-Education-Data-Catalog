@@ -33,6 +33,7 @@ export default function SearchPageContent() {
       selectedAgencies={filterParams.selectedAgencies}
       selectedYears={filterParams.selectedYears}
       selectedFormats={filterParams.selectedFormats}
+      selectedTag={filterParams.selectedTag}
       filterQuery={filterParams.filterQuery}
     />
   );

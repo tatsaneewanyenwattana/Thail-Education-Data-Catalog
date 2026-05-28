@@ -1,6 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import apiClient from "@/services/api";
 import type { AgencyBookmarkMock } from "@/data/mockData";
 import { fetchBookmarks } from "@/utils/savedItemsApi";
@@ -16,6 +18,8 @@ export function useBookmarks() {
 
 export function useAddBookmark() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const locale = useLocale();
 
   return useMutation({
     mutationFn: async (datasetId: string) => {
@@ -23,6 +27,12 @@ export function useAddBookmark() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agency", "bookmarks"] });
+    },
+    onError: (error: unknown) => {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status === 401 || status === 403) {
+        router.push(`/${locale}/login`);
+      }
     },
   });
 }

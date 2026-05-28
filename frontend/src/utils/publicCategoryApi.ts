@@ -14,8 +14,10 @@ type ApiPublishedDataset = {
   license: string;
   category_id: string | null;
   download_count: number;
+  created_at: string;
   updated_at: string;
-  metadata?: { year?: number } | null;
+  metadata?: { year?: number; agency?: string } | null;
+  agency_name?: string | null;
 };
 
 export function buildCategoryTreeFromApi(
@@ -104,6 +106,12 @@ export function mapApiDatasetToSearchResult(
   const title = item.title;
   const year =
     typeof item.metadata?.year === "number" ? item.metadata.year : 0;
+  const agencyName =
+    typeof item.agency_name === "string" && item.agency_name.trim()
+      ? item.agency_name.trim()
+      : typeof item.metadata?.agency === "string" && item.metadata.agency.trim()
+        ? item.metadata.agency.trim()
+        : "ไม่ระบุหน่วยงาน";
 
   return {
     id: String(item.id),
@@ -115,11 +123,12 @@ export function mapApiDatasetToSearchResult(
     categoryEn: parent?.name_en ?? cat?.name_en ?? "—",
     categoryId: parent ? String(parent.id) : cat ? String(cat.id) : "",
     subcategorySlug: cat?.level === 2 ? cat.slug : undefined,
-    agencyTh: "—",
-    agencyEn: "—",
+    agencyTh: agencyName,
+    agencyEn: agencyName,
     agencyId: "",
     status: item.status === "published" ? "published" : "published",
     downloadCount: item.download_count ?? 0,
+    createdAt: item.created_at,
     updatedAt: item.updated_at,
     license: (item.license as SearchResultMock["license"]) ?? "open",
     fileFormats: [],

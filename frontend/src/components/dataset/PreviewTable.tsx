@@ -30,6 +30,7 @@ function LockIcon() {
 export default function PreviewTable({ columns, rows }: PreviewTableProps) {
   const t = useTranslations("dataset.detail");
   const locale = useLocale();
+  const previewRows = rows.slice(0, 20);
 
   return (
     <section className="px-4 py-spacing-6 md:px-spacing-10">
@@ -44,9 +45,12 @@ export default function PreviewTable({ columns, rows }: PreviewTableProps) {
               {t("piiNote")}
             </p>
           </div>
+          <p className="font-sarabun text-caption text-text-muted">
+            {t("previewRowCount", { count: previewRows.length })}
+          </p>
         </div>
 
-        <div className="overflow-x-auto rounded-radius-lg border border-border-default/80 shadow-level-1">
+        <div className="max-h-[560px] overflow-auto rounded-radius-lg border border-border-default/80 shadow-level-1">
           <table className="w-full min-w-[640px] border-collapse bg-surface-card text-left">
             <thead>
               <tr className="border-b border-border-default bg-surface-container">
@@ -67,7 +71,7 @@ export default function PreviewTable({ columns, rows }: PreviewTableProps) {
               </tr>
             </thead>
             <tbody className="font-sarabun text-label text-text-secondary">
-              {rows.map((row, rowIndex) => (
+              {previewRows.map((row, rowIndex) => (
                 <tr
                   key={rowIndex}
                   className="border-b border-border-default/30 transition-colors hover:bg-surface-container/60"

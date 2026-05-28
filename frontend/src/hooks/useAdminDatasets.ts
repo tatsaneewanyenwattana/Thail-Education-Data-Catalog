@@ -48,13 +48,7 @@ function mapAdminDataset(item: ApiAdminDataset): AdminDataset {
     agencyEn: item.agencyEn ?? item.agency_en ?? item.agency,
     category: item.category,
     categoryEn: item.categoryEn ?? item.category_en ?? item.category,
-    status:
-      status === "published" ||
-      status === "draft" ||
-      status === "submitted" ||
-      status === "rejected"
-        ? status
-        : "draft",
+    status: status === "published" || status === "draft" ? status : "draft",
     qualityScore: item.qualityScore ?? item.quality_score ?? 0,
     updatedAt: item.updatedAt ?? item.updated_at ?? new Date().toISOString(),
   };

@@ -4,7 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/services/api";
 import type { AgencyDatasetRow } from "@/data/mockData";
 
-export type AgencyDatasetStatusFilter = "all" | "draft" | "published";
+export type AgencyDatasetStatusFilter =
+  | "all"
+  | "draft"
+  | "published";
 
 export type AgencyDatasetsResponse = {
   data: AgencyDatasetRow[];
@@ -57,7 +60,7 @@ function mapDataset(item: ApiAgencyDataset): AgencyDatasetRow {
     subcategory: item.subcategory,
     subcategoryEn: item.subcategoryEn ?? item.subcategory_en ?? item.subcategory,
     status:
-      status === "published" || status === "draft" || status === "submitted"
+      status === "published" || status === "draft"
         ? status
         : "draft",
     qualityScore: item.qualityScore ?? item.quality_score ?? 0,

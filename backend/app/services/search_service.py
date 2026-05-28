@@ -27,6 +27,7 @@ ALLOWED_FILTER_KEYS = {
     "year",
     "province",
     "agency_user_id",
+    "tag",
 }
 
 ALLOWED_LICENSES = {"open", "conditional", "cc"}
@@ -70,6 +71,8 @@ def _validate_filters(filters: dict | None) -> dict:
                 raise_app_error("SEARCH_INVALID_FILTER")
         elif key == "province":
             validated[key] = str(value)
+        elif key == "tag":
+            validated[key] = str(value).strip()
     return validated
 
 

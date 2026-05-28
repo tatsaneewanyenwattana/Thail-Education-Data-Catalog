@@ -37,9 +37,15 @@ def _ensure_slug_available(
     db: Session,
     slug: str,
     *,
+    parent_id: uuid.UUID | None,
     exclude_id: uuid.UUID | None = None,
 ) -> None:
-    if cat_repo.is_slug_taken(db, slug, exclude_id=exclude_id):
+    if cat_repo.is_slug_taken(
+        db,
+        slug,
+        parent_id=parent_id,
+        exclude_id=exclude_id,
+    ):
         raise_app_error("CATEGORY_SLUG_EXISTS")
 
 
@@ -49,7 +55,7 @@ def create_category(
     current_user: dict,
 ) -> CategoryResponse:
     slug = _make_slug(request.name_en, request.name_th)
-    _ensure_slug_available(db, slug)
+    _ensure_slug_available(db, slug, parent_id=request.parent_id)
 
     level = 1
     if request.parent_id is not None:
@@ -98,7 +104,7 @@ def create_subcategory(
             raise_app_error("CATEGORY_NOT_OWNED")
 
     slug = _make_slug(request.name_en, request.name_th)
-    _ensure_slug_available(db, slug)
+    _ensure_slug_available(db, slug, parent_id=parent_id)
 
     category = cat_repo.create_category(
         db,
@@ -141,7 +147,10 @@ def update_category(
     if fields:
         if "slug" in fields:
             _ensure_slug_available(
-                db, fields["slug"], exclude_id=category_id
+                db,
+                fields["slug"],
+                parent_id=category.parent_id,
+                exclude_id=category_id,
             )
         cat_repo.update_category(db, category_id, **fields)
 

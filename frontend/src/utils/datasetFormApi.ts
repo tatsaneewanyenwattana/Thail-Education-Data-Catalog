@@ -43,10 +43,14 @@ export function resolveCategoryId(
 
 function buildMetadata(formData: FormData): Record<string, unknown> | null {
   const meta: Record<string, unknown> = {};
-  const year = formData.get("year");
+  const yearStart = formData.get("year_start");
+  const yearEnd = formData.get("year_end");
   const province = formData.get("province");
-  if (year) {
-    meta.year = Number(year);
+  if (yearStart) {
+    meta.year_start = Number(yearStart);
+  }
+  if (yearEnd) {
+    meta.year_end = Number(yearEnd);
   }
   if (province && province !== "all") {
     meta.province = String(province);
@@ -79,7 +83,11 @@ export async function toUploadApiFormData(
   if (metadata) {
     apiForm.append("metadata", JSON.stringify(metadata));
   }
-  apiForm.append("tags", "[]");
+  const tags = formData
+    .getAll("tags[]")
+    .map((tag) => String(tag).trim())
+    .filter(Boolean);
+  apiForm.append("tags", JSON.stringify(tags));
   return apiForm;
 }
 
@@ -89,6 +97,7 @@ export type DatasetUpdateBody = {
   license: string;
   category_id?: string;
   metadata?: Record<string, unknown>;
+  status?: "draft" | "published";
 };
 
 export async function toUpdateApiBody(
@@ -109,6 +118,10 @@ export async function toUpdateApiBody(
   const metadata = buildMetadata(formData);
   if (metadata) {
     body.metadata = metadata;
+  }
+  const statusVal = formData.get("status");
+  if (statusVal === "draft" || statusVal === "published") {
+    body.status = statusVal;
   }
   return body;
 }
@@ -149,8 +162,14 @@ export async function fetchDatasetFormInitial(
       categoryLevel2,
       license: ds.license as AgencyDatasetFormInitial["license"],
       tags: [],
-      year:
-        typeof meta.year === "number" ? meta.year : undefined,
+      yearStart:
+        typeof meta.year_start === "number"
+          ? meta.year_start
+          : typeof meta.year === "number"
+            ? meta.year
+            : undefined,
+      yearEnd:
+        typeof meta.year_end === "number" ? meta.year_end : undefined,
       province:
         typeof meta.province === "string" ? meta.province : "all",
     };

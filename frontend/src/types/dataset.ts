@@ -15,6 +15,7 @@ export type ApiDataset = {
   published_at: string | null;
   created_at: string;
   updated_at?: string;
+  agency_name?: string | null;
 };
 
 export type DatasetPreviewData = {

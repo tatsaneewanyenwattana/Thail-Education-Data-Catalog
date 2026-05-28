@@ -138,6 +138,16 @@ def get_all_users(
     return items, total
 
 
+def count_active_admins(db: Session, exclude_user_id: uuid.UUID | None = None) -> int:
+    query = db.query(func.count(User.id)).filter(
+        User.is_deleted.is_(False),
+        User.role == "admin",
+    )
+    if exclude_user_id is not None:
+        query = query.filter(User.id != exclude_user_id)
+    return int(query.scalar() or 0)
+
+
 def get_user_by_id(db: Session, user_id: uuid.UUID) -> User | None:
     return (
         db.query(User)
@@ -157,6 +167,16 @@ def update_user(db: Session, user_id: uuid.UUID, **fields: Any) -> User:
             setattr(user, key, value)
     db.flush()
     return user
+
+
+def soft_delete_user(db: Session, user_id: uuid.UUID) -> None:
+    from app.core.errors import raise_app_error
+
+    user = get_user_by_id(db, user_id)
+    if user is None:
+        raise_app_error("USER_NOT_FOUND")
+    user.is_deleted = True
+    db.flush()
 
 
 def _audit_log_action_patterns(ui_action: str) -> list[str]:
@@ -312,3 +332,67 @@ def soft_delete_announcement(db: Session, announcement_id: uuid.UUID) -> None:
         raise_app_error("NOT_FOUND")
     announcement.is_deleted = True
     db.flush()
+
+
+def get_available_years(db: Session) -> list[int]:
+    """คืนปีที่มี published dataset หรือ download log อยู่จริง เรียงจากมากไปน้อย"""
+    ds_years = (
+        db.query(func.extract("year", Dataset.created_at).label("year"))
+        .filter(Dataset.is_deleted.is_(False), Dataset.status == "published")
+        .distinct()
+        .all()
+    )
+    dl_years = (
+        db.query(func.extract("year", DownloadLog.created_at).label("year"))
+        .distinct()
+        .all()
+    )
+    combined = {int(row.year) for row in ds_years} | {int(row.year) for row in dl_years}
+    # ถ้าไม่มีข้อมูลเลย ให้คืนปีปัจจุบัน
+    if not combined:
+        from datetime import datetime
+        combined.add(datetime.now().year)
+    return sorted(combined, reverse=True)
+
+
+def get_monthly_stats(db: Session, year: int) -> dict:
+    """คืนจำนวน datasets และ downloads รายเดือน 12 เดือน"""
+    # datasets by month (published only, ไม่รวม deleted)
+    ds_rows = (
+        db.query(
+            func.extract("month", Dataset.created_at).label("month"),
+            func.count(Dataset.id).label("count"),
+        )
+        .filter(
+            func.extract("year", Dataset.created_at) == year,
+            Dataset.is_deleted.is_(False),
+            Dataset.status == "published",
+        )
+        .group_by(func.extract("month", Dataset.created_at))
+        .all()
+    )
+
+    # downloads by month (ไม่มี is_deleted ใน download_logs)
+    dl_rows = (
+        db.query(
+            func.extract("month", DownloadLog.created_at).label("month"),
+            func.count(DownloadLog.id).label("count"),
+        )
+        .filter(
+            func.extract("year", DownloadLog.created_at) == year,
+        )
+        .group_by(func.extract("month", DownloadLog.created_at))
+        .all()
+    )
+
+    ds_by_month = {int(row.month): int(row.count) for row in ds_rows}
+    dl_by_month = {int(row.month): int(row.count) for row in dl_rows}
+
+    return {
+        "datasets_by_month": [
+            {"month": m, "count": ds_by_month.get(m, 0)} for m in range(1, 13)
+        ],
+        "downloads_by_month": [
+            {"month": m, "count": dl_by_month.get(m, 0)} for m in range(1, 13)
+        ],
+    }

@@ -57,6 +57,7 @@
 | แก้ไข Dataset ของตัวเอง | ❌ | ✅ | ✅ |
 | ลบ Dataset ของตัวเอง | ❌ | ✅ | ✅ |
 | ลบ Dataset ของ Agency (ทุกหน่วยงาน) | ❌ | ❌ | ✅ |
+| ลบ/ซ่อน Dataset ที่ไม่เหมาะสม | ❌ | ❌ | ✅ |
 | ดู Version History Dataset ตัวเอง | ❌ | ✅ | ✅ |
 | Restore Version Dataset ตัวเอง | ❌ | ✅ | ✅ |
 | Bulk Upload Excel Template | ❌ | ✅ | ✅ |
@@ -88,14 +89,18 @@
 - Admin Unsuspend → เปลี่ยน Status เป็น active
 
 **M2 · Dataset**
-- Agency อัปโหลด Dataset → Status = published ทันที บันทึก published_at
+- Agency อัปโหลด Dataset → เลือกได้ 2 ทาง:
+  - กด "บันทึก Draft" → Status = draft (ไม่แสดงต่อ Visitor)
+  - กด "เผยแพร่" → Status = published ทันที บันทึก published_at
 - Admin อัปโหลด Dataset → Status = published ทันที บันทึก published_at
+- Agency แก้ไข Dataset → published ทันที อัปเดต updated_at บันทึก Version ใหม่
+- Admin แก้ไขได้ทุก Dataset → published ทันที อัปเดต updated_at
+- ไม่มีขั้นตอน Submit / Approve / Reject (ไม่มี Approval Workflow)
 - แสดงเฉพาะ Dataset ที่ Status = published ต่อ Visitor
-- Agency แก้ไข Dataset ได้เฉพาะ Dataset ของตัวเองเท่านั้น
+- Agency/Admin ดู Dataset ของตัวเองได้ทุก Status (draft/published)
 - Agency ลบ Dataset ได้เฉพาะของตัวเอง (Soft Delete)
-- Admin แก้ไขได้ทุก Dataset
-- Admin ลบ Dataset ของ Agency ได้ (Soft Delete)
-- ไม่มี Submit / Reject อีกต่อไป (ไม่มี Approval Workflow)
+- Admin ลบ/ซ่อน Dataset ที่ไม่เหมาะสมได้ทุก Agency (Soft Delete)
+- Admin ไม่มีสิทธิ์ Approve หรือ Reject Dataset
 - หลัง Publish แล้ว ส่ง Email แจ้ง Subscriber ที่ติดตามหมวดหรือหน่วยงาน
 
 **M3 · Search**
@@ -107,8 +112,15 @@
 - บันทึก IP + Timestamp ทุกครั้งที่ดาวน์โหลด
 - INSERT download_log และ UPDATE download_count ต้องอยู่ใน Transaction เดียวกันเสมอ
 
+**M5 · UI แสดงวันที่ Dataset**
+- ถ้า updated_at != created_at → แสดง "อัปเดตล่าสุด {updated_at}"
+- ถ้า updated_at == created_at → แสดง "เผยแพร่เมื่อ {created_at}"
+- ใช้กฎนี้กับทุก Component ที่แสดงวันที่ของ Dataset (DatasetCard, DatasetDetail, CategoryPage, HomePage)
+
 **M6 · Admin**
 - Admin ไม่สามารถ Suspend ตัวเองได้
+- Admin ไม่มีสิทธิ์ Approve หรือ Reject Dataset (ไม่มี Approval Workflow)
+- Admin สามารถลบ/ซ่อน Dataset ที่ไม่เหมาะสมของ Agency ใดก็ได้ด้วย Soft Delete
 
 **หมวดหมู่ (Categories)**
 - หมวดหมู่มี 2 ระดับ Agency สร้างและจัดการของตัวเองได้เลย ไม่ต้องรอ Admin
@@ -405,13 +417,13 @@ NEXT_PUBLIC_APP_ENV=development
 | category_id | UUID | YES | NULL | FK → categories |
 | title | VARCHAR(500) | NO | - | |
 | description | TEXT | YES | NULL | |
-| status | ENUM(dataset_status) | NO | published | ตั้งเป็น published ทันทีหลังอัปโหลด |
+| status | ENUM(dataset_status) | NO | draft | draft = บันทึกร่าง, published = เผยแพร่ทันที Agency เลือกได้ตอนอัปโหลด |
 | license | ENUM(dataset_license) | NO | - | |
 | metadata | JSONB | YES | NULL | DCAT-AP metadata |
 | quality_score | INTEGER | YES | NULL | 0-100 |
 | download_count | INTEGER | NO | 0 | Cache ไม่ใช่ข้อมูลจริง |
 | view_count | INTEGER | NO | 0 | |
-| reject_comment | TEXT | YES | NULL | |
+| reject_comment | TEXT | YES | NULL | ไม่ใช้แล้ว — เก็บไว้เพื่อ backward compatibility |
 | published_at | TIMESTAMPTZ | YES | NULL | |
 | is_deleted | BOOLEAN | NO | false | Soft Delete |
 | created_at | TIMESTAMPTZ | NO | now() | |
@@ -588,7 +600,8 @@ NEXT_PUBLIC_APP_ENV=development
 | | | active | ใช้งานได้ปกติ |
 | | | rejected | ถูกปฏิเสธ |
 | | | suspended | ถูกระงับ |
-| dataset_status | datasets.status | published | เผยแพร่สาธารณะ — ค่าเดียวใน Flow (upload → published) |
+| dataset_status | datasets.status | draft | บันทึกร่างไว้ก่อน ยังไม่เผยแพร่ |
+| | | published | เผยแพร่สาธารณะ — Agency เลือกเผยแพร่ทันทีหรือบันทึกเป็น draft ก่อนก็ได้ |
 | dataset_license | datasets.license | open | เปิดเผยสาธารณะ ใช้ได้เลย |
 | | | conditional | มีเงื่อนไขการใช้งาน |
 | | | cc | Creative Commons |
@@ -743,7 +756,7 @@ Table datasets {
   category_id uuid [null, ref: > categories.id]
   title varchar(500) [not null]
   description text [null]
-  status dataset_status [not null, default: 'published']
+  status dataset_status [not null, default: 'draft']
   license dataset_license [not null]
   metadata jsonb [null]
   quality_score integer [null]
@@ -962,6 +975,7 @@ Enum user_status {
 }
 
 Enum dataset_status {
+  draft
   published
 }
 
@@ -1417,7 +1431,7 @@ Authorization: Bearer <token>
 
 **Upload Dataset Flow**
 ```
-1. Agency/Admin ส่งไฟล์ + Metadata มาที่ POST /api/v1/datasets
+1. Agency/Admin ส่งไฟล์ + Metadata + status (draft|published) มาที่ POST /api/v1/datasets
 2. ตรวจสอบ Token และสิทธิ์ → ไม่มีสิทธิ์ → คืน AUTH_PERMISSION_DENIED 403
 3. ตรวจสอบขนาดไฟล์ → เกิน 100MB → คืน FILE_TOO_LARGE 400
 4. ตรวจสอบประเภทไฟล์ → ไม่ใช่ CSV/Excel/JSON → คืน FILE_INVALID_FORMAT 400
@@ -1425,9 +1439,12 @@ Authorization: Bearer <token>
 6. Scan หาข้อมูล PII ในไฟล์ด้วย Pandas → พบ PII → Mask อัตโนมัติก่อนบันทึก
 7. คำนวณ Data Quality Score ด้วย Pandas
 8. บันทึกไฟล์ลง MinIO พร้อม Encryption
-9. บันทึก Metadata ลง PostgreSQL → Status = published, published_at = now(), version_number = 1
-10. Index ข้อมูลลง Elasticsearch
-11. Background Task ส่ง Email แจ้ง Subscriber
+9. ตรวจสอบ status ที่ Agency เลือก:
+   - status = draft → บันทึกลง PostgreSQL Status = draft, version_number = 1
+   - status = published → บันทึกลง PostgreSQL Status = published, published_at = now(), version_number = 1
+   - Admin อัปโหลด → Status = published ทันทีเสมอ
+10. Index ข้อมูลลง Elasticsearch (เฉพาะ status = published)
+11. Background Task ส่ง Email แจ้ง Subscriber (เฉพาะ status = published)
 12. คืน Dataset Object กลับไปพร้อม 201 Created
 ```
 
@@ -1446,16 +1463,45 @@ Authorization: Bearer <token>
 
 ## #30 · Dataset Publish Workflow
 
-**Upload Flow (ทุก Role)**
+**Upload Flow — Agency**
 ```
-1. Agency/Admin อัปโหลด Dataset
-2. ระบบ Published ทันที
-3. บันทึก published_at = เวลาปัจจุบัน
-4. อัปเดต Elasticsearch Index
-5. แจ้ง Subscriber ที่ติดตามหมวดหรือหน่วยงานนั้น
+Agency อัปโหลด Dataset → เลือกได้:
+- กด "บันทึก Draft"  → Status = draft
+                       ยังไม่แสดงต่อ Visitor
+                       ไม่ส่ง Email แจ้ง Subscriber
+
+- กด "เผยแพร่"      → Status = published
+                       บันทึก published_at = now()
+                       อัปเดต Elasticsearch Index
+                       แจ้ง Subscriber ทาง Email
 ```
 
-**Delete Flow**
+**Upload Flow — Admin**
+```
+Admin อัปโหลด Dataset → Status = published ทันทีเสมอ
+บันทึก published_at = now()
+อัปเดต Elasticsearch Index
+แจ้ง Subscriber ทาง Email
+```
+
+**Edit Flow (Agency/Admin)**
+```
+Agency/Admin แก้ไข Dataset ด้วย PATCH /datasets/{id}
+→ Status = published ทันที (ไม่ต้องรอ Approve)
+→ อัปเดต updated_at = now()
+→ สร้าง DatasetVersion ใหม่ (version_number + 1, changelog = "แก้ไขข้อมูล")
+→ ถ้าเดิมเป็น draft → เปลี่ยนเป็น published ทันที บันทึก published_at
+```
+
+**Delete/Hide Flow (Admin)**
+```
+Admin พบ Dataset ที่ไม่เหมาะสม:
+→ ลบด้วย DELETE /api/v1/datasets/{id} → Soft Delete (is_deleted = true)
+→ บันทึก Audit Log
+ไม่มีขั้นตอน Approve หรือ Reject Dataset
+```
+
+**Delete Flow (Agency)**
 ```
 1. Agency ลบที่ DELETE /api/v1/datasets/{id} → เฉพาะ Dataset ของตัวเอง
 2. Admin ลบที่ DELETE /api/v1/datasets/{id} → ลบ Dataset ของ Agency ใดก็ได้
@@ -1465,7 +1511,9 @@ Authorization: Bearer <token>
 
 **State Diagram**
 ```
-upload → published
+upload → draft → (Agency เลือกเผยแพร่) → published
+upload → published  (เผยแพร่ทันทีเมื่อกด "เผยแพร่")
+draft  → published  (แก้ไขแล้วกด "เผยแพร่" หรือ PATCH โดยตรง)
 ```
 
 ---

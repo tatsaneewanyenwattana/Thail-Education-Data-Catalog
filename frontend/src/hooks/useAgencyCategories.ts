@@ -13,7 +13,7 @@ export function useAgencyCategories(level: 1 | 2, page = 1) {
   const userId = useAuthStore((s) => s.user?.id);
 
   return useQuery<AgencyCategoriesCache, Error, AgencyCategoriesResponse>({
-    queryKey: ["agency", "categories"],
+    queryKey: ["agency", "categories", userId],
     queryFn: () => fetchAgencyCategoriesCache(userId!),
     enabled: Boolean(userId),
     retry: 1,
@@ -26,7 +26,7 @@ export function useAgencyCategoryParents() {
   const userId = useAuthStore((s) => s.user?.id);
 
   return useQuery<AgencyCategoriesCache, Error, AgencyCategoryL1[]>({
-    queryKey: ["agency", "categories"],
+    queryKey: ["agency", "categories", userId],
     queryFn: () => fetchAgencyCategoriesCache(userId!),
     enabled: Boolean(userId),
     retry: 1,

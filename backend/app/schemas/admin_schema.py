@@ -18,6 +18,16 @@ class AdminStatsResponse(BaseModel):
     downloads_today: int
 
 
+class MonthlyDataPoint(BaseModel):
+    month: int
+    count: int
+
+
+class MonthlyStatsResponse(BaseModel):
+    datasets_by_month: list[MonthlyDataPoint]
+    downloads_by_month: list[MonthlyDataPoint]
+
+
 class AdminUserListFilters(BaseModel):
     status: str | None = None
     role: str | None = None
@@ -61,6 +71,16 @@ class UserUpdateRequest(BaseModel):
         default=None,
         pattern="^(pending|active|rejected|suspended)$",
     )
+
+
+class UserRoleChangeRequest(BaseModel):
+    role: str = Field(pattern="^(admin|agency)$")
+
+
+class UserRoleChangeResponse(BaseModel):
+    id: uuid.UUID
+    email: str
+    role: str
 
 
 class AnnouncementCreateRequest(BaseModel):

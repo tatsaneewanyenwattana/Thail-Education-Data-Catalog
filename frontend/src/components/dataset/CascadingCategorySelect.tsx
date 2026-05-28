@@ -27,15 +27,18 @@ export default function CascadingCategorySelect({
   const level1Slug = useWatch({ control, name: "categoryLevel1" });
   const userId = useAuthStore((s) => s.user?.id);
 
+  const userRole = useAuthStore((s) => s.user?.role);
   const { data: categories = [], isLoading, isError } = useCategories();
+
+  const isAdmin = userRole === "admin";
 
   const level1Options = useMemo(() => {
     return categories.filter(
       (c) =>
         c.level === 1 &&
-        (!userId || String(c.created_by) === String(userId))
+        (isAdmin || !userId || String(c.created_by) === String(userId))
     );
-  }, [categories, userId]);
+  }, [categories, userId, isAdmin]);
 
   const level2Options = useMemo(() => {
     if (!level1Slug) {
@@ -49,9 +52,9 @@ export default function CascadingCategorySelect({
       (c) =>
         c.level === 2 &&
         String(c.parent_id) === String(parent.id) &&
-        (!userId || String(c.created_by) === String(userId))
+        (isAdmin || !userId || String(c.created_by) === String(userId))
     );
-  }, [categories, level1Slug, level1Options, userId]);
+  }, [categories, level1Slug, level1Options, userId, isAdmin]);
 
   const selectClass =
     "w-full rounded-radius-md border border-border-input bg-surface-page px-4 py-3 font-sarabun text-label text-text-primary outline-none transition-all focus:border-border-focus focus:ring-2 focus:ring-primary-dark/20 disabled:cursor-not-allowed disabled:opacity-60";

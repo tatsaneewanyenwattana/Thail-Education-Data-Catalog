@@ -244,6 +244,7 @@ export default function CategoryPageContent({
                     agency={isTh ? item.agencyTh : item.agencyEn}
                     status={item.status}
                     downloadCount={item.downloadCount}
+                    createdAt={item.createdAt}
                     updatedAt={item.updatedAt}
                     license={item.license}
                     variant="popular"

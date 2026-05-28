@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class DatasetCreateRequest(BaseModel):
@@ -14,11 +14,24 @@ class DatasetCreateRequest(BaseModel):
     license: str = Field(pattern="^(open|conditional|cc)$")
     category_id: uuid.UUID | None = None
     tags: list[uuid.UUID] = Field(default_factory=list, max_length=10)
+    tag_names: list[str] = Field(default_factory=list, max_length=10)
     metadata: dict[str, Any] | None = None
+    year_start: int | None = Field(default=None, ge=2500, le=2600)
+    year_end: int | None = Field(default=None, ge=2500, le=2600)
     status: str | None = Field(
         default=None,
-        pattern="^(draft|submitted|published)$",
+        pattern="^(draft|published)$",
     )
+
+    @model_validator(mode="after")
+    def validate_year_range(self):
+        if (
+            self.year_start is not None
+            and self.year_end is not None
+            and self.year_end < self.year_start
+        ):
+            raise ValueError("year_end must be greater than or equal to year_start")
+        return self
 
 
 class DatasetUpdateRequest(BaseModel):
@@ -28,10 +41,22 @@ class DatasetUpdateRequest(BaseModel):
     category_id: uuid.UUID | None = None
     tags: list[uuid.UUID] | None = Field(default=None, max_length=10)
     metadata: dict[str, Any] | None = None
+    year_start: int | None = Field(default=None, ge=2500, le=2600)
+    year_end: int | None = Field(default=None, ge=2500, le=2600)
     status: str | None = Field(
         default=None,
-        pattern="^(draft|submitted|published)$",
+        pattern="^(draft|published)$",
     )
+
+    @model_validator(mode="after")
+    def validate_year_range(self):
+        if (
+            self.year_start is not None
+            and self.year_end is not None
+            and self.year_end < self.year_start
+        ):
+            raise ValueError("year_end must be greater than or equal to year_start")
+        return self
 
 
 class DatasetResponse(BaseModel):
@@ -51,6 +76,7 @@ class DatasetResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     user_id: uuid.UUID
+    agency_name: str | None = None
 
     model_config = {"from_attributes": True, "populate_by_name": True}
 
@@ -118,5 +144,3 @@ class TagResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class RejectRequest(BaseModel):
-    comment: str = Field(min_length=10)

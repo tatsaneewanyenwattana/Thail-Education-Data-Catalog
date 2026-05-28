@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -11,11 +12,9 @@ import {
   YAxis,
 } from "recharts";
 import { CHART_COLORS } from "@/constants/chartColors";
-import type { AdminMonthlyCount } from "@/data/mockData";
+import { toChartData, useAdminMonthlyStats, useAdminStatsYears } from "@/hooks/useAdminMonthlyStats";
 
-type AdminDownloadChartProps = {
-  data: AdminMonthlyCount[];
-};
+const CURRENT_YEAR = new Date().getFullYear();
 
 function ChartTooltip({
   active,
@@ -37,14 +36,22 @@ function ChartTooltip({
   );
 }
 
-export default function AdminDownloadChart({ data }: AdminDownloadChartProps) {
+export default function AdminDownloadChart() {
   const t = useTranslations("admin.dashboard");
   const locale = useLocale();
+  const { data: availableYears = [] } = useAdminStatsYears();
+  const defaultYear = availableYears[0] ?? CURRENT_YEAR;
+  const [year, setYear] = useState<number | null>(null);
+  const selectedYear = year ?? defaultYear;
 
-  const chartData = data.map((point) => ({
-    month: locale === "th" ? point.month : point.monthEn,
-    count: point.count,
-  }));
+  const { data, isLoading, isError } = useAdminMonthlyStats(selectedYear);
+
+  const chartData = data
+    ? toChartData(data.downloads_by_month, locale)
+    : Array.from({ length: 12 }, (_, i) => ({
+        month: ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."][i],
+        count: 0,
+      }));
 
   return (
     <section className="rounded-radius-lg border border-border-default/80 bg-surface-card p-6 shadow-level-1">
@@ -52,14 +59,27 @@ export default function AdminDownloadChart({ data }: AdminDownloadChartProps) {
         <h2 className="font-kanit text-heading-3 font-semibold text-text-primary">
           {t("downloadChart")}
         </h2>
-        <div className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-radius-full bg-primary-action" />
-          <span className="font-sarabun text-caption text-text-muted">
-            {t("downloadLegend")}
-          </span>
-        </div>
+        <select
+          value={selectedYear}
+          onChange={(e) => setYear(Number(e.target.value))}
+          className="h-9 rounded-radius-sm border border-border-input bg-surface-container px-3 font-sarabun text-label text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+          aria-label={t("yearLabel")}
+        >
+          {availableYears.map((y) => (
+            <option key={y} value={y}>
+              {t("yearPrefix")} {y}
+            </option>
+          ))}
+        </select>
       </div>
-      <div className="h-64 w-full min-w-0">
+
+      {isError && (
+        <p className="py-8 text-center font-sarabun text-caption text-status-error">
+          โหลดข้อมูลไม่สำเร็จ
+        </p>
+      )}
+
+      <div className={`h-64 w-full min-w-0 transition-opacity ${isLoading ? "opacity-40" : "opacity-100"}`}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid stroke={CHART_COLORS.grid} strokeDasharray="3 3" />

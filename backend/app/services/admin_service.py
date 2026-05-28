@@ -8,6 +8,7 @@ from redis import Redis
 from sqlalchemy.orm import Session
 
 import app.repositories.admin_repository as admin_repo
+import app.repositories.dataset_repository as dataset_repo
 import app.services.email_service as email_service
 from app.core.errors import raise_app_error
 from app.core.pagination import PaginationParams
@@ -21,6 +22,8 @@ from app.schemas.admin_schema import (
     AuditLogResponse,
     UserListResponse,
     UserRejectRequest,
+    UserRoleChangeRequest,
+    UserRoleChangeResponse,
     UserUpdateRequest,
 )
 
@@ -30,6 +33,17 @@ _SESSION_KEY_PREFIX = "session:"
 def get_admin_stats(db: Session) -> AdminStatsResponse:
     data = admin_repo.get_admin_stats(db)
     return AdminStatsResponse(**data)
+
+
+def get_available_years(db: Session) -> list[int]:
+    return admin_repo.get_available_years(db)
+
+
+def get_monthly_stats(db: Session, year: int):
+    from app.schemas.admin_schema import MonthlyStatsResponse
+
+    data = admin_repo.get_monthly_stats(db, year)
+    return MonthlyStatsResponse(**data)
 
 
 def get_all_users(
@@ -113,6 +127,92 @@ def suspend_user(
     redis_client.delete(f"{_SESSION_KEY_PREFIX}{user_id}")
 
     return UserListResponse.model_validate(user)
+
+
+def delete_user(
+    db: Session,
+    redis_client: Redis,
+    user_id: uuid.UUID,
+    current_user: dict,
+) -> None:
+    if str(user_id) == current_user["sub"]:
+        raise_app_error("USER_CANNOT_DELETE_SELF")
+
+    user = admin_repo.get_user_by_id(db, user_id)
+    if user is None:
+        raise_app_error("USER_NOT_FOUND")
+
+    if user.role == "admin":
+        raise_app_error("USER_CANNOT_DELETE_ADMIN")
+
+    try:
+        admin_repo.soft_delete_user(db, user_id)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    redis_client.delete(f"{_SESSION_KEY_PREFIX}{user_id}")
+
+
+def change_user_role(
+    db: Session,
+    redis_client: Redis,
+    user_id: uuid.UUID,
+    request: UserRoleChangeRequest,
+    current_user: dict,
+    ip_address: str,
+) -> UserRoleChangeResponse:
+    if str(user_id) == current_user["sub"]:
+        raise_app_error("CANNOT_CHANGE_OWN_ROLE")
+
+    user = admin_repo.get_user_by_id(db, user_id)
+    if user is None:
+        raise_app_error("USER_NOT_FOUND")
+
+    new_role = request.role
+    if user.role == new_role:
+        return UserRoleChangeResponse(
+            id=user.id,
+            email=user.email,
+            role=user.role,
+        )
+
+    if user.role == "admin" and new_role == "agency":
+        other_admins = admin_repo.count_active_admins(db, exclude_user_id=user_id)
+        if other_admins < 1:
+            raise_app_error("LAST_ADMIN_ERROR")
+
+    old_role = user.role
+
+    try:
+        admin_repo.update_user(db, user_id, role=new_role)
+        dataset_repo.create_audit_log(
+            db,
+            user_id=uuid.UUID(current_user["sub"]),
+            action="USER_ROLE_CHANGED",
+            target_type="user",
+            target_id=user_id,
+            detail={
+                "email": user.email,
+                "old_role": old_role,
+                "new_role": new_role,
+            },
+            ip_address=ip_address,
+        )
+        db.commit()
+        db.refresh(user)
+    except Exception:
+        db.rollback()
+        raise
+
+    redis_client.delete(f"{_SESSION_KEY_PREFIX}{user_id}")
+
+    return UserRoleChangeResponse(
+        id=user.id,
+        email=user.email,
+        role=user.role,
+    )
 
 
 def update_user(

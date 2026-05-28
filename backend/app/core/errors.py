@@ -17,6 +17,10 @@ ERROR_DEFINITIONS: dict[str, tuple[int, str]] = {
     "USER_NOT_FOUND": (404, "ไม่พบ User"),
     "USER_EMAIL_EXISTS": (409, "Email นี้มีในระบบแล้ว"),
     "USER_CANNOT_SUSPEND_SELF": (400, "Admin ไม่สามารถ Suspend ตัวเองได้"),
+    "USER_CANNOT_DELETE_SELF": (400, "ไม่สามารถลบบัญชีตัวเองได้"),
+    "USER_CANNOT_DELETE_ADMIN": (400, "ไม่สามารถลบบัญชี Admin ได้"),
+    "CANNOT_CHANGE_OWN_ROLE": (400, "ไม่สามารถเปลี่ยน Role ของตัวเองได้"),
+    "LAST_ADMIN_ERROR": (400, "ไม่สามารถลด Role Admin คนสุดท้ายได้"),
     "USER_STATUS_INVALID": (400, "สถานะบัญชีไม่ถูกต้อง"),
     # Dataset
     "DATASET_NOT_FOUND": (404, "ไม่พบ Dataset"),
@@ -37,7 +41,7 @@ ERROR_DEFINITIONS: dict[str, tuple[int, str]] = {
     "DOWNLOAD_INVALID_FORMAT": (400, "Format ที่เลือกไม่รองรับ"),
     # Category / Tag
     "CATEGORY_NOT_FOUND": (404, "ไม่พบหมวดหมู่"),
-    "CATEGORY_SLUG_EXISTS": (409, "Slug นี้มีในระบบแล้ว"),
+    "CATEGORY_SLUG_EXISTS": (409, "ชื่อซ้ำในระบบ"),
     "CATEGORY_PARENT_NOT_FOUND": (404, "ไม่พบหมวดหมู่ระดับบนสุด"),
     "CATEGORY_MAX_DEPTH_REACHED": (400, "เกิน 2 ระดับ"),
     "CATEGORY_HAS_DATASETS": (400, "ลบไม่ได้เพราะมี Dataset อยู่"),

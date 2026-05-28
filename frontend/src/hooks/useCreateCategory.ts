@@ -16,16 +16,27 @@ type CategoryMutationResponse = {
 
 async function createCategory(variables: CreateCategoryVariables): Promise<ApiCategory> {
   const body = toCategoryMutationBody(variables);
+  const utf8JsonHeaders = {
+    headers: {
+      "Content-Type": "application/json; charset=UTF-8",
+      Accept: "application/json; charset=UTF-8",
+    },
+  };
 
   if (variables.level === 2 && variables.parentId) {
     const res = await apiClient.post<CategoryMutationResponse>(
       `/categories/${variables.parentId}/subcategories`,
-      body
+      body,
+      utf8JsonHeaders
     );
     return res.data.data;
   }
 
-  const res = await apiClient.post<CategoryMutationResponse>("/categories", body);
+  const res = await apiClient.post<CategoryMutationResponse>(
+    "/categories",
+    body,
+    utf8JsonHeaders
+  );
   return res.data.data;
 }
 

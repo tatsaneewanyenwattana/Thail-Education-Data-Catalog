@@ -12,16 +12,34 @@ type RecentDatasetTableProps = {
 function StatusBadge({
   status,
   publishedLabel,
+  submittedLabel,
   draftLabel,
+  rejectedLabel,
 }: {
   status: AgencyDatasetRow["status"];
   publishedLabel: string;
+  submittedLabel: string;
   draftLabel: string;
+  rejectedLabel: string;
 }) {
   if (status === "published") {
     return (
       <span className="inline-flex rounded-radius-full bg-status-published-bg px-3 py-1 font-sarabun text-caption font-semibold text-status-published">
         {publishedLabel}
+      </span>
+    );
+  }
+  if (status === "submitted") {
+    return (
+      <span className="inline-flex rounded-radius-full bg-[#ffefc9] px-3 py-1 font-sarabun text-caption font-semibold text-[#795900]">
+        {submittedLabel}
+      </span>
+    );
+  }
+  if (status === "rejected") {
+    return (
+      <span className="inline-flex rounded-radius-full bg-[#ffdad6] px-3 py-1 font-sarabun text-caption font-semibold text-[#93000a]">
+        {rejectedLabel}
       </span>
     );
   }
@@ -110,7 +128,9 @@ export default function RecentDatasetTable({ limit = 5 }: RecentDatasetTableProp
                       <StatusBadge
                         status={row.status}
                         publishedLabel={tStatus("published")}
+                        submittedLabel={tStatus("submitted")}
                         draftLabel={tStatus("draft")}
+                        rejectedLabel={tStatus("rejected")}
                       />
                     </td>
                     <td className="px-6 py-4 text-center">

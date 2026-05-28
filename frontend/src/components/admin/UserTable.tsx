@@ -5,7 +5,10 @@ import { useState } from "react";
 import type { AdminUser, AdminUsersFilters } from "@/data/mockData";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { useUnsuspendUser } from "@/hooks/useSuspendUser";
+import { useAuthStore } from "@/stores/useAuthStore";
 import ApproveUserModal from "./ApproveUserModal";
+import ChangeRoleModal from "./ChangeRoleModal";
+import DeleteUserModal from "./DeleteUserModal";
 import RejectUserModal from "./RejectUserModal";
 import SuspendUserModal from "./SuspendUserModal";
 
@@ -97,6 +100,7 @@ export default function UserTable({
   const t = useTranslations("admin.users");
   const tAdmin = useTranslations("admin");
   const locale = useLocale();
+  const currentUser = useAuthStore((s) => s.user);
   const { data, isLoading } = useAdminUsers(filters);
   const unsuspendMutation = useUnsuspendUser();
 
@@ -104,6 +108,8 @@ export default function UserTable({
   const [rejectTarget, setRejectTarget] = useState<AdminUser | null>(null);
   const [suspendTarget, setSuspendTarget] = useState<AdminUser | null>(null);
   const [reasonTarget, setReasonTarget] = useState<AdminUser | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
+  const [changeRoleTarget, setChangeRoleTarget] = useState<AdminUser | null>(null);
 
   const rows = data?.data ?? [];
   const total = data?.total ?? 0;
@@ -190,16 +196,21 @@ export default function UserTable({
                           <td className="px-6 py-4 text-right">
                             <UserRowActions
                               user={user}
+                              currentUserId={currentUser?.id ?? null}
                               onApprove={() => setApproveTarget(user)}
                               onReject={() => setRejectTarget(user)}
                               onSuspend={() => setSuspendTarget(user)}
                               onUnsuspend={() => handleUnsuspend(user.id)}
                               onViewReason={() => setReasonTarget(user)}
+                              onDelete={() => setDeleteTarget(user)}
+                              onChangeRole={() => setChangeRoleTarget(user)}
                               approveLabel={t("approve")}
                               rejectLabel={t("reject")}
                               suspendLabel={t("suspend")}
                               unsuspendLabel={t("unsuspend")}
                               viewReasonLabel={t("viewReason")}
+                              deleteLabel={t("deleteUser")}
+                              changeRoleLabel={t("changeRole")}
                             />
                           </td>
                         </tr>
@@ -253,6 +264,20 @@ export default function UserTable({
         onSuccess={() => onSuccess(tAdmin("userSuspended"))}
         onError={onError}
       />
+      <DeleteUserModal
+        user={deleteTarget}
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onSuccess={() => onSuccess(t("deleteSuccess"))}
+        onError={onError}
+      />
+      <ChangeRoleModal
+        user={changeRoleTarget}
+        open={Boolean(changeRoleTarget)}
+        onClose={() => setChangeRoleTarget(null)}
+        onSuccess={() => onSuccess(t("changeRoleSuccess"))}
+        onError={onError}
+      />
 
       {reasonTarget ? (
         <div
@@ -289,32 +314,51 @@ export default function UserTable({
 
 function UserRowActions({
   user,
+  currentUserId,
   onApprove,
   onReject,
   onSuspend,
   onUnsuspend,
   onViewReason,
+  onDelete,
+  onChangeRole,
   approveLabel,
   rejectLabel,
   suspendLabel,
   unsuspendLabel,
   viewReasonLabel,
+  deleteLabel,
+  changeRoleLabel,
 }: {
   user: AdminUser;
+  currentUserId: string | null;
   onApprove: () => void;
   onReject: () => void;
   onSuspend: () => void;
   onUnsuspend: () => void;
   onViewReason: () => void;
+  onDelete: () => void;
+  onChangeRole: () => void;
   approveLabel: string;
   rejectLabel: string;
   suspendLabel: string;
   unsuspendLabel: string;
   viewReasonLabel: string;
+  deleteLabel: string;
+  changeRoleLabel: string;
 }) {
+  const canDelete =
+    user.role !== "admin" && Boolean(currentUserId) && user.id !== currentUserId;
+  const canChangeRole = Boolean(currentUserId) && user.id !== currentUserId;
+
   if (user.status === "pending") {
     return (
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
+        <ChangeRoleButton
+          disabled={!canChangeRole}
+          onClick={onChangeRole}
+          label={changeRoleLabel}
+        />
         <button
           type="button"
           onClick={onApprove}
@@ -329,42 +373,127 @@ function UserRowActions({
         >
           {rejectLabel}
         </button>
+        <DeleteIconButton
+          disabled={!canDelete}
+          onClick={onDelete}
+          label={deleteLabel}
+        />
       </div>
     );
   }
 
   if (user.status === "active") {
     return (
-      <button
-        type="button"
-        onClick={onSuspend}
-        disabled={user.role === "admin"}
-        className="rounded-radius-sm bg-surface-container px-3 py-1.5 font-sarabun text-caption font-bold text-text-secondary transition-colors hover:bg-surface-page disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {suspendLabel}
-      </button>
+      <div className="flex flex-wrap justify-end gap-2">
+        <ChangeRoleButton
+          disabled={!canChangeRole}
+          onClick={onChangeRole}
+          label={changeRoleLabel}
+        />
+        <button
+          type="button"
+          onClick={onSuspend}
+          disabled={user.role === "admin"}
+          className="rounded-radius-sm bg-surface-container px-3 py-1.5 font-sarabun text-caption font-bold text-text-secondary transition-colors hover:bg-surface-page disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {suspendLabel}
+        </button>
+        <DeleteIconButton
+          disabled={!canDelete}
+          onClick={onDelete}
+          label={deleteLabel}
+        />
+      </div>
     );
   }
 
   if (user.status === "suspended") {
     return (
-      <button
-        type="button"
-        onClick={onUnsuspend}
-        className="rounded-radius-sm bg-status-draft-bg px-3 py-1.5 font-sarabun text-caption font-bold text-status-draft transition-colors hover:opacity-90"
-      >
-        {unsuspendLabel}
-      </button>
+      <div className="flex flex-wrap justify-end gap-2">
+        <ChangeRoleButton
+          disabled={!canChangeRole}
+          onClick={onChangeRole}
+          label={changeRoleLabel}
+        />
+        <button
+          type="button"
+          onClick={onUnsuspend}
+          className="rounded-radius-sm bg-status-draft-bg px-3 py-1.5 font-sarabun text-caption font-bold text-status-draft transition-colors hover:opacity-90"
+        >
+          {unsuspendLabel}
+        </button>
+        <DeleteIconButton
+          disabled={!canDelete}
+          onClick={onDelete}
+          label={deleteLabel}
+        />
+      </div>
     );
   }
 
   return (
+    <div className="flex flex-wrap justify-end gap-2">
+      <ChangeRoleButton
+        disabled={!canChangeRole}
+        onClick={onChangeRole}
+        label={changeRoleLabel}
+      />
+      <button
+        type="button"
+        onClick={onViewReason}
+        className="font-sarabun text-caption font-medium text-primary-dark hover:underline"
+      >
+        {viewReasonLabel}
+      </button>
+      <DeleteIconButton
+        disabled={!canDelete}
+        onClick={onDelete}
+        label={deleteLabel}
+      />
+    </div>
+  );
+}
+
+function ChangeRoleButton({
+  disabled,
+  onClick,
+  label,
+}: {
+  disabled: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
     <button
       type="button"
-      onClick={onViewReason}
-      className="font-sarabun text-caption font-medium text-primary-dark hover:underline"
+      onClick={onClick}
+      disabled={disabled}
+      className="rounded-radius-sm border border-primary-action px-3 py-1.5 font-sarabun text-caption font-bold text-primary-action transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40"
     >
-      {viewReasonLabel}
+      {label}
+    </button>
+  );
+}
+
+function DeleteIconButton({
+  disabled,
+  onClick,
+  label,
+}: {
+  disabled: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className="inline-flex items-center justify-center rounded-radius-sm border border-status-error bg-status-error px-2 py-1.5 text-caption font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      <span aria-hidden>🗑️</span>
     </button>
   );
 }

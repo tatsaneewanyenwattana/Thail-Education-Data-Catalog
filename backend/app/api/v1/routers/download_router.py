@@ -50,9 +50,24 @@ def _get_optional_user_id(request: Request) -> uuid.UUID | None:
     return None
 
 
+def _get_optional_user_payload(request: Request) -> dict | None:
+    auth = request.headers.get("Authorization")
+    if not auth or not auth.lower().startswith("bearer "):
+        return None
+    token = auth.split(" ", 1)[1].strip()
+    try:
+        payload = decode_access_token(token)
+        if payload.get("sub"):
+            return payload
+    except Exception:
+        return None
+    return None
+
+
 @router.get("/datasets/{id}/preview")
 def preview_dataset(
     id: uuid.UUID,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """
@@ -66,6 +81,7 @@ def preview_dataset(
         minio_client=_get_minio(),
         redis_client=_get_redis(),
         dataset_id=id,
+        current_user=_get_optional_user_payload(request),
     )
     return success_response(result.model_dump())
 
@@ -117,6 +133,7 @@ def download_dataset(
 @router.get("/datasets/{id}/citation")
 def citation_dataset(
     id: uuid.UUID,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """
@@ -125,7 +142,11 @@ def citation_dataset(
     - **Auth**: ไม่ต้อง Login
     - **Errors**: DATASET_NOT_FOUND
     """
-    result = download_service.get_citation(db=db, dataset_id=id)
+    result = download_service.get_citation(
+        db=db,
+        dataset_id=id,
+        current_user=_get_optional_user_payload(request),
+    )
     return success_response(result.model_dump())
 
 

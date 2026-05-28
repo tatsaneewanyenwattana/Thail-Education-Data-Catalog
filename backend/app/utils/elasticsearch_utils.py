@@ -175,16 +175,32 @@ def search_datasets(
             must_clauses.append(
                 {"term": {"metadata.province": filters["province"]}}
             )
+        if filters.get("tag"):
+            must_clauses.append(
+                {
+                    "wildcard": {
+                        "tags": {
+                            "value": f"*{str(filters['tag']).lower()}*",
+                            "case_insensitive": True,
+                        }
+                    }
+                }
+            )
 
     should_clauses: list[dict] = [
         {
             "multi_match": {
                 "query": keyword,
-                "fields": ["title", "description", "agency_name"],
+                "fields": ["title", "description", "agency_name", "tags"],
                 "operator": "or",
                 "analyzer": "thai",
             }
-        }
+        },
+        {
+            "wildcard": {
+                "tags": {"value": f"*{keyword.lower()}*", "case_insensitive": True}
+            }
+        },
     ]
 
     sort_field = _resolve_sort_field(es_client, pagination.sort)

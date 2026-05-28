@@ -1,14 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo } from "react";
-import {
-  MOCK_FILTER_CATEGORIES,
-  MOCK_SEARCH_RESULTS,
-  MOCK_SEARCH_TOTAL,
-  type SearchResultMock,
-} from "@/data/mockData";
+import { useCategories } from "@/hooks/useCategories";
+import apiClient from "@/services/api";
 import Pagination from "./Pagination";
 import SortDropdown, { type SortOption } from "./SortDropdown";
 import { parseListParam } from "./useSearchParamsUpdate";
@@ -22,8 +19,20 @@ type SearchResultProps = {
   selectedAgencies: string[];
   selectedYears: string[];
   selectedFormats: string[];
+  selectedTag: string;
   sort: SortOption;
   page: number;
+};
+
+type ApiSearchItem = {
+  id: string;
+  title: string;
+  description: string | null;
+  license: "open" | "conditional" | "cc";
+  category_id: string | null;
+  download_count: number;
+  published_at: string | null;
+  agency_name: string | null;
 };
 
 function formatDownloadCount(count: number, locale: string): string {
@@ -59,87 +68,38 @@ function formatDate(iso: string, locale: string): string {
   });
 }
 
-function licenseBadge(
-  license: SearchResultMock["license"],
-  locale: string
-): string {
+function licenseBadge(license: ApiSearchItem["license"], locale: string): string {
   if (license === "open") return locale === "th" ? "เปิดข้อมูล" : "Open Data";
   if (license === "cc") return "CC-BY-4.0";
   return locale === "th" ? "มีเงื่อนไข" : "Restricted";
 }
 
-function matchesCategory(item: SearchResultMock, categoryId: string | null): boolean {
-  if (!categoryId) return true;
-  if (item.categoryId === categoryId) return true;
-  const parent = MOCK_FILTER_CATEGORIES.find((c) => c.id === categoryId);
-  if (parent?.children?.some((ch) => ch.id === item.categoryId)) return true;
-  return item.categoryId.startsWith(categoryId);
-}
-
-function filterResults(
-  items: SearchResultMock[],
-  props: Omit<SearchResultProps, "sort" | "page">
-): SearchResultMock[] {
-  const q = props.keyword.trim().toLowerCase();
-  const fq = props.filterQuery.trim().toLowerCase();
-
-  return items.filter((item) => {
-    const title = `${item.titleTh} ${item.titleEn}`.toLowerCase();
-    const desc = `${item.descriptionTh} ${item.descriptionEn}`.toLowerCase();
-
-    if (q && !title.includes(q) && !desc.includes(q)) return false;
-    if (fq && !title.includes(fq) && !desc.includes(fq)) return false;
-    if (!matchesCategory(item, props.selectedCategory)) return false;
-    if (
-      props.selectedAgencies.length > 0 &&
-      !props.selectedAgencies.includes(item.agencyId)
-    ) {
-      return false;
-    }
-    if (
-      props.selectedYears.length > 0 &&
-      !props.selectedYears.includes(String(item.year))
-    ) {
-      return false;
-    }
-    if (
-      props.selectedFormats.length > 0 &&
-      !props.selectedFormats.some((f) => item.fileFormats.includes(f as typeof item.fileFormats[number]))
-    ) {
-      return false;
-    }
-    return true;
-  });
-}
-
-function sortResults(items: SearchResultMock[], sort: SortOption): SearchResultMock[] {
-  const copy = [...items];
+function mapSortToApi(sort: SortOption): string {
   if (sort === "popular") {
-    copy.sort((a, b) => b.downloadCount - a.downloadCount);
-  } else if (sort === "name") {
-    copy.sort((a, b) => a.titleEn.localeCompare(b.titleEn));
-  } else {
-    copy.sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    );
+    return "download_count";
   }
-  return copy;
+  return "published_at";
 }
 
-function SearchResultCard({ item }: { item: SearchResultMock }) {
+function SearchResultCard({
+  item,
+  categoryName,
+}: {
+  item: ApiSearchItem;
+  categoryName: string;
+}) {
   const t = useTranslations("search");
   const locale = useLocale();
-  const title = locale === "th" ? item.titleTh : item.titleEn;
-  const description = locale === "th" ? item.descriptionTh : item.descriptionEn;
-  const category = locale === "th" ? item.categoryTh : item.categoryEn;
-  const agency = locale === "th" ? item.agencyTh : item.agencyEn;
+  const title = item.title;
+  const description = item.description ?? "";
+  const agency = item.agency_name ?? "-";
 
   return (
     <article className="group flex flex-col justify-between gap-4 rounded-radius-lg border border-border-default/80 bg-surface-card p-5 shadow-level-1 transition-all hover:border-primary/50 hover:shadow-level-2 sm:flex-row sm:items-start">
       <div className="flex max-w-full flex-col gap-3 sm:max-w-[70%]">
         <div className="flex flex-wrap gap-2">
           <span className="rounded-radius-sm bg-primary-light px-2 py-0.5 font-sarabun text-caption font-bold uppercase tracking-wider text-primary-dark">
-            {category}
+            {categoryName}
           </span>
           <span className="rounded-radius-sm bg-surface-container px-2 py-0.5 font-sarabun text-caption font-bold uppercase tracking-wider text-text-secondary">
             {licenseBadge(item.license, locale)}
@@ -175,7 +135,7 @@ function SearchResultCard({ item }: { item: SearchResultMock }) {
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
-            {formatDate(item.updatedAt, locale)}
+            {formatDate(item.published_at ?? new Date().toISOString(), locale)}
           </span>
         </div>
       </div>
@@ -187,7 +147,7 @@ function SearchResultCard({ item }: { item: SearchResultMock }) {
         <div className="text-left sm:text-right">
           <p className="font-sarabun text-caption text-text-muted">{t("downloads")}</p>
           <p className="font-sarabun text-label font-bold text-text-primary">
-            {formatDownloadCount(item.downloadCount, locale)}
+            {formatDownloadCount(item.download_count, locale)}
           </p>
         </div>
         <Link
@@ -204,25 +164,60 @@ function SearchResultCard({ item }: { item: SearchResultMock }) {
 export default function SearchResult(props: SearchResultProps) {
   const t = useTranslations("search");
   const locale = useLocale();
+  const { data: categories = [] } = useCategories();
 
-  const { totalCount, pageItems, totalPages } = useMemo(() => {
-    const filteredItems = filterResults(MOCK_SEARCH_RESULTS, props);
-    const sorted = sortResults(filteredItems, props.sort);
-    const hasActiveFilters =
-      props.keyword ||
-      props.filterQuery ||
-      props.selectedCategory ||
-      props.selectedAgencies.length ||
-      props.selectedYears.length ||
-      props.selectedFormats.length;
-    const totalCount = hasActiveFilters ? filteredItems.length : MOCK_SEARCH_TOTAL;
-    const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-    const currentPage = Math.min(Math.max(1, props.page), totalPages);
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const pageItems = sorted.slice(start, start + PAGE_SIZE);
+  const categoryNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    categories.forEach((cat) => {
+      map.set(
+        String(cat.id),
+        locale === "th" ? cat.name_th : cat.name_en
+      );
+    });
+    return map;
+  }, [categories, locale]);
 
-    return { totalCount, pageItems, totalPages };
-  }, [props]);
+  const { data, isLoading } = useQuery({
+    queryKey: [
+      "search",
+      props.keyword,
+      props.filterQuery,
+      props.selectedCategory,
+      props.selectedTag,
+      props.page,
+      props.sort,
+    ],
+    queryFn: async () => {
+      const keyword = (props.keyword || props.filterQuery || "ข้อมูล").trim();
+      const filters: Record<string, string> = {};
+      if (props.selectedCategory) {
+        filters.category_id = props.selectedCategory;
+      }
+      if (props.selectedTag) {
+        filters.tag = props.selectedTag;
+      }
+
+      const response = await apiClient.get<{
+        data: ApiSearchItem[];
+        pagination: { total_items: number; total_pages: number };
+      }>("/search", {
+        params: {
+          keyword,
+          filters: JSON.stringify(filters),
+          page: props.page,
+          page_size: PAGE_SIZE,
+          sort: mapSortToApi(props.sort),
+          order: "desc",
+        },
+      });
+      return response.data;
+    },
+    retry: 1,
+  });
+
+  const totalCount = data?.pagination?.total_items ?? 0;
+  const totalPages = Math.max(1, data?.pagination?.total_pages ?? 1);
+  const pageItems = data?.data ?? [];
 
   const displayKeyword = props.keyword || (locale === "th" ? "ทั้งหมด" : "all");
 
@@ -236,14 +231,22 @@ export default function SearchResult(props: SearchResultProps) {
         <SortDropdown value={props.sort} />
       </div>
 
-      {pageItems.length === 0 ? (
+      {isLoading ? (
+        <div className="rounded-radius-lg border border-border-default bg-surface-card p-12 text-center">
+          <p className="font-sarabun text-body-md text-text-secondary">{t("loading")}</p>
+        </div>
+      ) : pageItems.length === 0 ? (
         <div className="rounded-radius-lg border border-border-default bg-surface-card p-12 text-center">
           <p className="font-sarabun text-body-md text-text-secondary">{t("noResults")}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
           {pageItems.map((item) => (
-            <SearchResultCard key={item.id} item={item} />
+            <SearchResultCard
+              key={item.id}
+              item={item}
+              categoryName={categoryNameMap.get(String(item.category_id)) ?? "-"}
+            />
           ))}
         </div>
       )}
@@ -266,6 +269,7 @@ export function parseSearchPageParams(searchParams: URLSearchParams) {
     selectedAgencies: parseListParam(searchParams.get("agency")),
     selectedYears: parseListParam(searchParams.get("year")),
     selectedFormats: parseListParam(searchParams.get("format")),
+    selectedTag: searchParams.get("tag") ?? "",
     sort,
     page,
   };

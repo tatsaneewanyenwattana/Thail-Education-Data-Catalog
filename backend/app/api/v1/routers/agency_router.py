@@ -49,7 +49,7 @@ def list_agency_datasets(
     - **Auth**: ✅ Agency/Admin
     - **Query**: page, page_size, sort, order, status (optional)
     """
-    allowed = {None, "draft", "submitted", "published", "rejected"}
+    allowed = {None, "draft", "published"}
     if status is not None and status not in allowed:
         from app.core.errors import raise_app_error
 
@@ -63,6 +63,31 @@ def list_agency_datasets(
     )
     return list_response(
         data=[i.model_dump(mode="json", by_alias=True) for i in items],
+        page=pagination.page,
+        page_size=pagination.page_size,
+        total_items=total,
+    )
+
+
+@router.get("/activity-logs", status_code=status.HTTP_200_OK)
+def list_agency_activity_logs(
+    pagination: PaginationParams = Depends(get_pagination_params),
+    payload: dict = Depends(require_roles("agency", "admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    Activity Log ของผู้ใช้ที่ login
+
+    - **Auth**: ✅ Agency/Admin
+    - **Response**: รายการ action ของ current_user เท่านั้น
+    """
+    items, total = agency_service.list_agency_activity_logs(
+        db=db,
+        user_id=uuid.UUID(payload["sub"]),
+        pagination=pagination,
+    )
+    return list_response(
+        data=[i.model_dump(mode="json") for i in items],
         page=pagination.page,
         page_size=pagination.page_size,
         total_items=total,

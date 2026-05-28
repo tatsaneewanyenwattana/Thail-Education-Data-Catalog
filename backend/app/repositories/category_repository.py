@@ -110,13 +110,14 @@ def is_slug_taken(
     db: Session,
     slug: str,
     *,
+    parent_id: uuid.UUID | None,
     exclude_id: uuid.UUID | None = None,
 ) -> bool:
-    """เช็ค slug ซ้ำรวมแถวที่ soft-delete แล้ว (unique constraint บน DB ครอบทุกแถว)"""
-    query = (
-        db.query(Category.id)
-        .filter(Category.slug == slug)
-        .execution_options(include_deleted=True)
+    """เช็ค slug ซ้ำเฉพาะใน parent เดียวกัน (ไม่นับ soft-deleted)"""
+    query = db.query(Category.id).filter(
+        Category.slug == slug,
+        Category.parent_id == parent_id,
+        Category.is_deleted.is_(False),
     )
     if exclude_id is not None:
         query = query.filter(Category.id != exclude_id)

@@ -31,6 +31,7 @@ from app.schemas.admin_schema import (
     AuditLogListFilters,
     PageContentUpdateRequest,
     UserRejectRequest,
+    UserRoleChangeRequest,
     UserUpdateRequest,
 )
 
@@ -70,6 +71,37 @@ def admin_stats(
     - Auth ✅ Admin
     """
     result = admin_service.get_admin_stats(db)
+    return success_response(result.model_dump(mode="json"))
+
+
+@router.get("/stats/years", status_code=status.HTTP_200_OK)
+def admin_available_years(
+    payload: dict = Depends(require_roles("admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    คืนรายการปีที่มี published dataset หรือ download log
+    - Auth ✅ Admin
+    """
+    years = admin_service.get_available_years(db)
+    return success_response(data=years)
+
+
+@router.get("/stats/monthly", status_code=status.HTTP_200_OK)
+def admin_monthly_stats(
+    year: int = Query(default=None),
+    payload: dict = Depends(require_roles("admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    สถิติ Dataset และ Download รายเดือน 12 เดือน
+    - Query: year (default = ปีปัจจุบัน)
+    - Auth ✅ Admin
+    """
+    from datetime import datetime
+
+    resolved_year = year if year else datetime.now().year
+    result = admin_service.get_monthly_stats(db, resolved_year)
     return success_response(result.model_dump(mode="json"))
 
 
@@ -115,6 +147,36 @@ def admin_update_user(
     """
     result = admin_service.update_user(db, user_id=id, request=request_body)
     return success_response(result.model_dump(mode="json"))
+
+
+@router.patch("/users/{id}/role", status_code=status.HTTP_200_OK)
+def admin_change_user_role(
+    id: uuid.UUID,
+    request: Request,
+    request_body: UserRoleChangeRequest,
+    payload: dict = Depends(require_roles("admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    เปลี่ยน Role ผู้ใช้ (admin ↔ agency)
+    - Auth ✅ Admin
+    - ห้ามเปลี่ยน Role ตัวเอง
+    - ห้ามลด Admin คนสุดท้าย
+    - บังคับ Logout ผู้ใช้ที่ถูกเปลี่ยน Role
+    - บันทึก Audit Log
+  """
+    result = admin_service.change_user_role(
+        db,
+        _get_redis(),
+        user_id=id,
+        request=request_body,
+        current_user=payload,
+        ip_address=get_client_ip(request),
+    )
+    return success_response(
+        result.model_dump(mode="json"),
+        message="เปลี่ยน Role สำเร็จ",
+    )
 
 
 @router.post("/users/{id}/approve", status_code=status.HTTP_200_OK)
@@ -173,8 +235,23 @@ def admin_suspend_user(
     return success_response(result.model_dump(mode="json"))
 
 
-@router.post("/datasets/{id}/approve", status_code=status.HTTP_200_OK)
-def admin_approve_dataset(
+@router.delete("/users/{id}", status_code=status.HTTP_200_OK)
+def admin_delete_user(
+    id: uuid.UUID,
+    payload: dict = Depends(require_roles("admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    ลบผู้ใช้ (Soft delete) ตาม #15
+    - Auth ✅ Admin
+    - ข้อจำกัด: Admin ลบตัวเองไม่ได้ และลบ Admin ด้วยกันไม่ได้
+    """
+    admin_service.delete_user(db, _get_redis(), user_id=id, current_user=payload)
+    return delete_response("ok")
+
+
+@router.post("/datasets/{id}/hide", status_code=status.HTTP_200_OK)
+def admin_hide_dataset(
     id: uuid.UUID,
     request: Request,
     background_tasks: BackgroundTasks,
@@ -182,10 +259,10 @@ def admin_approve_dataset(
     db: Session = Depends(get_db),
 ):
     """
-    อนุมัติ Dataset (submitted → published) ตาม #20
+    Admin ซ่อน Dataset ที่ไม่เหมาะสม (published → draft) ตาม #5 M6
     - Auth ✅ Admin
     """
-    result = dataset_service.approve_dataset(
+    result = dataset_service.hide_dataset(
         db=db,
         dataset_id=id,
         current_user=payload,

@@ -19,6 +19,7 @@ type SearchFilterProps = {
   selectedAgencies: string[];
   selectedYears: string[];
   selectedFormats: string[];
+  selectedTag: string;
   filterQuery: string;
   className?: string;
 };
@@ -28,6 +29,7 @@ export default function SearchFilter({
   selectedAgencies,
   selectedYears,
   selectedFormats,
+  selectedTag,
   filterQuery,
   className = "",
 }: SearchFilterProps) {
@@ -62,6 +64,7 @@ export default function SearchFilter({
       agency: null,
       year: null,
       format: null,
+      tag: null,
       license: null,
       fq: null,
       page: null,
@@ -103,6 +106,21 @@ export default function SearchFilter({
       </div>
 
       <FilterTree selectedCategory={selectedCategory} />
+
+      <hr className="border-border-default/60" />
+
+      <div className="flex flex-col gap-3">
+        <span className="font-sarabun text-label font-medium text-text-secondary">
+          {t("tag")}
+        </span>
+        <input
+          type="text"
+          defaultValue={selectedTag}
+          onBlur={(e) => updateParams({ tag: e.target.value.trim() || null })}
+          placeholder={t("tagPlaceholder")}
+          className="w-full rounded-radius-md border border-border-input px-3 py-2 font-sarabun text-label text-text-primary outline-none focus:border-border-focus focus:ring-1 focus:ring-primary-dark/30"
+        />
+      </div>
 
       <hr className="border-border-default/60" />
 
@@ -224,6 +242,7 @@ export function useSearchFilterParams(searchParams: URLSearchParams) {
     selectedAgencies: parseListParam(searchParams.get("agency")),
     selectedYears: parseListParam(searchParams.get("year")),
     selectedFormats: parseListParam(searchParams.get("format")),
+    selectedTag: searchParams.get("tag") ?? "",
     filterQuery: searchParams.get("fq") ?? "",
   };
 }

@@ -62,6 +62,12 @@ function NavIcon({ name }: { name: string }) {
           <path d="M3 13h2v8H3v-8Zm4-6h2v14H7V7Zm4 4h2v10h-2V11Zm4-8h2v18h-2V3Zm4 12h2v6h-2v-6Z" />
         </svg>
       );
+    case "activity":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M13 3a9 9 0 1 0 8.95 10h-2.02A7 7 0 1 1 17 6.1V9h2V3h-6v2h3.27A8.96 8.96 0 0 0 13 3Zm-1 5h2v5l4.25 2.52-1 1.73L12 14V8Z" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -234,6 +240,12 @@ export default function AgencySidebar() {
       icon: "custom",
       match: (p) => p.startsWith(`${base}/dashboard/custom`),
       dividerBefore: true,
+    },
+    {
+      href: `${base}/activity`,
+      labelKey: "activityLog",
+      icon: "activity",
+      match: (p) => p.startsWith(`${base}/activity`),
     },
   ];
 

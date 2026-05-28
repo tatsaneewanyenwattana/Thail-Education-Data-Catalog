@@ -10,11 +10,13 @@ import pandas as pd
 from fastapi import BackgroundTasks, UploadFile
 
 import app.repositories.dataset_repository as dataset_repo
+import app.repositories.tag_repository as tag_repo
 import app.services.email_service as email_service
 from app.core.config import settings
 from app.core.errors import raise_app_error
 from app.core.logging import get_logger, log_request
 from app.core.pagination import PaginationParams
+from app.models.user_model import User
 from app.schemas.admin_schema import AdminDatasetListItem
 from app.schemas.dataset_schema import (
     BulkUploadResponse,
@@ -101,7 +103,7 @@ def _delete_from_minio(minio_client, object_name: str) -> None:
         )
 
 
-_SAFE_METADATA_KEYS = frozenset({"year", "province", "agency"})
+_SAFE_METADATA_KEYS = frozenset({"year", "year_start", "year_end", "province", "agency"})
 
 
 def _metadata_for_search(metadata: dict | None) -> dict | None:
@@ -151,6 +153,8 @@ def _build_dataset_response(
     tag_ids = dataset_repo.get_dataset_tag_ids(db, dataset_id)
     data = DatasetResponse.model_validate(dataset)
     data.tags = tag_ids
+    owner = db.query(User).filter(User.id == dataset.user_id).first()
+    data.agency_name = owner.agency_name if owner else None
     return data
 
 
@@ -213,16 +217,35 @@ def upload(
             changelog="Initial upload",
             created_by=uuid.UUID(current_user["sub"]),
         )
-        if request.tags:
-            dataset_repo.create_dataset_tags(db, dataset.id, request.tags)
+        tag_ids = list(request.tags)
+        if request.tag_names:
+            for raw_name in request.tag_names:
+                tag_name = str(raw_name).strip()
+                if not tag_name:
+                    continue
+                existing_tag = tag_repo.get_tag_by_name(db, tag_name)
+                if existing_tag is None:
+                    existing_tag = tag_repo.create_tag(db, tag_name)
+                if existing_tag.id not in tag_ids:
+                    tag_ids.append(existing_tag.id)
+
+        if tag_ids:
+            dataset_repo.create_dataset_tags(db, dataset.id, tag_ids)
 
         role = current_user.get("role")
-        if role == "agency":
-            dataset.status = "draft"
-            dataset.published_at = None
-        else:
+        requested_status = (request.status or "draft").lower()
+        if role == "admin":
+            # Admin เผยแพร่ทันทีเสมอ
             dataset.status = "published"
             dataset.published_at = datetime.now(timezone.utc)
+        elif requested_status == "published":
+            # Agency เลือกเผยแพร่ทันที
+            dataset.status = "published"
+            dataset.published_at = datetime.now(timezone.utc)
+        else:
+            # Agency บันทึก Draft
+            dataset.status = "draft"
+            dataset.published_at = None
 
         dataset_repo.create_audit_log(
             db,
@@ -256,80 +279,29 @@ def upload(
     return _build_dataset_response(db, dataset.id)
 
 
-def submit_dataset(
-    db: Session,
-    dataset_id: uuid.UUID,
-    current_user: dict,
-    ip_address: str,
-    background_tasks: BackgroundTasks | None = None,
-) -> DatasetResponse:
-    dataset = dataset_repo.get_dataset_by_id(db, dataset_id)
-    if dataset is None:
-        raise_app_error("DATASET_NOT_FOUND")
-
-    if current_user.get("role") != "admin":
-        if str(dataset.user_id) != current_user["sub"]:
-            raise_app_error("DATASET_PERMISSION_DENIED")
-
-    if current_user.get("role") == "agency" and dataset.status != "draft":
-        raise_app_error("DATASET_INVALID_STATUS")
-
-    dataset_repo.update_dataset(
-        db,
-        dataset_id,
-        status="submitted",
-        published_at=None,
-    )
-
-    dataset_repo.create_audit_log(
-        db,
-        user_id=uuid.UUID(current_user["sub"]),
-        action="dataset.submit",
-        target_type="dataset",
-        target_id=dataset_id,
-        detail=None,
-        ip_address=ip_address,
-    )
-    db.commit()
-
-    if background_tasks is not None:
-        refreshed = dataset_repo.get_dataset_by_id(db, dataset_id)
-        if refreshed is not None:
-            email_service.notify_admin_dataset_submitted(
-                background_tasks, db, refreshed
-            )
-
-    return _build_dataset_response(db, dataset_id)
-
-
-def approve_dataset(
+def publish_dataset_directly(
     db: Session,
     dataset_id: uuid.UUID,
     current_user: dict,
     ip_address: str,
     background_tasks: BackgroundTasks,
-    es_client,
+    es_client=None,
 ) -> DatasetResponse:
-    """Admin อนุมัติ Dataset ที่ status=submitted → published."""
+    """Agency เผยแพร่ Dataset ที่เป็น draft ทันที (ไม่ต้องรอ Admin)."""
     dataset = dataset_repo.get_dataset_by_id(db, dataset_id)
     if dataset is None:
         raise_app_error("DATASET_NOT_FOUND")
-    if dataset.status == "published":
-        return _build_dataset_response(db, dataset_id)
-    if dataset.status != "submitted":
-        raise_app_error("DATASET_INVALID_STATUS")
+
+    role = current_user.get("role")
+    if role != "admin" and str(dataset.user_id) != current_user["sub"]:
+        raise_app_error("DATASET_PERMISSION_DENIED")
 
     now = datetime.now(timezone.utc)
-    dataset_repo.update_dataset(
-        db,
-        dataset_id,
-        status="published",
-        published_at=now,
-    )
+    dataset_repo.update_dataset(db, dataset_id, status="published", published_at=now)
     dataset_repo.create_audit_log(
         db,
         user_id=uuid.UUID(current_user["sub"]),
-        action="dataset.approve",
+        action="dataset.publish",
         target_type="dataset",
         target_id=dataset_id,
         detail=None,
@@ -338,21 +310,69 @@ def approve_dataset(
     db.commit()
 
     refreshed = dataset_repo.get_dataset_by_id(db, dataset_id)
-    if refreshed is not None:
+    if refreshed and es_client:
         from app.utils.elasticsearch_utils import index_dataset
-
         index_doc = _build_dataset_index_document(db, refreshed)
         background_tasks.add_task(index_dataset, es_client, index_doc)
         email_service.notify_subscribers_new_dataset(background_tasks, db, refreshed)
         email_service.notify_saved_search(background_tasks, db, refreshed)
-        email_service.notify_agency_dataset_approved(background_tasks, db, refreshed)
 
     return _build_dataset_response(db, dataset_id)
 
 
-def get_dataset(db: Session, dataset_id: uuid.UUID) -> DatasetResponse:
+def hide_dataset(
+    db: Session,
+    dataset_id: uuid.UUID,
+    current_user: dict,
+    ip_address: str,
+    background_tasks: BackgroundTasks,
+    es_client,
+) -> DatasetResponse:
+    """Admin ซ่อน Dataset ที่ไม่เหมาะสม (published → draft) ตาม #5 M6."""
+    if current_user.get("role") != "admin":
+        raise_app_error("AUTH_PERMISSION_DENIED")
+
     dataset = dataset_repo.get_dataset_by_id(db, dataset_id)
     if dataset is None:
+        raise_app_error("DATASET_NOT_FOUND")
+
+    dataset_repo.update_dataset(db, dataset_id, status="draft")
+    dataset_repo.create_audit_log(
+        db,
+        user_id=uuid.UUID(current_user["sub"]),
+        action="dataset.hide",
+        target_type="dataset",
+        target_id=dataset_id,
+        detail=None,
+        ip_address=ip_address,
+    )
+    db.commit()
+
+    from app.utils.elasticsearch_utils import delete_dataset_index as es_delete
+    background_tasks.add_task(es_delete, es_client, str(dataset_id))
+
+    return _build_dataset_response(db, dataset_id)
+
+
+def can_view_dataset(dataset, current_user: dict | None) -> bool:
+    if dataset.status == "published":
+        return True
+    if current_user and current_user.get("role") == "admin":
+        return True
+    if current_user:
+        current_user_id = current_user.get("sub") or current_user.get("id")
+        if current_user_id and str(dataset.user_id) == str(current_user_id):
+            return True
+    return False
+
+
+def get_dataset(
+    db: Session, dataset_id: uuid.UUID, current_user: dict | None = None
+) -> DatasetResponse:
+    dataset = dataset_repo.get_dataset_by_id(db, dataset_id)
+    if dataset is None:
+        raise_app_error("DATASET_NOT_FOUND")
+    if not can_view_dataset(dataset, current_user):
         raise_app_error("DATASET_NOT_FOUND")
     return _build_dataset_response(db, dataset_id)
 
@@ -372,8 +392,10 @@ def list_datasets(
     responses = []
     for ds in items:
         tag_ids = dataset_repo.get_dataset_tag_ids(db, ds.id)
+        owner = db.query(User).filter(User.id == ds.user_id).first()
         r = DatasetResponse.model_validate(ds)
         r.tags = tag_ids
+        r.agency_name = owner.agency_name if owner else None
         responses.append(r)
     return responses, total
 
@@ -485,8 +507,27 @@ def update_dataset(
         fields["license"] = request.license
     if request.category_id is not None:
         fields["category_id"] = request.category_id
-    if request.metadata is not None:
-        fields["dataset_metadata"] = request.metadata
+    metadata_changed = (
+        request.metadata is not None
+        or request.year_start is not None
+        or request.year_end is not None
+    )
+    if metadata_changed:
+        metadata = dict(dataset.dataset_metadata or {})
+        if request.metadata is not None:
+            metadata.update(request.metadata)
+        if request.year_start is not None:
+            metadata["year_start"] = request.year_start
+        if request.year_end is not None:
+            metadata["year_end"] = request.year_end
+        fields["dataset_metadata"] = metadata
+
+    if request.status is not None:
+        fields["status"] = request.status
+        if request.status == "published" and dataset.published_at is None:
+            fields["published_at"] = datetime.now(timezone.utc)
+        elif request.status == "draft":
+            fields["published_at"] = None
 
     if fields:
         dataset_repo.update_dataset(db, dataset_id, **fields)
@@ -495,6 +536,19 @@ def update_dataset(
         dataset_repo.delete_dataset_tags(db, dataset_id)
         if request.tags:
             dataset_repo.create_dataset_tags(db, dataset_id, request.tags)
+
+    versions = dataset_repo.get_dataset_versions(db, dataset_id)
+    if versions:
+        latest_file_path = versions[0].file_path
+        next_version_number = dataset_repo.get_latest_version_number(db, dataset_id) + 1
+        dataset_repo.create_dataset_version(
+            db,
+            dataset_id=dataset_id,
+            version_number=next_version_number,
+            file_path=latest_file_path,
+            changelog="แก้ไขข้อมูล",
+            created_by=uuid.UUID(current_user["sub"]),
+        )
 
     dataset_repo.create_audit_log(
         db,

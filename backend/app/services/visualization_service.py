@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 import app.repositories.dataset_repository as dataset_repo
 import app.repositories.visualization_repository as viz_repo
+from app.models.user_model import User
 from app.schemas.dataset_schema import DatasetResponse
 from app.schemas.visualization_schema import (
     CompareResponse,
@@ -25,8 +26,10 @@ def _datasets_to_responses(
     responses: list[DatasetResponse] = []
     for dataset in datasets:
         tag_ids = dataset_repo.get_dataset_tag_ids(db, dataset.id)
+        owner = db.query(User).filter(User.id == dataset.user_id).first()
         item = DatasetResponse.model_validate(dataset)
         item.tags = tag_ids
+        item.agency_name = owner.agency_name if owner else None
         responses.append(item)
     return responses
 
@@ -37,9 +40,17 @@ def get_stats_overview(db: Session) -> StatsOverviewResponse:
         total_datasets=data["total_datasets"],
         total_downloads=data["total_downloads"],
         total_agencies=data["total_agencies"],
+        total_categories_level1=data["total_categories_level1"],
+        total_categories_level2=data["total_categories_level2"],
         datasets_by_year=[
             DatasetYearStat(**row) for row in data["datasets_by_year"]
         ],
+        datasets_published_this_month=data["datasets_published_this_month"],
+        datasets_published_last_month=data["datasets_published_last_month"],
+        datasets_month_change_percent=data["datasets_month_change_percent"],
+        agencies_with_published_datasets=data["agencies_with_published_datasets"],
+        top_download_format=data["top_download_format"],
+        top_download_format_percent=data["top_download_format_percent"],
     )
 
 

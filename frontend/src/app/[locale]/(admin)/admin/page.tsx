@@ -133,8 +133,8 @@ export default function AdminDashboardPage() {
           </section>
 
           <section className="grid grid-cols-1 gap-spacing-6 lg:grid-cols-2">
-            <AdminDatasetChart data={data.datasetsByMonth} />
-            <AdminDownloadChart data={data.downloadsByMonth} />
+            <AdminDatasetChart />
+            <AdminDownloadChart />
           </section>
 
           <PendingUserTable

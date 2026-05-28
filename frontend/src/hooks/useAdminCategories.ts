@@ -195,7 +195,16 @@ export function useAdminCategories(filters?: AdminCategoriesFilters) {
 type CreateCategoryVariables = AdminCategoryInput;
 
 async function createCategory(variables: CreateCategoryVariables): Promise<void> {
-  await apiClient.post("/admin/categories", toCategoryMutationBody(variables));
+  await apiClient.post(
+    "/admin/categories",
+    toCategoryMutationBody(variables),
+    {
+      headers: {
+        "Content-Type": "application/json; charset=UTF-8",
+        Accept: "application/json; charset=UTF-8",
+      },
+    }
+  );
 }
 
 /** POST /api/v1/admin/categories */

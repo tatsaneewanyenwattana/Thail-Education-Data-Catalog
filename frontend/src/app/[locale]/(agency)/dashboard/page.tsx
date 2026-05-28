@@ -7,6 +7,7 @@ import DownloadChart from "@/components/dashboard/DownloadChart";
 import RecentDatasetTable from "@/components/dashboard/RecentDatasetTable";
 import { useAgencyDashboard } from "@/hooks/useAgencyDashboard";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { getAgencyDashboardFooters } from "@/utils/agencyDashboardFooters";
 
 function formatCompactNumber(value: number, locale: string): string {
   if (value >= 1000) {
@@ -79,13 +80,23 @@ export default function AgencyDashboardPage() {
   const { user } = useAuthStore();
   const { data: stats, isLoading, isError, error } = useAgencyDashboard();
 
-  const publishedPercent =
-    stats && stats.totalDatasets > 0
-      ? Math.round((stats.publishedDatasets / stats.totalDatasets) * 100)
-      : 0;
-
-  const monthlyTotal =
-    stats?.monthlyDownloads.reduce((sum, item) => sum + item.count, 0) ?? 0;
+  const footers = stats
+    ? getAgencyDashboardFooters(
+        {
+          totalDatasets: stats.totalDatasets,
+          publishedDatasets: stats.publishedDatasets,
+          draftDatasets: stats.draftDatasets,
+          submittedDatasets: stats.submittedDatasets,
+          datasetsCreatedThisMonth: stats.datasetsCreatedThisMonth,
+          datasetsCreatedLastMonth: stats.datasetsCreatedLastMonth,
+          datasetsMonthChangePercent: stats.datasetsMonthChangePercent,
+          downloadsThisMonth: stats.downloadsThisMonth,
+          topDownloadFormat: stats.topDownloadFormat,
+          topDownloadFormatPercent: stats.topDownloadFormatPercent,
+        },
+        t
+      )
+    : null;
 
   return (
     <div className="space-y-spacing-8 pb-24">
@@ -119,7 +130,7 @@ export default function AgencyDashboardPage() {
             footer={
               <p className="flex items-center gap-1 font-sarabun text-caption font-medium text-primary-dark">
                 <TrendUpIcon />
-                {t("totalTrend", { percent: 12 })}
+                {footers?.totalFooter}
               </p>
             }
           />
@@ -132,7 +143,7 @@ export default function AgencyDashboardPage() {
             iconClassName="bg-primary-light text-primary"
             footer={
               <p className="font-sarabun text-caption font-medium text-text-muted">
-                {t("publishedShare", { percent: publishedPercent })}
+                {footers?.publishedFooter}
               </p>
             }
           />
@@ -145,7 +156,7 @@ export default function AgencyDashboardPage() {
             iconClassName="bg-status-draft-bg text-status-draft"
             footer={
               <p className="font-sarabun text-caption font-medium text-status-draft">
-                {t("draftPending", { count: 5 })}
+                {footers?.draftFooter}
               </p>
             }
           />
@@ -156,9 +167,7 @@ export default function AgencyDashboardPage() {
             footer={
               <p className="flex items-center gap-1 font-sarabun text-caption font-medium text-primary-dark">
                 <TrendUpIcon />
-                {t("downloadsThisMonth", {
-                  count: formatCompactNumber(monthlyTotal, locale),
-                })}
+                {footers?.downloadsFooter}
               </p>
             }
           />

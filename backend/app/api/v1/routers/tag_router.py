@@ -16,6 +16,24 @@ from app.schemas.dataset_schema import TagCreateRequest, TagResponse, TagUpdateR
 router = APIRouter()
 
 
+@router.get("/tags", status_code=status.HTTP_200_OK)
+def list_public_tags(
+    db: Session = Depends(get_db),
+):
+    """
+    ดูรายการแท็กทั้งหมดสำหรับหน้า Public/Agency search & upload
+    - Auth ❌
+    """
+    tags = tag_repo.get_all_tags(db)
+    items = [TagResponse.model_validate(t) for t in tags]
+    return list_response(
+        data=[i.model_dump(mode="json") for i in items],
+        page=1,
+        page_size=len(items) if items else 1,
+        total_items=len(items),
+    )
+
+
 @router.get("/admin/tags", status_code=status.HTTP_200_OK)
 def list_tags(
     payload: dict = Depends(require_roles("admin")),

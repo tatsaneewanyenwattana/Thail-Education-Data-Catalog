@@ -7,7 +7,7 @@ import { useState } from "react";
 import DeleteDatasetModal from "@/components/admin/DeleteDatasetModal";
 import type { AdminDataset, AdminDatasetsFilters } from "@/data/mockData";
 import { useAdminDatasets } from "@/hooks/useAdminDatasets";
-import { useApproveDataset } from "@/hooks/useApproveDataset";
+import { useHideDataset } from "@/hooks/useHideDataset";
 
 type AdminDatasetTableProps = {
   filters: AdminDatasetsFilters;
@@ -50,8 +50,6 @@ function StatusBadge({
   const styles: Record<AdminDataset["status"], string> = {
     published: "bg-status-published-bg text-status-published",
     draft: "bg-status-draft-bg text-status-draft",
-    submitted: "bg-status-warning-bg text-status-warning",
-    rejected: "bg-status-error-bg text-status-error",
   };
 
   return (
@@ -104,7 +102,7 @@ export default function AdminDatasetTable({
   const router = useRouter();
   const base = `/${locale}`;
   const { data, isLoading } = useAdminDatasets(filters);
-  const approveMutation = useApproveDataset();
+  const hideMutation = useHideDataset();
 
   const [deleteTarget, setDeleteTarget] = useState<AdminDataset | null>(null);
   const [deleteTitle, setDeleteTitle] = useState("");
@@ -128,10 +126,10 @@ export default function AdminDatasetTable({
     setDeleteTitle(title);
   };
 
-  const handleApprove = async (datasetId: string) => {
+  const handleHide = async (datasetId: string) => {
     try {
-      await approveMutation.mutateAsync(datasetId);
-      onSuccess(tAdmin("datasetApproved"));
+      await hideMutation.mutateAsync(datasetId);
+      onSuccess(tAdmin("datasetHidden"));
     } catch {
       onError(t("actionError"));
     }
@@ -211,14 +209,14 @@ export default function AdminDatasetTable({
                           </td>
                           <td className="px-6 py-3 text-right">
                             <div className="flex items-center justify-end gap-3">
-                              {dataset.status === "submitted" ? (
+                              {dataset.status === "published" ? (
                                 <button
                                   type="button"
-                                  onClick={() => handleApprove(dataset.id)}
-                                  disabled={approveMutation.isPending}
-                                  className="rounded-radius-sm bg-primary-light px-3 py-1.5 font-sarabun text-caption font-bold text-status-published hover:opacity-90 disabled:opacity-50"
+                                  onClick={() => handleHide(dataset.id)}
+                                  disabled={hideMutation.isPending}
+                                  className="rounded-radius-sm bg-[#ffefc9] px-3 py-1.5 font-sarabun text-caption font-bold text-[#795900] hover:opacity-90 disabled:opacity-50"
                                 >
-                                  {tAdmin("approve")}
+                                  {tAdmin("hide")}
                                 </button>
                               ) : null}
                               <button

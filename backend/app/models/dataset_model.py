@@ -33,7 +33,7 @@ class Dataset(SoftDeleteMixin, BaseModel):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(
         Enum(
-            "draft", "submitted", "published", "rejected",
+            "draft", "published",
             name="dataset_status",
             create_type=False,
         ),
