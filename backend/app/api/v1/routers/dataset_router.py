@@ -258,6 +258,7 @@ def update_dataset(
         current_user=payload,
         ip_address=get_client_ip(request),
         background_tasks=background_tasks,
+        es_client=_get_es(),
     )
     return success_response(data=result.model_dump(mode="json"))
 
@@ -336,6 +337,7 @@ def restore_version(
     dataset_id: uuid.UUID,
     version_number: int,
     request: Request,
+    background_tasks: BackgroundTasks,
     payload: dict = Depends(get_current_user_payload_with_status),
     db: Session = Depends(get_db),
 ):
@@ -349,6 +351,8 @@ def restore_version(
         version_number=version_number,
         current_user=payload,
         ip_address=get_client_ip(request),
+        background_tasks=background_tasks,
+        es_client=_get_es(),
     )
     return success_response(data=result.model_dump(mode="json"))
 

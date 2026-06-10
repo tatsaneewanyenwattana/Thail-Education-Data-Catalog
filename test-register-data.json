@@ -1,0 +1,12 @@
+{
+  "agency_name": "หน่วยงานทดสอบ Phase2E",
+  "agency_type": "central",
+  "contact_name": "สมชาย ใจดี",
+  "contact_phone": "081-234-5678",
+  "email": "register-2e-test@example.com",
+  "password": "Register2E!",
+  "terms_version": "1.0",
+  "pdpa_version": "1.0",
+  "terms_consent": true,
+  "pdpa_consent": true
+}

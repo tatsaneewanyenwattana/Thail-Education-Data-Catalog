@@ -1,13 +1,10 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useMemo, useState } from "react";
-import {
-  MOCK_FILTER_AGENCIES,
-  MOCK_FILTER_FORMATS,
-  MOCK_FILTER_YEARS,
-} from "@/data/mockData";
 import { THAI_PROVINCES } from "@/data/thaiProvinces";
+import apiClient from "@/services/api";
 import FilterTree from "./FilterTree";
 import {
   parseListParam,
@@ -16,6 +13,19 @@ import {
 } from "./useSearchParamsUpdate";
 
 const LICENSE_OPTIONS = ["open", "conditional", "cc"] as const;
+
+const FORMAT_OPTIONS = [
+  { id: "csv", label: "CSV" },
+  { id: "excel", label: "XLSX" },
+  { id: "json", label: "JSON" },
+  { id: "xml", label: "XML" },
+] as const;
+
+type PublicAgency = {
+  agency_user_id: string;
+  agency_name: string | null;
+  agency_name_en?: string | null;
+};
 
 type SearchFilterProps = {
   selectedCategory: string | null;
@@ -47,6 +57,29 @@ export default function SearchFilter({
   const [provinceQuery, setProvinceQuery] = useState("");
   const [provinceOpen, setProvinceOpen] = useState(false);
 
+  // TODO: แสดง filter หน่วยงานเมื่อ GET /api/v1/public/agencies พร้อมใช้งาน
+  const { data: agencies } = useQuery({
+    queryKey: ["public", "agencies"],
+    queryFn: async (): Promise<PublicAgency[] | null> => {
+      try {
+        const response = await apiClient.get("/public/agencies");
+        const data = (response.data as { data?: PublicAgency[] }).data;
+        return data ?? [];
+      } catch {
+        return null;
+      }
+    },
+    retry: false,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const yearOptions = useMemo(() => {
+    const currentBE = new Date().getFullYear() + 543;
+    return Array.from({ length: 10 }, (_, index) =>
+      String(currentBE - index)
+    );
+  }, []);
+
   const provinceLabelMap = useMemo(() => {
     const map = new Map<string, string>();
     THAI_PROVINCES.forEach((p) =>
@@ -67,13 +100,15 @@ export default function SearchFilter({
       .slice(0, 5);
   }, [provinceQuery, locale]);
 
+  const showAgencyFilter = agencies !== null && agencies.length > 0;
+
   function handleFilterInResults(e: FormEvent) {
     e.preventDefault();
     updateParams({ fq: localFilter.trim() || null });
   }
 
-  function toggleAgency(id: string) {
-    const next = toggleListParam(selectedAgencies, id);
+  function toggleAgency(agencyUserId: string) {
+    const next = toggleListParam(selectedAgencies, agencyUserId);
     updateParams({ agency: next.length ? next.join(",") : null });
   }
 
@@ -171,37 +206,44 @@ export default function SearchFilter({
         />
       </div>
 
-      <hr className="border-border-default/60" />
+      {showAgencyFilter ? (
+        <>
+          <hr className="border-border-default/60" />
 
-      <div className="flex flex-col gap-3">
-        <span className="font-sarabun text-label font-medium text-text-secondary">
-          {t("agency")}
-        </span>
-        {MOCK_FILTER_AGENCIES.map((agency) => {
-          const label = locale === "th" ? agency.labelTh : agency.labelEn;
-          const checked = selectedAgencies.includes(agency.id);
-          return (
-            <label
-              key={agency.id}
-              className="group flex cursor-pointer items-center gap-3"
-            >
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={() => toggleAgency(agency.id)}
-                className="h-5 w-5 rounded-radius-sm border-border-input accent-primary-dark focus:ring-primary-dark/30"
-              />
-              <span
-                className={`font-sarabun text-label transition-colors group-hover:text-primary-dark ${
-                  checked ? "font-bold text-primary-dark" : "text-text-primary"
-                }`}
-              >
-                {label}
-              </span>
-            </label>
-          );
-        })}
-      </div>
+          <div className="flex flex-col gap-3">
+            <span className="font-sarabun text-label font-medium text-text-secondary">
+              {t("agency")}
+            </span>
+            {agencies.map((agency) => {
+              const label =
+                locale === "th"
+                  ? agency.agency_name ?? agency.agency_name_en ?? "-"
+                  : agency.agency_name_en ?? agency.agency_name ?? "-";
+              const checked = selectedAgencies.includes(agency.agency_user_id);
+              return (
+                <label
+                  key={agency.agency_user_id}
+                  className="group flex cursor-pointer items-center gap-3"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleAgency(agency.agency_user_id)}
+                    className="h-5 w-5 rounded-radius-sm border-border-input accent-primary-dark focus:ring-primary-dark/30"
+                  />
+                  <span
+                    className={`font-sarabun text-label transition-colors group-hover:text-primary-dark ${
+                      checked ? "font-bold text-primary-dark" : "text-text-primary"
+                    }`}
+                  >
+                    {label}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </>
+      ) : null}
 
       <hr className="border-border-default/60" />
 
@@ -209,7 +251,7 @@ export default function SearchFilter({
         <span className="font-sarabun text-label font-medium text-text-secondary">
           {t("academicYear")}
         </span>
-        {MOCK_FILTER_YEARS.map((year) => {
+        {yearOptions.map((year) => {
           const checked = selectedYears.includes(year);
           return (
             <label key={year} className="group flex cursor-pointer items-center gap-3">
@@ -238,7 +280,7 @@ export default function SearchFilter({
           {t("fileFormat")}
         </span>
         <div className="flex flex-wrap gap-2">
-          {MOCK_FILTER_FORMATS.map((fmt) => {
+          {FORMAT_OPTIONS.map((fmt) => {
             const active = selectedFormats.includes(fmt.id);
             return (
               <button

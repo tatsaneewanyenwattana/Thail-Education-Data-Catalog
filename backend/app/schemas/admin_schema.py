@@ -38,6 +38,10 @@ class UserRejectRequest(BaseModel):
     reason: str = Field(min_length=10, max_length=500)
 
 
+class UserSuspendRequest(BaseModel):
+    reason: str = Field(min_length=10, max_length=500)
+
+
 class AdminDatasetListItem(BaseModel):
     id: uuid.UUID
     title: str

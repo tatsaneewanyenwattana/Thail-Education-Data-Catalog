@@ -4,7 +4,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import DateTime, Enum, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -23,6 +23,10 @@ class PDPAConsent(Base):
         UUID(as_uuid=True),
         ForeignKey("users.id", name="fk_pdpa_consents_users"),
         nullable=False,
+    )
+    consent_type: Mapped[str | None] = mapped_column(
+        Enum("terms", "pdpa", name="consent_type", create_type=False),
+        nullable=True,
     )
     version: Mapped[str] = mapped_column(
         String(50),

@@ -23,7 +23,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.pagination import PaginationParams, get_pagination_params
 from app.core.response import delete_response, list_response, success_response
-from app.core.security import get_client_ip, require_roles
+from app.core.security import get_client_ip, get_user_agent, require_roles
 from app.schemas.admin_schema import (
     AdminUserListFilters,
     AnnouncementCreateRequest,
@@ -32,6 +32,7 @@ from app.schemas.admin_schema import (
     PageContentUpdateRequest,
     UserRejectRequest,
     UserRoleChangeRequest,
+    UserSuspendRequest,
     UserUpdateRequest,
 )
 
@@ -182,16 +183,23 @@ def admin_change_user_role(
 @router.post("/users/{id}/approve", status_code=status.HTTP_200_OK)
 def admin_approve_user(
     id: uuid.UUID,
+    request: Request,
     background_tasks: BackgroundTasks,
     payload: dict = Depends(require_roles("admin")),
     db: Session = Depends(get_db),
 ):
     """
-    อนุมัติบัญชี Agency ตาม #28
+    อนุมัติบัญชี Agency ตาม claude-v3 M1
     - Auth ✅ Admin
+    - Errors: USER_NOT_FOUND, USER_STATUS_INVALID
     """
     result = admin_service.approve_user(
-        db, background_tasks, user_id=id, current_user=payload
+        db,
+        background_tasks,
+        user_id=id,
+        current_user=payload,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     return success_response(result.model_dump(mode="json"))
 
@@ -199,15 +207,17 @@ def admin_approve_user(
 @router.post("/users/{id}/reject", status_code=status.HTTP_200_OK)
 def admin_reject_user(
     id: uuid.UUID,
+    request: Request,
     request_body: UserRejectRequest,
     background_tasks: BackgroundTasks,
     payload: dict = Depends(require_roles("admin")),
     db: Session = Depends(get_db),
 ):
     """
-    ปฏิเสธบัญชี Agency ตาม #28
+    ปฏิเสธบัญชี Agency ตาม claude-v3 M1 (บังคับ reason)
     - Body: { "reason": string }
     - Auth ✅ Admin
+    - Errors: USER_NOT_FOUND, USER_STATUS_INVALID
     """
     result = admin_service.reject_user(
         db,
@@ -215,6 +225,8 @@ def admin_reject_user(
         user_id=id,
         request=request_body,
         current_user=payload,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     return success_response(result.model_dump(mode="json"))
 
@@ -222,15 +234,50 @@ def admin_reject_user(
 @router.post("/users/{id}/suspend", status_code=status.HTTP_200_OK)
 def admin_suspend_user(
     id: uuid.UUID,
+    request: Request,
+    request_body: UserSuspendRequest,
+    background_tasks: BackgroundTasks,
     payload: dict = Depends(require_roles("admin")),
     db: Session = Depends(get_db),
 ):
     """
-    Suspend User ตาม #28 #34
+    ระงับบัญชี Agency ตาม claude-v3 M1 (บังคับ reason)
+    - Body: { "reason": string }
     - Auth ✅ Admin
+    - Errors: USER_NOT_FOUND, USER_STATUS_INVALID, USER_CANNOT_SUSPEND_SELF
     """
     result = admin_service.suspend_user(
-        db, _get_redis(), user_id=id, current_user=payload
+        db,
+        background_tasks,
+        user_id=id,
+        request=request_body,
+        current_user=payload,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
+    )
+    return success_response(result.model_dump(mode="json"))
+
+
+@router.post("/users/{id}/unsuspend", status_code=status.HTTP_200_OK)
+def admin_unsuspend_user(
+    id: uuid.UUID,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    payload: dict = Depends(require_roles("admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    ปลดระงับบัญชี Agency ตาม claude-v3 M1
+    - Auth ✅ Admin
+    - Errors: USER_NOT_FOUND, USER_STATUS_INVALID
+    """
+    result = admin_service.unsuspend_user(
+        db,
+        background_tasks,
+        user_id=id,
+        current_user=payload,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     return success_response(result.model_dump(mode="json"))
 

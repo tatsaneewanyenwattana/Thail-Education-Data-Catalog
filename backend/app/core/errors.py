@@ -8,10 +8,15 @@ ERROR_DEFINITIONS: dict[str, tuple[int, str]] = {
     "AUTH_INVALID_CREDENTIALS": (401, "อีเมลหรือรหัสผ่านไม่ถูกต้อง"),
     "AUTH_TOKEN_EXPIRED": (401, "Token หมดอายุ กรุณา Login ใหม่"),
     "AUTH_TOKEN_INVALID": (401, "Token ไม่ถูกต้อง"),
+    "AUTH_TOKEN_ALREADY_USED": (400, "ลิงก์นี้ถูกใช้ไปแล้ว"),
     "AUTH_TOKEN_MISSING": (401, "ไม่มี Token"),
     "AUTH_ACCOUNT_SUSPENDED": (403, "บัญชีถูกระงับ"),
     "AUTH_ACCOUNT_PENDING": (403, "บัญชียังรอการอนุมัติ"),
     "AUTH_ACCOUNT_REJECTED": (403, "บัญชีถูกปฏิเสธ"),
+    "AUTH_EMAIL_NOT_VERIFIED": (403, "กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ"),
+    "AUTH_ACCOUNT_LOCKED": (423, "บัญชีถูกล็อกชั่วคราว กรุณาลองใหม่ภายหลัง"),
+    "AUTH_ACCOUNT_DELETED": (410, "บัญชีถูกลบแล้ว"),
+    "AUTH_RESEND_COOLDOWN": (429, "กรุณารอสักครู่ก่อนขออีเมลใหม่"),
     "AUTH_PERMISSION_DENIED": (403, "ไม่มีสิทธิ์ทำสิ่งนี้"),
     # User
     "USER_NOT_FOUND": (404, "ไม่พบ User"),
@@ -33,6 +38,9 @@ ERROR_DEFINITIONS: dict[str, tuple[int, str]] = {
     "FILE_INVALID_FORMAT": (400, "ไฟล์ไม่ใช่ CSV/Excel/JSON"),
     "FILE_UPLOAD_FAILED": (500, "อัปโหลดไฟล์ไม่สำเร็จ"),
     "FILE_NOT_FOUND": (404, "ไม่พบไฟล์"),
+    "VERIFICATION_DOC_REQUIRED": (400, "ต้องอัปโหลดเอกสารยืนยันตน"),
+    "VERIFICATION_DOC_TOO_LARGE": (413, "เอกสารยืนยันตนใหญ่เกิน 5MB"),
+    "INVALID_MIME_TYPE": (415, "ประเภทไฟล์ไม่ถูกต้อง ต้องเป็น PDF"),
     # Search
     "SEARCH_KEYWORD_TOO_SHORT": (400, "คำค้นหาสั้นเกินไป"),
     "SEARCH_INVALID_FILTER": (400, "Filter ไม่ถูกต้อง"),
@@ -58,22 +66,34 @@ ERROR_DEFINITIONS: dict[str, tuple[int, str]] = {
 
 
 class AppException(HTTPException):
-    def __init__(self, code: str, message: str | None = None) -> None:
+    def __init__(
+        self,
+        code: str,
+        message: str | None = None,
+        details: dict | None = None,
+    ) -> None:
         if code not in ERROR_DEFINITIONS:
             raise ValueError(f"Unknown error code: {code}")
         status_code, default_message = ERROR_DEFINITIONS[code]
         self.code = code
+        error_body: dict = {
+            "code": code,
+            "message": message or default_message,
+        }
+        if details:
+            error_body["details"] = details
         super().__init__(
             status_code=status_code,
             detail={
                 "success": False,
-                "error": {
-                    "code": code,
-                    "message": message or default_message,
-                },
+                "error": error_body,
             },
         )
 
 
-def raise_app_error(code: str, message: str | None = None) -> None:
-    raise AppException(code, message)
+def raise_app_error(
+    code: str,
+    message: str | None = None,
+    details: dict | None = None,
+) -> None:
+    raise AppException(code, message, details)

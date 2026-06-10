@@ -24,6 +24,7 @@ class Settings(BaseSettings):
 
     APP_ENV: str = "development"
     APP_SECRET_KEY: str = ""
+    APP_BASE_URL: str = "http://localhost:3000"
 
     DATABASE_URL: str = ""
     DATABASE_POOL_SIZE: int = 10
@@ -47,9 +48,15 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_FROM_NAME: str = ""
+    SMTP_USE_TLS: bool = True
 
     RATE_LIMIT_PER_MINUTE: int = 100
+    RATE_LIMIT_REGISTER_PER_HOUR: int = 3
+    RATE_LIMIT_LOGIN_PER_MINUTE: int = 5
     MAX_FILE_SIZE_MB: int = 100
+    MAX_VERIFICATION_DOC_SIZE_MB: int = 5
     ALLOWED_ORIGINS: str = ""
 
     @property
@@ -83,6 +90,22 @@ class Settings(BaseSettings):
                 f"{self.REDIS_PORT}/0"
             )
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+
+    @property
+    def smtp_from_address(self) -> str:
+        if self.SMTP_FROM_NAME and self.SMTP_FROM_EMAIL:
+            return f"{self.SMTP_FROM_NAME} <{self.SMTP_FROM_EMAIL}>"
+        if self.SMTP_FROM_EMAIL:
+            return self.SMTP_FROM_EMAIL
+        return self.SMTP_FROM
+
+    @property
+    def smtp_configured(self) -> bool:
+        return bool(self.SMTP_HOST and self.smtp_from_address)
+
+    @property
+    def rate_limit_enabled(self) -> bool:
+        return self.APP_ENV != "development"
 
     @property
     def is_production(self) -> bool:

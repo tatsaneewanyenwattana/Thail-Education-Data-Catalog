@@ -18,14 +18,18 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.errors import raise_app_error
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12,
+)
 bearer_scheme = HTTPBearer(auto_error=False)
 
 _redis_client: redis.Redis | None = None
 
 PASSWORD_MIN_LENGTH = 8
 PASSWORD_MAX_LENGTH = 128
-PASSWORD_PATTERN = re.compile(r"^[A-Za-z0-9]+$")
+PASSWORD_SPECIAL_CHAR_PATTERN = re.compile(r"[!@#$%^&*]")
 
 
 def get_redis_client() -> redis.Redis:
@@ -51,6 +55,11 @@ def validate_password(password: str) -> None:
         raise_app_error("VALIDATION_ERROR", "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร")
     if len(password) > PASSWORD_MAX_LENGTH:
         raise_app_error("VALIDATION_ERROR", "รหัสผ่านต้องไม่เกิน 128 ตัวอักษร")
+    if not re.search(r"[a-z]", password):
+        raise_app_error(
+            "VALIDATION_ERROR",
+            "รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว",
+        )
     if not re.search(r"[A-Z]", password):
         raise_app_error(
             "VALIDATION_ERROR",
@@ -61,10 +70,10 @@ def validate_password(password: str) -> None:
             "VALIDATION_ERROR",
             "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว",
         )
-    if not PASSWORD_PATTERN.match(password):
+    if not PASSWORD_SPECIAL_CHAR_PATTERN.search(password):
         raise_app_error(
             "VALIDATION_ERROR",
-            "รหัสผ่านใช้ได้เฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น",
+            "รหัสผ่านต้องมีอักขระพิเศษอย่างน้อย 1 ตัว เช่น !@#$%^&*",
         )
     if " " in password:
         raise_app_error("VALIDATION_ERROR", "รหัสผ่านห้ามใช้ช่องว่าง")
@@ -134,6 +143,17 @@ def extract_bearer_token(
     return credentials.credentials
 
 
+def is_user_deleted(db: Session, user_id: str) -> bool:
+    result = db.execute(
+        text("SELECT is_deleted FROM users WHERE id = :uid"),
+        {"uid": user_id},
+    )
+    row = result.fetchone()
+    if row is None:
+        return False
+    return bool(row[0])
+
+
 def get_user_status(db: Session, user_id: str) -> str | None:
     result = db.execute(
         text(
@@ -148,6 +168,8 @@ def get_user_status(db: Session, user_id: str) -> str | None:
 def validate_user_status(status: str | None) -> None:
     if status is None:
         raise_app_error("USER_NOT_FOUND")
+    if status == "email_unverified":
+        raise_app_error("AUTH_EMAIL_NOT_VERIFIED")
     if status == "suspended":
         raise_app_error("AUTH_ACCOUNT_SUSPENDED")
     if status == "pending":
@@ -175,7 +197,10 @@ def get_current_user_payload_with_status(
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     payload = get_current_user_payload(credentials)
-    status = get_user_status(db, payload["sub"])
+    user_id = payload["sub"]
+    if is_user_deleted(db, user_id):
+        raise_app_error("AUTH_ACCOUNT_DELETED")
+    status = get_user_status(db, user_id)
     validate_user_status(status)
     payload["status"] = status
     return payload
@@ -199,3 +224,12 @@ def get_client_ip(request: Request) -> str:
     if request.client:
         return request.client.host
     return "unknown"
+
+
+def get_user_agent(request: Request) -> str | None:
+    user_agent = request.headers.get("User-Agent")
+    if not user_agent:
+        return None
+    if len(user_agent) > 500:
+        return user_agent[:500]
+    return user_agent

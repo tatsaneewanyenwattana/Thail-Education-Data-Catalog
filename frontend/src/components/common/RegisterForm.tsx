@@ -10,28 +10,59 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import apiClient from "@/services/api";
 
+const TERMS_VERSION = "1.0";
 const PDPA_VERSION = "1.0";
+const MAX_VERIFICATION_DOC_BYTES = 5 * 1024 * 1024;
+
+const AGENCY_TYPES = [
+  "central",
+  "regional",
+  "local",
+  "educational",
+  "other",
+] as const;
+
+const TH_PHONE_RE = /^(0[689]\d-\d{3}-\d{4}|0[2-57]-\d{3}-\d{4})$/;
+
+type AgencyType = (typeof AGENCY_TYPES)[number];
 
 type RegisterFormValues = {
   agency_name: string;
+  agency_name_en: string;
+  agency_type: AgencyType | "";
+  agency_code: string;
+  agency_website: string;
+  contact_name: string;
+  contact_position: string;
+  contact_phone: string;
   email: string;
   password: string;
   confirm_password: string;
+  verification_doc: File | null;
+  terms_consent: boolean;
   pdpa_consent: boolean;
 };
 
-type PasswordStrength = "none" | "weak" | "medium" | "strong";
+type PasswordChecks = {
+  length: boolean;
+  lower: boolean;
+  upper: boolean;
+  number: boolean;
+  special: boolean;
+};
 
-function getPasswordStrength(password: string): PasswordStrength {
-  if (!password) return "none";
+function getPasswordChecks(password: string): PasswordChecks {
+  return {
+    length: password.length >= 8,
+    lower: /[a-z]/.test(password),
+    upper: /[A-Z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*]/.test(password),
+  };
+}
 
-  const hasMinLength = password.length >= 8;
-  const hasUppercase = /[A-Z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-
-  if (hasMinLength && hasUppercase && hasNumber) return "strong";
-  if (hasMinLength) return "medium";
-  return "weak";
+function getPasswordLevel(checks: PasswordChecks): number {
+  return Object.values(checks).filter(Boolean).length;
 }
 
 function AgencyIcon() {
@@ -96,6 +127,54 @@ function EyeIcon({ off }: { off?: boolean }) {
   );
 }
 
+function PasswordStrengthIndicator({
+  password,
+  t,
+}: {
+  password: string;
+  t: ReturnType<typeof useTranslations<"auth.register">>;
+}) {
+  if (!password) return null;
+
+  const checks = getPasswordChecks(password);
+  const level = getPasswordLevel(checks);
+
+  const checklist = [
+    { key: "passwordCheckLength", met: checks.length },
+    { key: "passwordCheckLower", met: checks.lower },
+    { key: "passwordCheckUpper", met: checks.upper },
+    { key: "passwordCheckNumber", met: checks.number },
+    { key: "passwordCheckSpecial", met: checks.special },
+  ] as const;
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="flex gap-1">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div
+            key={index}
+            className={`h-1 flex-1 rounded-radius-full transition-colors duration-300 ${
+              index < level ? "bg-primary" : "bg-surface-container"
+            }`}
+          />
+        ))}
+      </div>
+      <ul className="space-y-1">
+        {checklist.map((item) => (
+          <li
+            key={item.key}
+            className={`font-sarabun text-caption ${
+              item.met ? "text-primary" : "text-text-muted"
+            }`}
+          >
+            {item.met ? "✓" : "✗"} {t(item.key)}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function RegisterForm() {
   const t = useTranslations("auth.register");
   const router = useRouter();
@@ -116,6 +195,26 @@ export default function RegisterForm() {
             .string()
             .min(1, t("agencyNameRequired"))
             .min(3, t("agencyNameMin")),
+          agency_name_en: z.string(),
+          agency_type: z
+            .string()
+            .min(1, t("agencyTypeRequired"))
+            .refine(
+              (value): value is AgencyType =>
+                AGENCY_TYPES.includes(value as AgencyType),
+              { message: t("agencyTypeRequired") }
+            ),
+          agency_code: z.string(),
+          agency_website: z.string(),
+          contact_name: z
+            .string()
+            .min(1, t("contactNameRequired"))
+            .min(3, t("contactNameMin")),
+          contact_position: z.string(),
+          contact_phone: z
+            .string()
+            .min(1, t("contactPhoneRequired"))
+            .regex(TH_PHONE_RE, t("contactPhoneInvalid")),
           email: z
             .string()
             .min(1, t("emailRequired"))
@@ -124,9 +223,29 @@ export default function RegisterForm() {
             .string()
             .min(1, t("passwordRequired"))
             .min(8, t("passwordMin"))
+            .regex(/[a-z]/, t("passwordLowercase"))
             .regex(/[A-Z]/, t("passwordUppercase"))
-            .regex(/[0-9]/, t("passwordNumber")),
+            .regex(/[0-9]/, t("passwordNumber"))
+            .regex(/[!@#$%^&*]/, t("passwordSpecial")),
           confirm_password: z.string().min(1, t("confirmPasswordRequired")),
+          verification_doc: z
+            .custom<File | null>((value) => value instanceof File, {
+              message: t("verificationDocRequired"),
+            })
+            .refine(
+              (file) =>
+                file !== null &&
+                (file.type === "application/pdf" ||
+                  file.name.toLowerCase().endsWith(".pdf")),
+              { message: t("verificationDocInvalid") }
+            )
+            .refine(
+              (file) => file !== null && file.size <= MAX_VERIFICATION_DOC_BYTES,
+              { message: t("verificationDocTooLarge") }
+            ),
+          terms_consent: z.boolean().refine((value) => value === true, {
+            message: t("termsRequired"),
+          }),
           pdpa_consent: z.boolean().refine((value) => value === true, {
             message: t("pdpaRequired"),
           }),
@@ -142,53 +261,62 @@ export default function RegisterForm() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isValid },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     mode: "onChange",
     defaultValues: {
       agency_name: "",
+      agency_name_en: "",
+      agency_type: "",
+      agency_code: "",
+      agency_website: "",
+      contact_name: "",
+      contact_position: "",
+      contact_phone: "",
       email: "",
       password: "",
       confirm_password: "",
+      verification_doc: null,
+      terms_consent: false,
       pdpa_consent: false,
     },
   });
 
   const passwordValue = watch("password");
-  const passwordStrength = getPasswordStrength(passwordValue);
-
-  const strengthBarClass =
-    passwordStrength === "weak"
-      ? "w-1/3 bg-status-error"
-      : passwordStrength === "medium"
-        ? "w-2/3 bg-status-warning"
-        : passwordStrength === "strong"
-          ? "w-full bg-primary"
-          : "w-0";
-
-  const strengthLabel =
-    passwordStrength === "weak"
-      ? t("passwordWeak")
-      : passwordStrength === "medium"
-        ? t("passwordMedium")
-        : passwordStrength === "strong"
-          ? t("passwordStrong")
-          : "";
 
   const mutation = useMutation({
     mutationFn: async (values: RegisterFormValues) => {
-      await apiClient.post("/auth/register", {
-        agency_name: values.agency_name,
-        email: values.email,
+      const metadata = {
+        agency_name: values.agency_name.trim(),
+        agency_name_en: values.agency_name_en.trim() || undefined,
+        agency_type: values.agency_type,
+        agency_code: values.agency_code.trim() || undefined,
+        agency_website: values.agency_website.trim() || undefined,
+        contact_name: values.contact_name.trim(),
+        contact_position: values.contact_position.trim() || undefined,
+        contact_phone: values.contact_phone.trim(),
+        email: values.email.trim(),
         password: values.password,
+        terms_version: TERMS_VERSION,
         pdpa_version: PDPA_VERSION,
-      });
+        terms_consent: true,
+        pdpa_consent: true,
+      };
+
+      const formData = new FormData();
+      formData.append("data", JSON.stringify(metadata));
+      if (values.verification_doc) {
+        formData.append("verification_doc", values.verification_doc);
+      }
+
+      await apiClient.post("/auth/register", formData);
     },
     onSuccess: () => {
       setToast({ type: "success", message: t("success") });
       window.setTimeout(() => {
-        router.push(`/${locale}/login`);
+        router.push(`/${locale}/register-status`);
       }, 1500);
     },
     onError: (error: Error) => {
@@ -206,6 +334,11 @@ export default function RegisterForm() {
 
   const inputClass = (hasError: boolean) =>
     `h-10 w-full rounded-radius-sm border bg-surface-container px-3 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20 ${
+      hasError ? "border-status-error" : "border-border-input"
+    }`;
+
+  const selectClass = (hasError: boolean) =>
+    `h-10 w-full rounded-radius-sm border bg-surface-container px-3 font-sarabun text-body-md text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20 ${
       hasError ? "border-status-error" : "border-border-input"
     }`;
 
@@ -243,6 +376,138 @@ export default function RegisterForm() {
             {errors.agency_name && (
               <p className="mt-1 font-sarabun text-caption text-status-error">
                 {errors.agency_name.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="agency_name_en"
+              className="mb-2 block font-sarabun text-label text-text-secondary"
+            >
+              {t("agencyNameEn")}
+            </label>
+            <input
+              id="agency_name_en"
+              type="text"
+              placeholder={t("agencyNameEnPlaceholder")}
+              className={inputClass(!!errors.agency_name_en)}
+              {...register("agency_name_en")}
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="agency_type"
+              className="mb-2 block font-sarabun text-label text-text-secondary"
+            >
+              {t("agencyType")}
+            </label>
+            <select
+              id="agency_type"
+              className={selectClass(!!errors.agency_type)}
+              {...register("agency_type")}
+            >
+              <option value="">{t("agencyTypePlaceholder")}</option>
+              {AGENCY_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {t(`agencyType_${type}`)}
+                </option>
+              ))}
+            </select>
+            {errors.agency_type && (
+              <p className="mt-1 font-sarabun text-caption text-status-error">
+                {errors.agency_type.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="agency_code"
+              className="mb-2 block font-sarabun text-label text-text-secondary"
+            >
+              {t("agencyCode")}
+            </label>
+            <input
+              id="agency_code"
+              type="text"
+              placeholder={t("agencyCodePlaceholder")}
+              className={inputClass(!!errors.agency_code)}
+              {...register("agency_code")}
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="agency_website"
+              className="mb-2 block font-sarabun text-label text-text-secondary"
+            >
+              {t("agencyWebsite")}
+            </label>
+            <input
+              id="agency_website"
+              type="url"
+              placeholder={t("agencyWebsitePlaceholder")}
+              className={inputClass(!!errors.agency_website)}
+              {...register("agency_website")}
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="contact_name"
+              className="mb-2 block font-sarabun text-label text-text-secondary"
+            >
+              {t("contactName")}
+            </label>
+            <input
+              id="contact_name"
+              type="text"
+              placeholder={t("contactNamePlaceholder")}
+              className={inputClass(!!errors.contact_name)}
+              {...register("contact_name")}
+            />
+            {errors.contact_name && (
+              <p className="mt-1 font-sarabun text-caption text-status-error">
+                {errors.contact_name.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="contact_position"
+              className="mb-2 block font-sarabun text-label text-text-secondary"
+            >
+              {t("contactPosition")}
+            </label>
+            <input
+              id="contact_position"
+              type="text"
+              placeholder={t("contactPositionPlaceholder")}
+              className={inputClass(!!errors.contact_position)}
+              {...register("contact_position")}
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="contact_phone"
+              className="mb-2 block font-sarabun text-label text-text-secondary"
+            >
+              {t("contactPhone")}
+            </label>
+            <input
+              id="contact_phone"
+              type="tel"
+              placeholder={t("contactPhonePlaceholder")}
+              className={inputClass(!!errors.contact_phone)}
+              {...register("contact_phone")}
+            />
+            {errors.contact_phone && (
+              <p className="mt-1 font-sarabun text-caption text-status-error">
+                {errors.contact_phone.message}
               </p>
             )}
           </div>
@@ -294,33 +559,7 @@ export default function RegisterForm() {
                 <EyeIcon off={showPassword} />
               </button>
             </div>
-            {passwordValue.length > 0 && (
-              <div className="mt-2 space-y-1">
-                <div className="h-1 w-full overflow-hidden rounded-radius-full bg-surface-container">
-                  <div
-                    className={`h-full rounded-radius-full transition-all duration-300 ${strengthBarClass}`}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span
-                    className={`font-sarabun text-caption font-medium ${
-                      passwordStrength === "weak"
-                        ? "text-status-error"
-                        : passwordStrength === "medium"
-                          ? "text-status-warning"
-                          : "text-primary"
-                    }`}
-                  >
-                    {strengthLabel}
-                  </span>
-                  {passwordStrength === "strong" && (
-                    <span className="font-sarabun text-caption text-text-muted">
-                      {t("passwordSecureHint")}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
+            <PasswordStrengthIndicator password={passwordValue} t={t} />
             {errors.password && (
               <p className="mt-1 font-sarabun text-caption text-status-error">
                 {errors.password.message}
@@ -349,6 +588,56 @@ export default function RegisterForm() {
               </p>
             )}
           </div>
+
+          <div>
+            <label
+              htmlFor="verification_doc"
+              className="mb-2 block font-sarabun text-label text-text-secondary"
+            >
+              {t("verificationDoc")}
+            </label>
+            <input
+              id="verification_doc"
+              type="file"
+              accept="application/pdf,.pdf"
+              className={inputClass(!!errors.verification_doc)}
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                setValue("verification_doc", file, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                });
+              }}
+            />
+            <p className="mt-1 font-sarabun text-caption text-text-muted">
+              {t("verificationDocHint")}
+            </p>
+            {errors.verification_doc && (
+              <p className="mt-1 font-sarabun text-caption text-status-error">
+                {errors.verification_doc.message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-start gap-3 py-1">
+            <input
+              id="terms_consent"
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded-radius-sm border-border-input text-primary focus:ring-primary-dark/20"
+              {...register("terms_consent")}
+            />
+            <label
+              htmlFor="terms_consent"
+              className="font-sarabun text-caption leading-snug text-text-secondary"
+            >
+              {t("termsConsent")}
+            </label>
+          </div>
+          {errors.terms_consent && (
+            <p className="-mt-3 font-sarabun text-caption text-status-error">
+              {errors.terms_consent.message}
+            </p>
+          )}
 
           <div className="flex items-start gap-3 py-1">
             <input

@@ -100,6 +100,8 @@ def seed_admin() -> None:
                 redis_client=redis_client,
                 email=ADMIN_EMAIL,
                 password=ADMIN_PASSWORD,
+                ip_address="127.0.0.1",
+                user_agent="seed_admin.py",
             )
         finally:
             redis_client.close()

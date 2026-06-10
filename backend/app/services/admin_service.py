@@ -12,6 +12,9 @@ import app.repositories.dataset_repository as dataset_repo
 import app.services.email_service as email_service
 from app.core.errors import raise_app_error
 from app.core.pagination import PaginationParams
+from app.core.security import delete_session
+from app.models.audit_log_model import AuditLog
+from app.models.user_model import User
 from app.schemas.admin_schema import (
     AdminStatsResponse,
     AdminUserListFilters,
@@ -24,10 +27,34 @@ from app.schemas.admin_schema import (
     UserRejectRequest,
     UserRoleChangeRequest,
     UserRoleChangeResponse,
+    UserSuspendRequest,
     UserUpdateRequest,
 )
 
 _SESSION_KEY_PREFIX = "session:"
+
+
+def _log_admin_user_action(
+    db: Session,
+    *,
+    admin_user_id: uuid.UUID,
+    action: str,
+    target_user: User,
+    ip_address: str,
+    user_agent: str | None = None,
+    detail: dict | None = None,
+) -> None:
+    db.add(
+        AuditLog(
+            user_id=admin_user_id,
+            action=action,
+            target_type="user",
+            target_id=target_user.id,
+            detail=detail,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+    )
 
 
 def get_admin_stats(db: Session) -> AdminStatsResponse:
@@ -60,18 +87,33 @@ def approve_user(
     background_tasks: BackgroundTasks,
     user_id: uuid.UUID,
     current_user: dict,
+    ip_address: str,
+    user_agent: str | None = None,
 ) -> UserListResponse:
     user = admin_repo.get_user_by_id(db, user_id)
     if user is None:
         raise_app_error("USER_NOT_FOUND")
-    if user.status != "pending":
+    if user.role != "agency" or user.status != "pending":
         raise_app_error("USER_STATUS_INVALID")
 
-    admin_repo.update_user(db, user_id, status="active")
-    db.commit()
-    db.refresh(user)
+    try:
+        admin_repo.update_user(db, user_id, status="active")
+        _log_admin_user_action(
+            db,
+            admin_user_id=uuid.UUID(current_user["sub"]),
+            action="USER_APPROVED",
+            target_user=user,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            detail={"email": user.email},
+        )
+        db.commit()
+        db.refresh(user)
+    except Exception:
+        db.rollback()
+        raise
 
-    email_service.notify_agency_approved(background_tasks, db, user)
+    email_service.send_account_approved(background_tasks, db, user)
 
     return UserListResponse.model_validate(user)
 
@@ -82,32 +124,52 @@ def reject_user(
     user_id: uuid.UUID,
     request: UserRejectRequest,
     current_user: dict,
+    ip_address: str,
+    user_agent: str | None = None,
 ) -> UserListResponse:
     user = admin_repo.get_user_by_id(db, user_id)
     if user is None:
         raise_app_error("USER_NOT_FOUND")
-    if user.status != "pending":
+    if user.role != "agency" or user.status != "pending":
         raise_app_error("USER_STATUS_INVALID")
 
-    admin_repo.update_user(
-        db,
-        user_id,
-        status="rejected",
-        reject_reason=request.reason.strip(),
-    )
-    db.commit()
-    db.refresh(user)
+    reason = request.reason.strip()
 
-    email_service.notify_agency_rejected(background_tasks, db, user)
+    try:
+        admin_repo.update_user(
+            db,
+            user_id,
+            status="rejected",
+            reject_reason=reason,
+        )
+        _log_admin_user_action(
+            db,
+            admin_user_id=uuid.UUID(current_user["sub"]),
+            action="USER_REJECTED",
+            target_user=user,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            detail={"email": user.email, "reason": reason},
+        )
+        db.commit()
+        db.refresh(user)
+    except Exception:
+        db.rollback()
+        raise
+
+    email_service.send_account_rejected(background_tasks, db, user)
 
     return UserListResponse.model_validate(user)
 
 
 def suspend_user(
     db: Session,
-    redis_client: Redis,
+    background_tasks: BackgroundTasks,
     user_id: uuid.UUID,
+    request: UserSuspendRequest,
     current_user: dict,
+    ip_address: str,
+    user_agent: str | None = None,
 ) -> UserListResponse:
     if str(user_id) == current_user["sub"]:
         raise_app_error("USER_CANNOT_SUSPEND_SELF")
@@ -115,16 +177,76 @@ def suspend_user(
     user = admin_repo.get_user_by_id(db, user_id)
     if user is None:
         raise_app_error("USER_NOT_FOUND")
+    if user.role != "agency" or user.status != "active":
+        raise_app_error("USER_STATUS_INVALID")
+
+    reason = request.reason.strip()
 
     try:
-        admin_repo.update_user(db, user_id, status="suspended")
+        admin_repo.update_user(
+            db,
+            user_id,
+            status="suspended",
+            suspend_reason=reason,
+        )
+        _log_admin_user_action(
+            db,
+            admin_user_id=uuid.UUID(current_user["sub"]),
+            action="USER_SUSPENDED",
+            target_user=user,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            detail={"email": user.email, "reason": reason},
+        )
         db.commit()
         db.refresh(user)
     except Exception:
         db.rollback()
         raise
 
-    redis_client.delete(f"{_SESSION_KEY_PREFIX}{user_id}")
+    delete_session(str(user_id))
+    email_service.send_account_suspended(background_tasks, db, user)
+
+    return UserListResponse.model_validate(user)
+
+
+def unsuspend_user(
+    db: Session,
+    background_tasks: BackgroundTasks,
+    user_id: uuid.UUID,
+    current_user: dict,
+    ip_address: str,
+    user_agent: str | None = None,
+) -> UserListResponse:
+    user = admin_repo.get_user_by_id(db, user_id)
+    if user is None:
+        raise_app_error("USER_NOT_FOUND")
+    if user.role != "agency" or user.status != "suspended":
+        raise_app_error("USER_STATUS_INVALID")
+
+    try:
+        admin_repo.update_user(
+            db,
+            user_id,
+            status="active",
+        )
+        user.suspend_reason = None
+        _log_admin_user_action(
+            db,
+            admin_user_id=uuid.UUID(current_user["sub"]),
+            action="USER_UNSUSPENDED",
+            target_user=user,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            detail={"email": user.email},
+        )
+        db.commit()
+        db.refresh(user)
+    except Exception:
+        db.rollback()
+        raise
+
+    email_service.send_account_unsuspended(background_tasks, db, user)
 
     return UserListResponse.model_validate(user)
 

@@ -4,6 +4,7 @@
 import logging
 import re
 import time
+from dataclasses import dataclass
 from typing import Callable
 
 from fastapi import Request, Response
@@ -20,6 +21,7 @@ from app.core.security import (
     get_client_ip,
     get_redis_client,
     get_user_status,
+    is_user_deleted,
     validate_token_in_redis,
     validate_user_status,
 )
@@ -37,44 +39,62 @@ PUBLIC_PATHS = {
 PUBLIC_PREFIXES = (
     "/api/v1/auth/login",
     "/api/v1/auth/register",
+    "/api/v1/auth/verify-email",
+    "/api/v1/auth/resend-verification",
+    "/api/v1/auth/register-status",
+    "/api/v1/auth/forgot-password",
+    "/api/v1/auth/reset-password",
     "/api/v1/public",
 )
 
 ADMIN_PREFIX = "/api/v1/admin"
 
-AUTH_LOGIN_PATH = "/api/v1/auth/login"
-
-# POST /api/v1/auth/login — ไม่ใส่ใน rules (Dev ปิดผ่าน _is_rate_limit_exempt ทั้งระบบ)
-RATE_LIMIT_RULES: list[tuple[str, str, int]] = [
-    ("POST", r"^/api/v1/auth/register$", 3),
-    ("GET", r"^/api/v1/search$", 30),
-    ("GET", r"^/api/v1/datasets/[^/]+/download$", 10),
-    ("POST", r"^/api/v1/datasets$", 10),
-    ("GET", r"^/api/v1/public", 60),
-]
-
-DEFAULT_RATE_LIMIT = settings.RATE_LIMIT_PER_MINUTE
-RATE_LIMIT_WINDOW_SECONDS = 60
-
-# claude.md #47 — localhost + Docker bridge (เบราว์เซอร์ → host → container)
-RATE_LIMIT_WHITELIST_IPS = frozenset(
-    {"127.0.0.1", "::1", "172.17.0.1", "172.18.0.1", "172.19.0.1"}
-)
+DEFAULT_RATE_LIMIT_WINDOW_SECONDS = 60
+REGISTER_RATE_LIMIT_WINDOW_SECONDS = 3600
+VERIFY_EMAIL_RATE_LIMIT_PER_MINUTE = 10
+RESET_PASSWORD_RATE_LIMIT_PER_MINUTE = 5
 
 
-def _app_env() -> str:
-    return (settings.APP_ENV or "").strip().lower()
+@dataclass(frozen=True)
+class RateLimitRule:
+    method: str
+    pattern: str
+    limit: int
+    window_seconds: int = DEFAULT_RATE_LIMIT_WINDOW_SECONDS
+
+
+def _rate_limit_rules() -> list[RateLimitRule]:
+    return [
+        RateLimitRule(
+            "POST",
+            r"^/api/v1/auth/login$",
+            settings.RATE_LIMIT_LOGIN_PER_MINUTE,
+        ),
+        RateLimitRule(
+            "POST",
+            r"^/api/v1/auth/register$",
+            settings.RATE_LIMIT_REGISTER_PER_HOUR,
+            REGISTER_RATE_LIMIT_WINDOW_SECONDS,
+        ),
+        RateLimitRule(
+            "POST",
+            r"^/api/v1/auth/verify-email$",
+            VERIFY_EMAIL_RATE_LIMIT_PER_MINUTE,
+        ),
+        RateLimitRule(
+            "POST",
+            r"^/api/v1/auth/reset-password$",
+            RESET_PASSWORD_RATE_LIMIT_PER_MINUTE,
+        ),
+        RateLimitRule("GET", r"^/api/v1/search$", 30),
+        RateLimitRule("GET", r"^/api/v1/datasets/[^/]+/download$", 10),
+        RateLimitRule("POST", r"^/api/v1/datasets$", 10),
+        RateLimitRule("GET", r"^/api/v1/public", 60),
+    ]
 
 
 def _is_rate_limit_exempt(request: Request) -> bool:
-    """Dev (APP_ENV=development): ปิด rate limit ทั้งหมด รวม POST /api/v1/auth/login."""
-    if _app_env() == "development":
-        return True
-
-    ip = get_client_ip(request)
-    if ip in RATE_LIMIT_WHITELIST_IPS:
-        return True
-    return False
+    return not settings.rate_limit_enabled
 
 
 def _is_public_path(path: str) -> bool:
@@ -83,22 +103,21 @@ def _is_public_path(path: str) -> bool:
     return any(path.startswith(prefix) for prefix in PUBLIC_PREFIXES)
 
 
-def _get_rate_limit(method: str, path: str) -> int:
-    for rule_method, pattern, limit in RATE_LIMIT_RULES:
-        if method == rule_method and re.match(pattern, path):
-            return limit
+def _resolve_rate_limit(method: str, path: str) -> tuple[int, int]:
+    for rule in _rate_limit_rules():
+        if method == rule.method and re.match(rule.pattern, path):
+            return rule.limit, rule.window_seconds
     if method == "GET" and path.startswith("/api/v1/public"):
-        return 60
-    return DEFAULT_RATE_LIMIT
+        return 60, DEFAULT_RATE_LIMIT_WINDOW_SECONDS
+    return settings.RATE_LIMIT_PER_MINUTE, DEFAULT_RATE_LIMIT_WINDOW_SECONDS
 
 
-def _rate_limit_key(ip: str, method: str, path: str) -> str:
-    return f"rate_limit:{ip}:{method}:{path}"
+def _rate_limit_key(ip: str, method: str, path: str, window_seconds: int) -> str:
+    return f"rate_limit:{window_seconds}:{ip}:{method}:{path}"
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        # Dev: ข้าม rate limit ก่อนทุกอย่าง (รวม /auth/login)
         if _is_rate_limit_exempt(request):
             return await call_next(request)
 
@@ -108,16 +127,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         ip = get_client_ip(request)
         method = request.method
         path = request.url.path
-        limit = _get_rate_limit(method, path)
-        key = _rate_limit_key(ip, method, path)
+        limit, window_seconds = _resolve_rate_limit(method, path)
+        key = _rate_limit_key(ip, method, path, window_seconds)
 
         try:
             client = get_redis_client()
             current = client.incr(key)
             if current == 1:
-                client.expire(key, RATE_LIMIT_WINDOW_SECONDS)
+                client.expire(key, window_seconds)
             ttl = client.ttl(key)
-            reset_at = int(time.time()) + (ttl if ttl > 0 else RATE_LIMIT_WINDOW_SECONDS)
+            reset_at = int(time.time()) + (
+                ttl if ttl > 0 else window_seconds
+            )
             remaining = max(0, limit - current)
 
             if current > limit:
@@ -192,6 +213,8 @@ class RBACMiddleware(BaseHTTPMiddleware):
 
             db = SessionLocal()
             try:
+                if is_user_deleted(db, user_id):
+                    return _error_response("AUTH_ACCOUNT_DELETED", 410)
                 status = get_user_status(db, user_id)
                 validate_user_status(status)
             finally:

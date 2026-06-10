@@ -28,9 +28,11 @@ ALLOWED_FILTER_KEYS = {
     "province",
     "agency_user_id",
     "tag",
+    "format",
 }
 
 ALLOWED_LICENSES = {"open", "conditional", "cc"}
+ALLOWED_FORMATS = {"csv", "excel", "json", "xml"}
 
 
 def _tokenize_thai(keyword: str) -> str:
@@ -73,6 +75,10 @@ def _validate_filters(filters: dict | None) -> dict:
             validated[key] = str(value)
         elif key == "tag":
             validated[key] = str(value).strip()
+        elif key == "format":
+            if value not in ALLOWED_FORMATS:
+                raise_app_error("SEARCH_INVALID_FILTER")
+            validated[key] = value
     return validated
 
 

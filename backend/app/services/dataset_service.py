@@ -6,6 +6,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
+import magic
 import pandas as pd
 from fastapi import BackgroundTasks, UploadFile
 
@@ -56,6 +57,10 @@ def _validate_file(file: UploadFile, content: bytes) -> str:
     content_type = (file.content_type or "").split(";")[0].strip()
     if content_type not in ALLOWED_MIME_TYPES:
         raise_app_error("FILE_INVALID_FORMAT")
+
+    actual_mime = magic.from_buffer(content, mime=True)
+    if actual_mime not in ALLOWED_MIME_TYPES:
+        raise_app_error("INVALID_MIME_TYPE")
 
     filename = file.filename or ""
     parts = filename.split(".")
@@ -492,6 +497,7 @@ def update_dataset(
     current_user: dict,
     ip_address: str,
     background_tasks: BackgroundTasks | None = None,
+    es_client=None,
 ) -> DatasetResponse:
     dataset = dataset_repo.get_dataset_by_id(db, dataset_id)
     if dataset is None:
@@ -563,6 +569,22 @@ def update_dataset(
         ip_address=ip_address,
     )
     db.commit()
+
+    if background_tasks is not None and es_client is not None:
+        updated = dataset_repo.get_dataset_by_id(db, dataset_id)
+        if updated is not None:
+            if updated.status == "published":
+                from app.utils.elasticsearch_utils import index_dataset
+
+                doc = _build_dataset_index_document(db, updated)
+                background_tasks.add_task(index_dataset, es_client, doc)
+            elif updated.status == "draft":
+                from app.utils.elasticsearch_utils import delete_dataset_index
+
+                background_tasks.add_task(
+                    delete_dataset_index, es_client, str(dataset_id)
+                )
+
     return _build_dataset_response(db, dataset_id)
 
 
@@ -625,6 +647,8 @@ def restore_version(
     version_number: int,
     current_user: dict,
     ip_address: str,
+    background_tasks: BackgroundTasks | None = None,
+    es_client=None,
 ) -> DatasetResponse:
     from datetime import datetime, timezone
 
@@ -663,6 +687,15 @@ def restore_version(
         ip_address=ip_address,
     )
     db.commit()
+
+    if background_tasks is not None and es_client is not None:
+        restored = dataset_repo.get_dataset_by_id(db, dataset_id)
+        if restored is not None and restored.status == "published":
+            from app.utils.elasticsearch_utils import index_dataset
+
+            doc = _build_dataset_index_document(db, restored)
+            background_tasks.add_task(index_dataset, es_client, doc)
+
     return _build_dataset_response(db, dataset_id)
 
 
@@ -774,6 +807,14 @@ def bulk_upload(
             )
             db.commit()
             success_count += 1
+
+            if es_client is not None:
+                from app.utils.elasticsearch_utils import index_dataset
+
+                refreshed = dataset_repo.get_dataset_by_id(db, dataset.id)
+                if refreshed is not None:
+                    doc = _build_dataset_index_document(db, refreshed)
+                    background_tasks.add_task(index_dataset, es_client, doc)
 
             email_service.notify_subscribers_new_dataset(
                 background_tasks, db, dataset

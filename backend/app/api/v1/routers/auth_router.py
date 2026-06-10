@@ -1,13 +1,26 @@
 # Module: M1 Auth
 # Feature: API Endpoints ตาม #20 #27
 
+import json
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Request, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    Request,
+    UploadFile,
+    status,
+)
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 import app.services.auth_service as auth_service
+from app.core.config import settings
 from app.core.database import get_db
+from app.core.errors import raise_app_error
 from app.core.pagination import PaginationParams, get_pagination_params
 from app.core.response import (
     delete_response,
@@ -15,55 +28,99 @@ from app.core.response import (
     success_response,
 )
 from app.core.security import (
+    get_client_ip,
     get_current_user_payload_with_status,
     get_redis_client,
+    get_user_agent,
     require_roles,
 )
 from app.schemas.auth_schema import (
     BookmarkRequest,
+    DeleteAccountRequest,
+    ForgotPasswordRequest,
+    LoginHistoryItemResponse,
     LoginRequest,
-    RegisterRequest,
+    MessageResponse,
+    RegisterMetadata,
+    RegisterStatusQuery,
+    RegisterStatusResponse,
+    ResendVerificationRequest,
+    ResetPasswordRequest,
     SubscriptionRequest,
+    VerifyEmailRequest,
+    VerifyEmailResponse,
 )
 
 router = APIRouter()
 
 
+def _get_minio():
+    from minio import Minio
+
+    return Minio(
+        settings.MINIO_ENDPOINT,
+        access_key=settings.MINIO_ACCESS_KEY,
+        secret_key=settings.MINIO_SECRET_KEY,
+        secure=False,
+    )
+
+
+def _parse_register_metadata(data: str) -> RegisterMetadata:
+    try:
+        payload = json.loads(data)
+    except json.JSONDecodeError:
+        raise_app_error("VALIDATION_ERROR", "ข้อมูล data ไม่ใช่ JSON ที่ถูกต้อง")
+
+    try:
+        return RegisterMetadata.model_validate(payload)
+    except ValidationError as exc:
+        raise_app_error("VALIDATION_ERROR", str(exc.errors()[0]["msg"]))
+
+
 @router.post("/auth/register", status_code=status.HTTP_201_CREATED)
-def register(
-    request_body: RegisterRequest,
+async def register(
     request: Request,
     background_tasks: BackgroundTasks,
+    verification_doc: UploadFile = File(...),
+    data: str = Form(...),
     db: Session = Depends(get_db),
 ):
     """
-    สมัครสมาชิก (Agency)
+    สมัครสมาชิก Agency (multipart/form-data) ตาม claude-v3 M1
+    - Fields: verification_doc (PDF ≤5MB), data (JSON RegisterMetadata)
     - Auth ❌
-    - คืน 201 Created
-    - Errors: USER_EMAIL_EXISTS 409, VALIDATION_ERROR 422
+    - Errors: USER_EMAIL_EXISTS 409, VERIFICATION_DOC_* , VALIDATION_ERROR 422
     """
-    from app.core.security import get_client_ip
-
+    metadata = _parse_register_metadata(data)
+    content = await verification_doc.read()
     ip = get_client_ip(request)
     user = auth_service.register(
         db=db,
-        request=request_body,
+        request=metadata,
         ip_address=ip,
         background_tasks=background_tasks,
+        minio_client=_get_minio(),
+        verification_doc_content=content,
+        verification_doc_filename=verification_doc.filename,
     )
-    return success_response(data=user.model_dump(mode="json"), message="สมัครสำเร็จ รอ Admin อนุมัติ")
+    return success_response(
+        data=user.model_dump(mode="json"),
+        message="สมัครสำเร็จ กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชี",
+    )
 
 
 @router.post("/auth/login", status_code=status.HTTP_200_OK)
 def login(
     request_body: LoginRequest,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """
     Login ด้วย Email + Password
     - Auth ❌
     - คืน 200 OK พร้อม Token
-    - Errors: AUTH_INVALID_CREDENTIALS 401, AUTH_ACCOUNT_SUSPENDED 403
+    - Errors: AUTH_INVALID_CREDENTIALS 401, AUTH_ACCOUNT_SUSPENDED 403,
+              AUTH_EMAIL_NOT_VERIFIED 403, AUTH_ACCOUNT_LOCKED 423
     """
     redis_client = get_redis_client()
     token_response = auth_service.login(
@@ -71,8 +128,165 @@ def login(
         redis_client=redis_client,
         email=request_body.email,
         password=request_body.password,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
     )
     return success_response(data=token_response.model_dump(), message="ok")
+
+
+@router.post("/auth/verify-email", status_code=status.HTTP_200_OK)
+def verify_email(
+    request_body: VerifyEmailRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    ยืนยันอีเมลด้วย Token จากลิงก์ในเมล
+    - Auth ❌
+    - Errors: AUTH_TOKEN_INVALID 401, AUTH_TOKEN_EXPIRED 401, AUTH_TOKEN_ALREADY_USED 400
+    """
+    auth_service.verify_email(db=db, token=request_body.token)
+    response = VerifyEmailResponse()
+    return success_response(data=response.model_dump(mode="json"), message="ok")
+
+
+@router.post("/auth/resend-verification", status_code=status.HTTP_200_OK)
+def resend_verification(
+    request_body: ResendVerificationRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    ขออีเมลยืนยันใหม่
+    - Auth ❌
+    - Errors: USER_NOT_FOUND 404, AUTH_RESEND_COOLDOWN 429
+    """
+    ip = get_client_ip(request)
+    auth_service.resend_verification(
+        db=db,
+        redis_client=get_redis_client(),
+        email=request_body.email,
+        ip_address=ip,
+    )
+    return success_response(
+        data=MessageResponse(message="ส่งอีเมลยืนยันใหม่แล้ว").model_dump(mode="json"),
+        message="ok",
+    )
+
+
+@router.get("/auth/register-status", status_code=status.HTTP_200_OK)
+def register_status(
+    email: str,
+    db: Session = Depends(get_db),
+):
+    """
+    เช็คสถานะหลังสมัครด้วย email
+    - Auth ❌
+    - Errors: VALIDATION_ERROR 422
+    """
+    query = RegisterStatusQuery(email=email)
+    result = auth_service.get_register_status(db=db, email=query.email)
+    return success_response(
+        data=RegisterStatusResponse(**result).model_dump(mode="json"),
+        message="ok",
+    )
+
+
+@router.post("/auth/forgot-password", status_code=status.HTTP_200_OK)
+def forgot_password(
+    request_body: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    """
+    ขอลิงก์ตั้งรหัสผ่านใหม่ — ไม่เปิดเผยว่ามี email ในระบบหรือไม่
+    - Auth ❌
+    """
+    auth_service.forgot_password(
+        db=db,
+        redis_client=get_redis_client(),
+        email=request_body.email,
+        background_tasks=background_tasks,
+    )
+    return success_response(
+        data=MessageResponse(
+            message="หากอีเมลมีในระบบ จะส่งลิงก์ตั้งรหัสผ่านใหม่ไปให้",
+        ).model_dump(mode="json"),
+        message="ok",
+    )
+
+
+@router.post("/auth/reset-password", status_code=status.HTTP_200_OK)
+def reset_password(
+    request_body: ResetPasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    ตั้งรหัสผ่านใหม่ด้วย token จากอีเมล
+    - Auth ❌
+    - Errors: AUTH_TOKEN_INVALID 401, AUTH_TOKEN_EXPIRED 401, VALIDATION_ERROR 422
+    """
+    auth_service.reset_password(
+        db=db,
+        token=request_body.token,
+        new_password=request_body.new_password,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
+    )
+    return success_response(
+        data=MessageResponse(message="ตั้งรหัสผ่านใหม่สำเร็จ").model_dump(mode="json"),
+        message="ok",
+    )
+
+
+@router.get("/auth/login-history", status_code=status.HTTP_200_OK)
+def login_history(
+    payload: dict = Depends(require_roles("agency", "admin")),
+    db: Session = Depends(get_db),
+    pagination: PaginationParams = Depends(get_pagination_params),
+):
+    """
+    ดูประวัติ Login ของตัวเอง
+    - Auth ✅ Agency/Admin
+    """
+    items, total = auth_service.get_login_history(
+        db=db,
+        user_id=uuid.UUID(payload["sub"]),
+        pagination=pagination,
+    )
+    return list_response(
+        data=[
+            LoginHistoryItemResponse.model_validate(item).model_dump(mode="json")
+            for item in items
+        ],
+        page=pagination.page,
+        page_size=pagination.page_size,
+        total_items=total,
+    )
+
+
+@router.delete("/auth/me", status_code=status.HTTP_200_OK)
+def delete_me(
+    request_body: DeleteAccountRequest,
+    request: Request,
+    payload: dict = Depends(require_roles("agency", "admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    ลบบัญชีตัวเอง (Anonymize + Soft Delete)
+    - Auth ✅ Agency/Admin
+    - Errors: AUTH_INVALID_CREDENTIALS 401, USER_NOT_FOUND 404
+    """
+    redis_client = get_redis_client()
+    auth_service.delete_account(
+        db=db,
+        redis_client=redis_client,
+        user_id=uuid.UUID(payload["sub"]),
+        password=request_body.password,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
+    )
+    return delete_response(message="deleted")
 
 
 @router.post("/auth/logout", status_code=status.HTTP_200_OK)

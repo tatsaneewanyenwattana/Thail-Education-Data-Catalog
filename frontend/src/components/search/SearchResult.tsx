@@ -190,6 +190,9 @@ export default function SearchResult(props: SearchResultProps) {
       props.selectedProvince,
       props.page,
       props.sort,
+      props.selectedAgencies,
+      props.selectedYears,
+      props.selectedFormats,
     ],
     queryFn: async () => {
       const keyword = (props.keyword || props.filterQuery || "").trim();
@@ -205,6 +208,15 @@ export default function SearchResult(props: SearchResultProps) {
       }
       if (props.selectedProvince && props.selectedProvince !== "all") {
         filters.province = props.selectedProvince;
+      }
+      if (props.selectedAgencies.length > 0) {
+        filters.agency_user_id = props.selectedAgencies[0];
+      }
+      if (props.selectedYears.length > 0) {
+        filters.year = props.selectedYears[0];
+      }
+      if (props.selectedFormats.length > 0) {
+        filters.format = props.selectedFormats[0];
       }
 
       const hasKeyword = keyword.length >= 2;

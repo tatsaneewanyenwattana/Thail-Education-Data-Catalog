@@ -28,18 +28,50 @@ def get_user_by_id(db: Session, user_id: uuid.UUID) -> User | None:
     )
 
 
+def get_user_by_verify_token(db: Session, token: str) -> User | None:
+    return (
+        db.query(User)
+        .filter(User.verify_token == token, User.is_deleted.is_(False))
+        .first()
+    )
+
+
+def get_user_by_reset_token(db: Session, token: str) -> User | None:
+    return (
+        db.query(User)
+        .filter(User.reset_token == token, User.is_deleted.is_(False))
+        .first()
+    )
+
+
 def create_user(
     db: Session,
     agency_name: str,
     email: str,
     password_hash: str,
+    agency_name_en: str | None = None,
+    agency_type: str | None = None,
+    agency_code: str | None = None,
+    agency_website: str | None = None,
+    contact_name: str | None = None,
+    contact_position: str | None = None,
+    contact_phone: str | None = None,
+    verification_doc_path: str | None = None,
 ) -> User:
     user = User(
         email=email,
         password_hash=password_hash,
         role="agency",
-        status="pending",
+        status="email_unverified",
         agency_name=agency_name,
+        agency_name_en=agency_name_en,
+        agency_type=agency_type,
+        agency_code=agency_code,
+        agency_website=agency_website,
+        contact_name=contact_name,
+        contact_position=contact_position,
+        contact_phone=contact_phone,
+        verification_doc_path=verification_doc_path,
     )
     db.add(user)
     db.flush()
@@ -59,17 +91,26 @@ def update_user_status(db: Session, user_id: uuid.UUID, status: str) -> User:
 def create_pdpa_consent(
     db: Session,
     user_id: uuid.UUID,
-    version: str,
+    terms_version: str,
+    pdpa_version: str,
     ip_address: str,
-) -> PDPAConsent:
-    consent = PDPAConsent(
+) -> list[PDPAConsent]:
+    terms_consent = PDPAConsent(
         user_id=user_id,
-        version=version,
+        consent_type="terms",
+        version=terms_version,
         ip_address=ip_address,
     )
-    db.add(consent)
+    pdpa_consent = PDPAConsent(
+        user_id=user_id,
+        consent_type="pdpa",
+        version=pdpa_version,
+        ip_address=ip_address,
+    )
+    db.add(terms_consent)
+    db.add(pdpa_consent)
     db.flush()
-    return consent
+    return [terms_consent, pdpa_consent]
 
 
 def create_bookmark(

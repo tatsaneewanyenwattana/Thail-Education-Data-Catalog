@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AgencySidebar from "@/components/common/AgencySidebar";
 import Navbar from "@/components/common/Navbar";
@@ -15,12 +15,20 @@ export default function AgencyLayout({
   const params = useParams();
   const locale = (params.locale as string) || "th";
   const { token, user, initAuth } = useAuthStore();
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    void initAuth();
+    let active = true;
+    void initAuth().finally(() => {
+      if (active) setAuthReady(true);
+    });
+    return () => {
+      active = false;
+    };
   }, [initAuth]);
 
   useEffect(() => {
+    if (!authReady) return;
     if (!token) {
       router.push(`/${locale}/login`);
       return;
@@ -28,7 +36,11 @@ export default function AgencyLayout({
     if (user && user.role !== "agency" && user.role !== "admin") {
       router.push(`/${locale}`);
     }
-  }, [token, user, router, locale]);
+  }, [authReady, token, user, router, locale]);
+
+  if (!authReady) {
+    return null;
+  }
 
   if (!token) {
     return null;
