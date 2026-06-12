@@ -332,6 +332,8 @@
       "goToLogin": "เข้าสู่ระบบ",
       "checkStatus": "เช็คสถานะการสมัคร",
       "errorDefault": "ไม่สามารถสมัครสมาชิกได้ กรุณาลองใหม่",
+      "turnstileRequired": "กรุณายืนยันว่าไม่ใช่บอท",
+      "turnstileFailed": "การยืนยันไม่สำเร็จ กรุณาลองใหม่",
       "agencyNameRequired": "กรุณากรอกชื่อหน่วยงาน",
       "agencyNameMin": "ชื่อหน่วยงานต้องมีอย่างน้อย 3 ตัวอักษร",
       "emailRequired": "กรุณากรอกอีเมล",
@@ -414,7 +416,9 @@
       "successMessage": "ถ้าอีเมลนี้มีบัญชีในระบบ เราจะส่งลิงก์ให้ทันที",
       "backToLogin": "กลับหน้า Login",
       "emailRequired": "กรุณากรอกอีเมล",
-      "emailInvalid": "รูปแบบอีเมลไม่ถูกต้อง"
+      "emailInvalid": "รูปแบบอีเมลไม่ถูกต้อง",
+      "turnstileRequired": "กรุณายืนยันว่าไม่ใช่บอท",
+      "turnstileFailed": "การยืนยันไม่สำเร็จ กรุณาลองใหม่"
     },
     "resetPassword": {
       "title": "ตั้งรหัสผ่านใหม่",

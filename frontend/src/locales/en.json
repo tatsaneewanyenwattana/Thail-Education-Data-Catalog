@@ -332,6 +332,8 @@
       "goToLogin": "Log in",
       "checkStatus": "Check registration status",
       "errorDefault": "Registration failed. Please try again.",
+      "turnstileRequired": "Please complete the bot check",
+      "turnstileFailed": "Verification failed. Please try again",
       "agencyNameRequired": "Agency name is required",
       "agencyNameMin": "Agency name must be at least 3 characters",
       "emailRequired": "Email is required",
@@ -411,7 +413,9 @@
       "successMessage": "If this email is registered, we will send a reset link shortly",
       "backToLogin": "Back to login",
       "emailRequired": "Email is required",
-      "emailInvalid": "Invalid email format"
+      "emailInvalid": "Invalid email format",
+      "turnstileRequired": "Please complete the bot check",
+      "turnstileFailed": "Verification failed. Please try again"
     },
     "resetPassword": {
       "title": "Set new password",

@@ -18,6 +18,8 @@ ERROR_DEFINITIONS: dict[str, tuple[int, str]] = {
     "AUTH_ACCOUNT_DELETED": (410, "บัญชีถูกลบแล้ว"),
     "AUTH_RESEND_COOLDOWN": (429, "กรุณารอสักครู่ก่อนขออีเมลใหม่"),
     "AUTH_PERMISSION_DENIED": (403, "ไม่มีสิทธิ์ทำสิ่งนี้"),
+    "TURNSTILE_REQUIRED": (400, "กรุณายืนยันว่าไม่ใช่บอท"),
+    "TURNSTILE_FAILED": (400, "การยืนยันไม่สำเร็จ กรุณาลองใหม่"),
     # User
     "USER_NOT_FOUND": (404, "ไม่พบ User"),
     "USER_EMAIL_EXISTS": (409, "Email นี้มีในระบบแล้ว"),

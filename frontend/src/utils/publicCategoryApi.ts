@@ -14,6 +14,7 @@ type ApiPublishedDataset = {
   license: string;
   category_id: string | null;
   download_count: number;
+  published_at: string | null;
   created_at: string;
   updated_at: string;
   metadata?: { year?: number; agency?: string } | null;

@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     MAX_VERIFICATION_DOC_SIZE_MB: int = 5
     ALLOWED_ORIGINS: str = ""
 
+    TURNSTILE_SECRET_KEY: str = ""
+    TURNSTILE_ENABLED: bool = True
+
     @property
     def cors_allowed_origins(self) -> list[str]:
         if self.APP_ENV == "development":

@@ -8,6 +8,9 @@ import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import TurnstileField, {
+  isTurnstileConfigured,
+} from "@/components/common/TurnstileField";
 import apiClient from "@/services/api";
 import { toast } from "@/stores/toastStore";
 
@@ -183,6 +186,9 @@ export default function RegisterForm() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const turnstileEnabled = isTurnstileConfigured();
 
   const registerSchema = useMemo(
     () =>
@@ -307,6 +313,9 @@ export default function RegisterForm() {
       if (values.verification_doc) {
         formData.append("verification_doc", values.verification_doc);
       }
+      if (turnstileEnabled) {
+        formData.append("turnstile_token", turnstileToken);
+      }
 
       await apiClient.post("/auth/register", formData);
     },
@@ -314,11 +323,17 @@ export default function RegisterForm() {
       setRegistered(true);
     },
     onError: (error) => {
+      setTurnstileToken("");
+      setTurnstileResetKey((prev) => prev + 1);
       toast.error(error instanceof Error ? error.message : t("errorDefault"));
     },
   });
 
   const onSubmit = (values: RegisterFormValues) => {
+    if (turnstileEnabled && !turnstileToken) {
+      toast.error(t("turnstileRequired"));
+      return;
+    }
     mutation.mutate(values);
   };
 
@@ -691,10 +706,21 @@ export default function RegisterForm() {
             </p>
           )}
 
+          <TurnstileField
+            resetKey={turnstileResetKey}
+            onSuccess={setTurnstileToken}
+            onExpire={() => setTurnstileToken("")}
+            onError={() => setTurnstileToken("")}
+          />
+
           <div className="pt-1">
             <button
               type="submit"
-              disabled={!isValid || mutation.isPending}
+              disabled={
+                !isValid ||
+                mutation.isPending ||
+                (turnstileEnabled && !turnstileToken)
+              }
               className="flex h-10 w-full items-center justify-center rounded-radius-sm bg-primary font-sarabun text-label font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
             >
               {mutation.isPending ? `${t("submit")}...` : t("submit")}

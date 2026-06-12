@@ -8,7 +8,11 @@ import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import TurnstileField, {
+  isTurnstileConfigured,
+} from "@/components/common/TurnstileField";
 import apiClient from "@/services/api";
+import { toast } from "@/stores/toastStore";
 
 type ForgotPasswordValues = {
   email: string;
@@ -38,6 +42,9 @@ export default function ForgotPasswordPage() {
   const params = useParams();
   const locale = (params.locale as string) || "th";
   const [submitted, setSubmitted] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const turnstileEnabled = isTurnstileConfigured();
 
   const forgotPasswordSchema = useMemo(
     () =>
@@ -65,17 +72,30 @@ export default function ForgotPasswordPage() {
       try {
         await apiClient.post("/auth/forgot-password", {
           email: values.email.trim(),
+          ...(turnstileEnabled ? { turnstile_token: turnstileToken } : {}),
         });
-      } catch {
-        // Always show the same message — do not reveal whether the email exists.
+      } catch (error) {
+        const code = (error as Error & { code?: string }).code;
+        if (code === "TURNSTILE_REQUIRED" || code === "TURNSTILE_FAILED") {
+          throw error;
+        }
       }
     },
-    onSettled: () => {
+    onSuccess: () => {
       setSubmitted(true);
+    },
+    onError: (error) => {
+      setTurnstileToken("");
+      setTurnstileResetKey((prev) => prev + 1);
+      toast.error(error instanceof Error ? error.message : t("turnstileFailed"));
     },
   });
 
   const onSubmit = (values: ForgotPasswordValues) => {
+    if (turnstileEnabled && !turnstileToken) {
+      toast.error(t("turnstileRequired"));
+      return;
+    }
     mutation.mutate(values);
   };
 
@@ -151,9 +171,20 @@ export default function ForgotPasswordPage() {
                 )}
               </div>
 
+              <TurnstileField
+                resetKey={turnstileResetKey}
+                onSuccess={setTurnstileToken}
+                onExpire={() => setTurnstileToken("")}
+                onError={() => setTurnstileToken("")}
+              />
+
               <button
                 type="submit"
-                disabled={!isValid || mutation.isPending}
+                disabled={
+                  !isValid ||
+                  mutation.isPending ||
+                  (turnstileEnabled && !turnstileToken)
+                }
                 className="flex h-10 w-full items-center justify-center rounded-radius-sm bg-primary font-sarabun text-label font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {mutation.isPending ? t("submitting") : t("submit")}

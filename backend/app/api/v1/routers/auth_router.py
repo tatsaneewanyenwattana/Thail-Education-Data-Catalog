@@ -18,6 +18,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 import app.services.auth_service as auth_service
+from app.services.turnstile_service import verify_turnstile
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.errors import raise_app_error
@@ -83,17 +84,19 @@ async def register(
     background_tasks: BackgroundTasks,
     verification_doc: UploadFile = File(...),
     data: str = Form(...),
+    turnstile_token: str | None = Form(default=None),
     db: Session = Depends(get_db),
 ):
     """
     สมัครสมาชิก Agency (multipart/form-data) ตาม claude-v3 M1
-    - Fields: verification_doc (PDF ≤5MB), data (JSON RegisterMetadata)
+    - Fields: verification_doc (PDF ≤5MB), data (JSON RegisterMetadata), turnstile_token
     - Auth ❌
     - Errors: USER_EMAIL_EXISTS 409, VERIFICATION_DOC_* , VALIDATION_ERROR 422
     """
+    ip = get_client_ip(request)
+    verify_turnstile(turnstile_token, ip)
     metadata = _parse_register_metadata(data)
     content = await verification_doc.read()
-    ip = get_client_ip(request)
     user = auth_service.register(
         db=db,
         request=metadata,
@@ -202,6 +205,7 @@ def forgot_password(
     ขอลิงก์ตั้งรหัสผ่านใหม่ — ไม่เปิดเผยว่ามี email ในระบบหรือไม่
     - Auth ❌
     """
+    verify_turnstile(request_body.turnstile_token, get_client_ip(request))
     auth_service.forgot_password(
         db=db,
         redis_client=get_redis_client(),
