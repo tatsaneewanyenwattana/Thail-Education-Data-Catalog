@@ -178,7 +178,10 @@
       "searchPlaceholder": "Search by title, description, or eligibility...",
       "searchButton": "Search",
       "type": "Scholarship type",
-      "level": "Education level"
+      "level": "Education level",
+      "applicationStatus": "Application status",
+      "applicationStatus_open": "Open for applications",
+      "applicationStatus_closed": "Closed"
     },
     "list": {
       "empty": "No scholarships match your criteria",

@@ -4,7 +4,7 @@
 import json
 import logging
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -46,6 +46,7 @@ ALLOWED_SORT_FIELDS = {
     "open_date",
     "title",
 }
+ALLOWED_APPLICATION_STATUS = {"open", "closed"}
 
 SCHOLARSHIP_INDEX_MAPPINGS = {
     "mappings": {
@@ -82,6 +83,36 @@ def _resolve_sort_field(sort: str) -> str:
     if sort in ALLOWED_SORT_FIELDS:
         return sort
     return "created_at"
+
+
+def _today_date() -> date:
+    return datetime.now(timezone.utc).date()
+
+
+def _apply_application_status_filter(query, application_status: str | None):
+    if application_status not in ALLOWED_APPLICATION_STATUS:
+        return query
+
+    today = _today_date()
+    if application_status == "open":
+        return query.filter(
+            Scholarship.open_date <= today,
+            Scholarship.close_date >= today,
+        )
+    return query.filter(Scholarship.close_date < today)
+
+
+def _application_status_es_clauses(application_status: str | None) -> list[dict]:
+    if application_status not in ALLOWED_APPLICATION_STATUS:
+        return []
+
+    today = _today_date().isoformat()
+    if application_status == "open":
+        return [
+            {"range": {"open_date": {"lte": today}}},
+            {"range": {"close_date": {"gte": today}}},
+        ]
+    return [{"range": {"close_date": {"lt": today}}}]
 
 
 def _load_agency_names(
@@ -250,6 +281,9 @@ def _search_scholarships_es(
         )
     if filters.get("target_level"):
         must_clauses.append({"term": {"target_level": filters["target_level"]}})
+    must_clauses.extend(
+        _application_status_es_clauses(filters.get("application_status"))
+    )
 
     tokenized = _tokenize_thai(keyword)
     should_clauses: list[dict] = [
@@ -320,6 +354,7 @@ def _list_scholarships_sql(
     created_by: uuid.UUID | None = None,
     scholarship_type: str | None = None,
     target_level: str | None = None,
+    application_status: str | None = None,
     published_only: bool = False,
     updated_within_days: int | None = None,
     current_month_only: bool = False,
@@ -337,6 +372,7 @@ def _list_scholarships_sql(
         query = query.filter(Scholarship.scholarship_type == scholarship_type)
     if target_level:
         query = query.filter(Scholarship.target_level == target_level)
+    query = _apply_application_status_filter(query, application_status)
     if updated_within_days is not None:
         cutoff = _recent_updated_cutoff(
             updated_within_days=updated_within_days,
@@ -359,6 +395,7 @@ def list_scholarships(
     q: str | None = Query(default=None),
     scholarship_type: str | None = Query(default=None),
     target_level: str | None = Query(default=None),
+    application_status: str | None = Query(default=None),
     updated_within_days: int | None = Query(default=None, ge=1, le=30),
     current_month_only: bool = Query(default=False),
     pagination: PaginationParams = Depends(get_pagination_params),
@@ -368,10 +405,15 @@ def list_scholarships(
     ค้นหาและดูรายการทุนการศึกษา (Public)
     - Auth ❌
     - เฉพาะ status=published และ is_deleted=false
+    - application_status: open | closed (optional)
     """
+    if application_status and application_status not in ALLOWED_APPLICATION_STATUS:
+        raise_app_error("SEARCH_INVALID_FILTER", "ตัวกรองสถานะการรับสมัครไม่ถูกต้อง")
+
     filters = {
         "scholarship_type": scholarship_type,
         "target_level": target_level,
+        "application_status": application_status,
     }
 
     if q and q.strip():
@@ -408,6 +450,7 @@ def list_scholarships(
         pagination,
         scholarship_type=scholarship_type,
         target_level=target_level,
+        application_status=application_status,
         published_only=True,
         updated_within_days=updated_within_days,
         current_month_only=current_month_only,

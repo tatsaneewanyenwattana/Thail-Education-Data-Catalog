@@ -34,13 +34,14 @@ export default function ScholarshipPageClient({
 }: ScholarshipPageClientProps) {
   const t = useTranslations("scholarship");
   const tList = useTranslations("scholarship.list");
-  const { page, q, scholarship_type, target_level } =
+  const { page, q, scholarship_type, target_level, application_status } =
     parseScholarshipFilterParams(searchParams);
 
   const { data, isLoading, isError } = useScholarships({
     q: q || undefined,
     scholarship_type: scholarship_type || undefined,
     target_level: target_level || undefined,
+    application_status: application_status || undefined,
     page,
     page_size: 20,
   });

@@ -20,6 +20,8 @@ export type EducationLevel =
 
 export type ScholarshipStatus = "draft" | "published";
 
+export type ScholarshipApplicationStatus = "open" | "closed";
+
 export type ScholarshipSource = "agency" | "data_go_th" | "api";
 
 export type Scholarship = {
@@ -51,6 +53,7 @@ export type ScholarshipListParams = {
   q?: string;
   scholarship_type?: string;
   target_level?: string;
+  application_status?: ScholarshipApplicationStatus;
   updated_within_days?: number;
   current_month_only?: boolean;
   sort?: string;
@@ -85,6 +88,7 @@ export function useScholarships(params: ScholarshipListParams) {
           q: params.q || undefined,
           scholarship_type: params.scholarship_type || undefined,
           target_level: params.target_level || undefined,
+          application_status: params.application_status || undefined,
           updated_within_days: params.updated_within_days ?? undefined,
           current_month_only: params.current_month_only || undefined,
           sort: params.sort || undefined,

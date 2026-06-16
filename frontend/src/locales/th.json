@@ -178,7 +178,10 @@
       "searchPlaceholder": "ค้นหาชื่อทุน รายละเอียด หรือคุณสมบัติ...",
       "searchButton": "ค้นหา",
       "type": "ประเภททุน",
-      "level": "ระดับการศึกษา"
+      "level": "ระดับการศึกษา",
+      "applicationStatus": "สถานะการรับสมัคร",
+      "applicationStatus_open": "เปิดรับสมัคร",
+      "applicationStatus_closed": "ปิดรับสมัคร"
     },
     "list": {
       "empty": "ไม่พบทุนการศึกษาที่ตรงกับเงื่อนไข",

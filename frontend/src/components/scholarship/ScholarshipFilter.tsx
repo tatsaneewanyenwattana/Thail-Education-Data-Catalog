@@ -23,7 +23,18 @@ export const TARGET_LEVEL_VALUES = [
   "any",
 ] as const satisfies readonly EducationLevel[];
 
+export const APPLICATION_STATUS_VALUES = ["open", "closed"] as const;
+export type ScholarshipApplicationStatus =
+  (typeof APPLICATION_STATUS_VALUES)[number];
+
 type SearchParamsInput = URLSearchParams | Record<string, string | string[] | undefined>;
+type ScholarshipFilterParams = {
+  page: number;
+  q: string;
+  scholarship_type: string;
+  target_level: string;
+  application_status: ScholarshipApplicationStatus | "";
+};
 
 function readParam(
   searchParams: SearchParamsInput,
@@ -40,10 +51,18 @@ function readParam(
   return value ?? "";
 }
 
-export function parseScholarshipFilterParams(searchParams: SearchParamsInput) {
+export function parseScholarshipFilterParams(
+  searchParams: SearchParamsInput
+): ScholarshipFilterParams {
   const page = Math.max(1, Number(readParam(searchParams, "page") || "1") || 1);
   const scholarshipType = readParam(searchParams, "scholarship_type");
   const targetLevel = readParam(searchParams, "target_level");
+  const applicationStatusRaw = readParam(searchParams, "application_status");
+  const applicationStatus = APPLICATION_STATUS_VALUES.includes(
+    applicationStatusRaw as ScholarshipApplicationStatus
+  )
+    ? (applicationStatusRaw as ScholarshipApplicationStatus)
+    : "";
   const q = readParam(searchParams, "q");
 
   return {
@@ -51,6 +70,7 @@ export function parseScholarshipFilterParams(searchParams: SearchParamsInput) {
     q,
     scholarship_type: scholarshipType,
     target_level: targetLevel,
+    application_status: applicationStatus,
   };
 }
 
@@ -62,7 +82,7 @@ export default function ScholarshipFilter() {
   const searchParams = useSearchParams();
   const updateParams = useSearchParamsUpdate();
 
-  const { scholarship_type, target_level, q } =
+  const { scholarship_type, target_level, application_status, q } =
     parseScholarshipFilterParams(searchParams);
   const [keyword, setKeyword] = useState(q);
 
@@ -105,8 +125,8 @@ export default function ScholarshipFilter() {
         </button>
       </form>
 
-      <div className="flex flex-col gap-4 rounded-radius-lg border border-border-default/80 bg-surface-card p-4 md:flex-row md:items-end md:gap-6">
-        <div className="flex-1">
+      <div className="flex flex-col gap-4 rounded-radius-lg border border-border-default/80 bg-surface-card p-4 md:flex-row md:flex-wrap md:items-end md:gap-6">
+        <div className="flex-1 md:min-w-[200px]">
           <label
             htmlFor="scholarship-type-filter"
             className="mb-2 block font-sarabun text-label font-medium text-text-primary"
@@ -130,7 +150,7 @@ export default function ScholarshipFilter() {
           </select>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 md:min-w-[200px]">
           <label
             htmlFor="target-level-filter"
             className="mb-2 block font-sarabun text-label font-medium text-text-primary"
@@ -149,6 +169,32 @@ export default function ScholarshipFilter() {
             {TARGET_LEVEL_VALUES.map((value) => (
               <option key={value} value={value}>
                 {tLevels(value)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex-1 md:min-w-[200px]">
+          <label
+            htmlFor="application-status-filter"
+            className="mb-2 block font-sarabun text-label font-medium text-text-primary"
+          >
+            {tFilter("applicationStatus")}
+          </label>
+          <select
+            id="application-status-filter"
+            value={application_status}
+            onChange={(event) =>
+              updateParams({
+                application_status: event.target.value || null,
+              })
+            }
+            className="min-h-[44px] w-full rounded-radius-md border border-border-input bg-surface-page px-3 font-sarabun text-body-sm text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="">{t("common.all")}</option>
+            {APPLICATION_STATUS_VALUES.map((value) => (
+              <option key={value} value={value}>
+                {tFilter(`applicationStatus_${value}`)}
               </option>
             ))}
           </select>
