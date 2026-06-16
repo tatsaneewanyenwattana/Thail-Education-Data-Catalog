@@ -1,5 +1,6 @@
 "use client";
 
+import { useHeroImage } from "@/hooks/useHeroImage";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
@@ -29,6 +30,8 @@ export default function HeroSearch() {
   const locale = useLocale();
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const { data: heroImage } = useHeroImage();
+  const heroUrl = heroImage?.imageUrl ?? null;
 
   const handleSearch = (e?: FormEvent) => {
     e?.preventDefault();
@@ -42,14 +45,34 @@ export default function HeroSearch() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary-dark to-primary py-16 text-white md:py-24">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-10"
-        aria-hidden
-      >
-        <div className="absolute -left-20 -top-20 h-96 w-96 rounded-radius-full bg-surface-card blur-3xl" />
-        <div className="absolute -bottom-20 -right-20 h-96 w-96 rounded-radius-full bg-surface-card blur-3xl" />
-      </div>
+    <section
+      className={`relative overflow-hidden py-16 text-white md:py-24 ${
+        heroUrl ? "" : "bg-gradient-to-br from-primary-dark to-primary"
+      }`}
+    >
+      {heroUrl ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={heroUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            aria-hidden
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-br from-primary-dark/80 to-primary/70"
+            aria-hidden
+          />
+        </>
+      ) : (
+        <div
+          className="pointer-events-none absolute inset-0 opacity-10"
+          aria-hidden
+        >
+          <div className="absolute -left-20 -top-20 h-96 w-96 rounded-radius-full bg-surface-card blur-3xl" />
+          <div className="absolute -bottom-20 -right-20 h-96 w-96 rounded-radius-full bg-surface-card blur-3xl" />
+        </div>
+      )}
 
       <div className="relative z-10 mx-auto flex max-w-container-max flex-col items-center px-4 text-center md:px-10">
         <h1 className="font-kanit text-heading-1 text-white md:text-display md:leading-[60px]">

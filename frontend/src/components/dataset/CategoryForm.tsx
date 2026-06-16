@@ -1,29 +1,31 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTranslations } from "next-intl";
-import { useEffect, useRef } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import type { AgencyCategoryL1, AgencyCategoryL2 } from "@/data/mockData";
 import { useCreateCategory } from "@/hooks/useCreateCategory";
 import { useUpdateCategory } from "@/hooks/useUpdateCategory";
+import type { ApiCategory } from "@/utils/categoryApi";
+import type { CategoryTreeNode } from "@/utils/categoryTreeUtils";
 
 export type CategoryFormValues = {
   nameTh: string;
   nameEn: string;
   slug: string;
-  parentId?: string;
 };
 
 type CategoryFormProps = {
   open: boolean;
-  level: 1 | 2;
   mode: "create" | "edit";
-  category?: AgencyCategoryL1 | AgencyCategoryL2 | null;
-  parentOptions: AgencyCategoryL1[];
+  category?: CategoryTreeNode | null;
+  parent?: CategoryTreeNode | null;
   onClose: () => void;
   onError: (message: string) => void;
+  /** เรียกหลังสร้างหมวดหมู่สำเร็จ (ใช้ในหน้าอัปโหลด Dataset) */
+  onCreated?: (category: ApiCategory) => void;
 };
 
 function slugify(value: string): string {
@@ -38,14 +40,15 @@ function slugify(value: string): string {
 
 export default function CategoryForm({
   open,
-  level,
   mode,
   category,
-  parentOptions,
+  parent,
   onClose,
   onError,
+  onCreated,
 }: CategoryFormProps) {
   const t = useTranslations("agency.categories");
+  const locale = useLocale();
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
   const slugTouched = useRef(false);
@@ -57,14 +60,7 @@ export default function CategoryForm({
       .string()
       .min(1, t("fieldSlugError"))
       .regex(/^[a-z0-9-]+$/, t("fieldSlugError")),
-    parentId:
-      level === 2
-        ? z.string().min(1, t("fieldParentError"))
-        : z.string().optional(),
   });
-
-  const defaultParentId =
-    category && "parentId" in category ? category.parentId : "";
 
   const {
     register,
@@ -79,11 +75,7 @@ export default function CategoryForm({
     defaultValues: {
       nameTh: category?.nameTh ?? "",
       nameEn: category?.nameEn ?? "",
-      slug:
-        category?.slug ||
-        (category?.nameEn ? slugify(category.nameEn) : "") ||
-        "",
-      parentId: defaultParentId,
+      slug: category?.slug ?? "",
     },
   });
 
@@ -102,8 +94,6 @@ export default function CategoryForm({
         category?.slug ||
         (category?.nameEn ? slugify(category.nameEn) : "") ||
         "category",
-      parentId:
-        category && "parentId" in category ? category.parentId : "",
     });
     slugTouched.current = mode === "edit";
   }, [open, category, mode, reset]);
@@ -114,7 +104,13 @@ export default function CategoryForm({
     }
   }, [nameEn, setValue]);
 
-  if (!open) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!open || !mounted) {
     return null;
   }
 
@@ -122,31 +118,33 @@ export default function CategoryForm({
 
   const title =
     mode === "create"
-      ? level === 1
-        ? t("formTitleAddL1")
-        : t("formTitleAddL2")
-      : level === 1
-        ? t("formTitleEditL1")
-        : t("formTitleEditL2");
+      ? parent
+        ? t("formTitleAddChild")
+        : t("formTitleAddRoot")
+      : t("formTitleEdit");
+
+  const parentLabel = parent
+    ? locale === "th"
+      ? parent.nameTh
+      : parent.nameEn
+    : "";
 
   const onSubmit = async (values: CategoryFormValues) => {
     try {
       if (mode === "create") {
-        await createMutation.mutateAsync({
-          level,
+        const created = await createMutation.mutateAsync({
           nameTh: values.nameTh,
           nameEn: values.nameEn,
           slug: values.slug,
-          parentId: level === 2 ? values.parentId : undefined,
+          parentId: parent?.id,
         });
+        onCreated?.(created);
       } else if (category) {
         await updateMutation.mutateAsync({
           id: category.id,
-          level,
           nameTh: values.nameTh,
           nameEn: values.nameEn,
           slug: values.slug,
-          parentId: level === 2 ? values.parentId : undefined,
           originalNameTh: category.nameTh,
           originalNameEn: category.nameEn,
         });
@@ -161,7 +159,7 @@ export default function CategoryForm({
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
       role="dialog"
@@ -192,7 +190,20 @@ export default function CategoryForm({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {parent && (
+          <p className="mb-4 rounded-radius-sm bg-surface-container px-3 py-2 font-sarabun text-label text-text-secondary">
+            {t("parentHint", { name: parentLabel })}
+          </p>
+        )}
+
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            void handleSubmit(onSubmit)(event);
+          }}
+          className="space-y-5"
+        >
           <div>
             <label
               htmlFor="nameTh"
@@ -270,38 +281,6 @@ export default function CategoryForm({
             )}
           </div>
 
-          {level === 2 && (
-            <div>
-              <label
-                htmlFor="parentId"
-                className="mb-2 block font-sarabun text-label text-text-secondary"
-              >
-                {t("fieldParent")}
-              </label>
-              <select
-                id="parentId"
-                className={`h-10 w-full rounded-radius-sm border bg-surface-card px-3 font-sarabun text-body-md outline-none transition-colors focus:ring-2 focus:ring-primary-dark/20 ${
-                  errors.parentId
-                    ? "border-status-error"
-                    : "border-border-input"
-                }`}
-                {...register("parentId")}
-              >
-                <option value="">{t("fieldParentPlaceholder")}</option>
-                {parentOptions.map((parent) => (
-                  <option key={parent.id} value={parent.id}>
-                    {parent.nameTh}
-                  </option>
-                ))}
-              </select>
-              {errors.parentId && (
-                <p className="mt-1 font-sarabun text-caption text-status-error">
-                  {errors.parentId.message}
-                </p>
-              )}
-            </div>
-          )}
-
           <div className="flex gap-3 pt-2">
             <button
               type="button"
@@ -321,7 +300,8 @@ export default function CategoryForm({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

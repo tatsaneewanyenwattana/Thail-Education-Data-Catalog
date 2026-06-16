@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 import app.services.admin_service as admin_service
 import app.services.download_service as download_service
+import app.services.hero_image_service as hero_image_service
 import app.services.page_content_service as page_content_service
 import app.services.public_service as public_service
 from app.core.config import settings
@@ -42,12 +43,42 @@ def _get_redis():
 @router.get("/pages/{slug}", status_code=200)
 def public_get_page(slug: str, db: Session = Depends(get_db)):
     """
-    ดึงเนื้อหาหน้า Static (privacy-policy, terms, api-docs, help-center)
+    ดึงเนื้อหาหน้า Static
     - Auth ❌
-    - คืน default content เมื่อยังไม่มีใน DB (ไม่ 404)
+    - ไม่แสดงหน้าที่ status = draft
     """
-    result = page_content_service.get_page(db, slug)
+    result = page_content_service.get_public_page(db, slug)
     return success_response(result.model_dump(mode="json"))
+
+
+@router.get("/settings/hero-image", status_code=200)
+def public_get_hero_image():
+    """
+    ดึง URL รูป Hero หน้าหลัก (path ไปยัง backend proxy)
+    - Auth ❌
+    """
+    result = hero_image_service.get_hero_image(_get_minio())
+    return success_response(result.model_dump(mode="json"))
+
+
+@router.get("/settings/hero-image/file")
+def public_stream_hero_image():
+    """
+    สตรีมรูป Hero หน้าหลักจาก MinIO ผ่าน Backend
+    - Auth ❌
+    """
+    from app.core.errors import raise_app_error
+
+    payload = hero_image_service.stream_hero_image(_get_minio())
+    if payload is None:
+        raise_app_error("FILE_NOT_FOUND", "ไม่พบไฟล์")
+
+    content, media_type = payload
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=300"},
+    )
 
 
 @router.get("/agencies", status_code=200)

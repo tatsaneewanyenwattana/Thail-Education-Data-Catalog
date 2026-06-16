@@ -16,12 +16,24 @@ type HeroImageApiResponse = {
 };
 
 function mapHeroImage(data: HeroImageApiResponse): HeroImageData {
-  return { imageUrl: data.image_url ?? null };
+  return { imageUrl: resolveHeroImageUrl(data.image_url ?? null) };
+}
+
+function resolveHeroImageUrl(path: string | null): string | null {
+  if (!path) {
+    return null;
+  }
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  const base = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${normalizedPath}`;
 }
 
 async function fetchHeroImage(): Promise<HeroImageData> {
   const res = await apiClient.get<{ data: HeroImageApiResponse }>(
-    "/admin/settings/hero-image"
+    "/public/settings/hero-image"
   );
   return mapHeroImage(res.data.data);
 }

@@ -12,6 +12,7 @@ from app.api.v1.routers.tag_router import router as tag_router
 from app.api.v1.routers.notification_router import router as notification_router
 from app.api.v1.routers.scholarship_router import router as scholarship_router
 from app.api.v1.routers.visualization_router import router as visualization_router
+from app.pii.router import router as pii_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router, tags=["Auth"])
@@ -26,3 +27,4 @@ api_router.include_router(visualization_router, tags=["Visualization"])
 api_router.include_router(notification_router, tags=["Notification"])
 api_router.include_router(public_router, tags=["Public API"])
 api_router.include_router(scholarship_router, tags=["Scholarship"])
+api_router.include_router(pii_router, tags=["PII"])

@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, status
 from pythainlp.tokenize import word_tokenize
 from sqlalchemy import asc, desc
 from sqlalchemy.exc import IntegrityError
@@ -18,7 +18,8 @@ from app.core.database import get_db
 from app.core.errors import raise_app_error
 from app.core.pagination import PaginationParams, get_pagination_params
 from app.core.response import delete_response, list_response, success_response
-from app.core.security import require_roles
+from app.core.security import get_client_ip, require_roles
+import app.repositories.dataset_repository as dataset_repo
 from app.models.scholarship_bookmark_model import ScholarshipBookmark
 from app.models.scholarship_model import Scholarship
 from app.models.user_model import User
@@ -515,6 +516,7 @@ def get_scholarship(
 def create_scholarship(
     request_body: ScholarshipCreate,
     background_tasks: BackgroundTasks,
+    request: Request,
     payload: dict = Depends(require_roles("agency", "admin")),
     db: Session = Depends(get_db),
 ):
@@ -549,6 +551,16 @@ def create_scholarship(
         published_at=published_at,
     )
     db.add(scholarship)
+    db.flush()
+    dataset_repo.create_audit_log(
+        db,
+        user_id=uuid.UUID(payload["sub"]),
+        action="scholarship.create",
+        target_type="scholarship",
+        target_id=scholarship.id,
+        detail={"status": scholarship.status, "title": scholarship.title},
+        ip_address=get_client_ip(request),
+    )
     db.commit()
     db.refresh(scholarship)
 
@@ -605,6 +617,7 @@ def update_scholarship(
     id: uuid.UUID,
     request_body: ScholarshipUpdate,
     background_tasks: BackgroundTasks,
+    request: Request,
     payload: dict = Depends(require_roles("agency", "admin")),
     db: Session = Depends(get_db),
 ):
@@ -668,6 +681,15 @@ def update_scholarship(
         scholarship.published_at = datetime.now(timezone.utc)
 
     scholarship.updated_at = datetime.now(timezone.utc)
+    dataset_repo.create_audit_log(
+        db,
+        user_id=uuid.UUID(payload["sub"]),
+        action="scholarship.update",
+        target_type="scholarship",
+        target_id=scholarship.id,
+        detail={"title": scholarship.title, "updated_fields": list(update_data.keys())},
+        ip_address=get_client_ip(request),
+    )
     db.commit()
     db.refresh(scholarship)
 
@@ -694,6 +716,7 @@ def update_scholarship(
 def delete_scholarship(
     id: uuid.UUID,
     background_tasks: BackgroundTasks,
+    request: Request,
     payload: dict = Depends(require_roles("agency", "admin")),
     db: Session = Depends(get_db),
 ):
@@ -705,6 +728,15 @@ def delete_scholarship(
 
     scholarship.is_deleted = True
     scholarship.updated_at = datetime.now(timezone.utc)
+    dataset_repo.create_audit_log(
+        db,
+        user_id=uuid.UUID(payload["sub"]),
+        action="scholarship.delete",
+        target_type="scholarship",
+        target_id=scholarship.id,
+        detail={"title": scholarship.title},
+        ip_address=get_client_ip(request),
+    )
     db.commit()
 
     background_tasks.add_task(_delete_scholarship_index, _get_es(), str(scholarship.id))

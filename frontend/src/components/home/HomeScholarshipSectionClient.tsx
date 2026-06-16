@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import ScholarshipRecentListItem from "@/components/scholarship/ScholarshipRecentListItem";
 import { useScholarships } from "@/hooks/useScholarships";
 
-const RECENT_DAYS = 7;
+const HOME_SCHOLARSHIP_LIMIT = 6;
 
 type HomeScholarshipSectionClientProps = {
   locale: string;
@@ -14,7 +14,7 @@ type HomeScholarshipSectionClientProps = {
 function ScholarshipListSkeleton() {
   return (
     <div className="animate-pulse space-y-4">
-      {Array.from({ length: 3 }).map((_, i) => (
+      {Array.from({ length: HOME_SCHOLARSHIP_LIMIT }).map((_, i) => (
         <div
           key={i}
           className="rounded-radius-lg border border-border-default bg-surface-card p-5"
@@ -33,15 +33,13 @@ export default function HomeScholarshipSectionClient({
 }: HomeScholarshipSectionClientProps) {
   const t = useTranslations("home.scholarships");
   const { data, isLoading, isError, error } = useScholarships({
-    updated_within_days: RECENT_DAYS,
-    current_month_only: true,
     sort: "updated_at",
     order: "desc",
     page: 1,
-    page_size: 10,
+    page_size: HOME_SCHOLARSHIP_LIMIT,
   });
 
-  const items = data?.items ?? [];
+  const items = (data?.items ?? []).slice(0, HOME_SCHOLARSHIP_LIMIT);
 
   if (!isLoading && !isError && items.length === 0) {
     return null;

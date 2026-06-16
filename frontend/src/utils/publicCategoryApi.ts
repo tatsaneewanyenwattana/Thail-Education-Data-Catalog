@@ -1,10 +1,13 @@
-import type {
-  CategoryMock,
-  CategoryPageData,
-  CategorySubcategoryMock,
-  SearchResultMock,
-} from "@/data/mockData";
+import type { SearchResultMock } from "@/data/mockData";
 import type { ApiCategory } from "@/utils/categoryApi";
+import {
+  buildCategoryTree,
+  collectDescendantLeafIds,
+  findCategoryNodeBySlug,
+  getCategoryAncestors,
+  isCategoryLeaf,
+  type CategoryTreeNode,
+} from "@/utils/categoryTreeUtils";
 
 type ApiPublishedDataset = {
   id: string;
@@ -21,73 +24,47 @@ type ApiPublishedDataset = {
   agency_name?: string | null;
 };
 
-export function buildCategoryTreeFromApi(
+export type PublicCategoryPageData = {
+  node: CategoryTreeNode;
+  ancestors: CategoryTreeNode[];
+  children: CategoryTreeNode[];
+  isLeaf: boolean;
+};
+
+export function buildPublicCategoryTree(
   categories: ApiCategory[]
-): CategoryMock[] {
-  const l1Raw = categories.filter((c) => c.level === 1);
-  const l2Raw = categories.filter((c) => c.level === 2);
-  const l2ByParent = new Map<string, CategorySubcategoryMock[]>();
-
-  for (const c of l2Raw) {
-    const parentId = c.parent_id ? String(c.parent_id) : "";
-    const sub: CategorySubcategoryMock = {
-      id: String(c.id),
-      slug: c.slug,
-      nameTh: c.name_th,
-      nameEn: c.name_en,
-      level: 2,
-      datasetCount: 0,
-    };
-    const list = l2ByParent.get(parentId) ?? [];
-    list.push(sub);
-    l2ByParent.set(parentId, list);
-  }
-
-  return l1Raw.map((c) => ({
-    id: String(c.id),
-    slug: c.slug,
-    nameTh: c.name_th,
-    nameEn: c.name_en,
-    level: 1 as const,
-    datasetCount: 0,
-    searchCategoryId: String(c.id),
-    subcategories: l2ByParent.get(String(c.id)) ?? [],
-  }));
+): CategoryTreeNode[] {
+  return buildCategoryTree(categories);
 }
 
-export function findCategoryPageBySlug(
+export function findPublicCategoryPageBySlug(
   slug: string,
-  tree: CategoryMock[]
-): CategoryPageData | null {
-  for (const category of tree) {
-    if (category.slug === slug) {
-      return { level: 1, category, subcategory: null };
-    }
-    const subcategory = category.subcategories.find((s) => s.slug === slug);
-    if (subcategory) {
-      return { level: 2, category, subcategory };
-    }
+  tree: CategoryTreeNode[]
+): PublicCategoryPageData | null {
+  const node = findCategoryNodeBySlug(tree, slug);
+  if (!node) {
+    return null;
   }
-  return null;
+  const ancestors = getCategoryAncestors(tree, node.id) ?? [];
+  return {
+    node,
+    ancestors,
+    children: node.children,
+    isLeaf: isCategoryLeaf(node),
+  };
 }
 
-/** UUID ของหมวดที่ใช้กรอง Dataset (L1 รวม L2 ใต้ตัว) */
-export function getCategoryFilterIds(
-  pageData: CategoryPageData,
-  allCategories: ApiCategory[]
-): string[] {
-  const { category, subcategory, level } = pageData;
-
-  if (level === 2 && subcategory) {
-    return [subcategory.id ?? subcategory.slug];
+/** Leaf pages only — branch pages return [] (no datasets on branch). */
+export function getCategoryFilterIds(pageData: PublicCategoryPageData): string[] {
+  if (!pageData.isLeaf) {
+    return [];
   }
+  return [pageData.node.id];
+}
 
-  const rootId = category.id ?? category.searchCategoryId;
-  const childIds = allCategories
-    .filter((c) => c.level === 2 && String(c.parent_id) === rootId)
-    .map((c) => String(c.id));
-
-  return [rootId, ...childIds];
+/** All leaf IDs under a node (for child-card dataset counts on branch pages). */
+export function getSubtreeLeafFilterIds(node: CategoryTreeNode): string[] {
+  return collectDescendantLeafIds(node);
 }
 
 export function mapApiDatasetToSearchResult(
@@ -97,12 +74,8 @@ export function mapApiDatasetToSearchResult(
   const cat = item.category_id
     ? categoryById.get(String(item.category_id))
     : undefined;
-  const parent =
-    cat?.level === 2 && cat.parent_id
-      ? categoryById.get(String(cat.parent_id))
-      : cat?.level === 1
-        ? cat
-        : undefined;
+
+  const rootCategory = cat ? getRootCategory(cat, categoryById) : undefined;
 
   const title = item.title;
   const year =
@@ -120,10 +93,11 @@ export function mapApiDatasetToSearchResult(
     titleEn: title,
     descriptionTh: item.description ?? "",
     descriptionEn: item.description ?? "",
-    categoryTh: parent?.name_th ?? cat?.name_th ?? "—",
-    categoryEn: parent?.name_en ?? cat?.name_en ?? "—",
-    categoryId: parent ? String(parent.id) : cat ? String(cat.id) : "",
-    subcategorySlug: cat?.level === 2 ? cat.slug : undefined,
+    categoryTh: rootCategory?.name_th ?? cat?.name_th ?? "—",
+    categoryEn: rootCategory?.name_en ?? cat?.name_en ?? "—",
+    categoryId: rootCategory ? String(rootCategory.id) : cat ? String(cat.id) : "",
+    leafCategoryId: cat ? String(cat.id) : undefined,
+    subcategorySlug: cat && cat.level > 1 ? cat.slug : undefined,
     agencyTh: agencyName,
     agencyEn: agencyName,
     agencyId: "",
@@ -138,19 +112,43 @@ export function mapApiDatasetToSearchResult(
   };
 }
 
-export function applyDatasetCounts(
-  tree: CategoryMock[],
+function getRootCategory(
+  cat: ApiCategory,
+  categoryById: Map<string, ApiCategory>
+): ApiCategory {
+  let current = cat;
+  while (current.parent_id) {
+    const parent = categoryById.get(String(current.parent_id));
+    if (!parent) {
+      break;
+    }
+    current = parent;
+  }
+  return current;
+}
+
+export function applyDatasetCountsToTree(
+  nodes: CategoryTreeNode[],
   datasets: SearchResultMock[]
-): CategoryMock[] {
-  return tree.map((category) => ({
-    ...category,
-    datasetCount: datasets.filter((d) => d.categoryId === category.id).length,
-    subcategories: category.subcategories.map((sub) => ({
-      ...sub,
-      datasetCount: datasets.filter((d) => d.subcategorySlug === sub.slug)
-        .length,
-    })),
-  }));
+): CategoryTreeNode[] {
+  const countForNode = (node: CategoryTreeNode): number => {
+    if (node.children.length === 0) {
+      return datasets.filter(
+        (d) =>
+          d.leafCategoryId === node.id ||
+          (!d.leafCategoryId && d.subcategorySlug === node.slug)
+      ).length;
+    }
+    return node.children.reduce((sum, child) => sum + countForNode(child), 0);
+  };
+
+  const mapNode = (node: CategoryTreeNode): CategoryTreeNode => ({
+    ...node,
+    datasetCount: countForNode(node),
+    children: node.children.map(mapNode),
+  });
+
+  return nodes.map(mapNode);
 }
 
 export type { ApiPublishedDataset };

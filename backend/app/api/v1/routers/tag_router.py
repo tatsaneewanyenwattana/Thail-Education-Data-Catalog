@@ -11,7 +11,7 @@ from app.core.database import get_db
 from app.core.errors import raise_app_error
 from app.core.response import delete_response, list_response, success_response
 from app.core.security import require_roles
-from app.schemas.dataset_schema import TagCreateRequest, TagResponse, TagUpdateRequest
+from app.schemas.dataset_schema import TagCreateRequest, TagResponse, TagUpdateRequest, TagWithDatasetCountResponse
 
 router = APIRouter()
 
@@ -44,7 +44,15 @@ def list_tags(
     - Auth ✅ Admin
     """
     tags = tag_repo.get_all_tags(db)
-    items = [TagResponse.model_validate(t) for t in tags]
+    counts = tag_repo.count_datasets_by_tag(db)
+    items = [
+        TagWithDatasetCountResponse(
+            **TagResponse.model_validate(tag).model_dump(),
+            dataset_count=counts.get(tag.id, 0),
+        )
+        for tag in tags
+    ]
+    items.sort(key=lambda item: (-item.dataset_count, item.name.lower()))
     return list_response(
         data=[i.model_dump(mode="json") for i in items],
         page=1,

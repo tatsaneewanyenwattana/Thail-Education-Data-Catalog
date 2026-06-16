@@ -1,68 +1,66 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import AgencyCategoryTree from "@/components/dataset/AgencyCategoryTree";
 import CategoryForm from "@/components/dataset/CategoryForm";
-import CategoryTable from "@/components/dataset/CategoryTable";
 import DeleteCategoryModal from "@/components/dataset/DeleteCategoryModal";
-import type { AgencyCategoryL1, AgencyCategoryL2 } from "@/data/mockData";
-import { useAgencyCategoryParents } from "@/hooks/useAgencyCategories";
+import { useAgencyCategoryTree } from "@/hooks/useAgencyCategories";
 import { useAuthStore } from "@/stores/useAuthStore";
-
-type CategoryTab = "level1" | "level2";
+import type { CategoryTreeNode } from "@/utils/categoryTreeUtils";
 
 export default function AgencyCategoriesPage() {
   const t = useTranslations("agency.categories");
   const tDashboard = useTranslations("agency.dashboard");
   const { user } = useAuthStore();
 
-  const [tab, setTab] = useState<CategoryTab>("level1");
-  const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
-  const [editingCategory, setEditingCategory] = useState<
-    AgencyCategoryL1 | AgencyCategoryL2 | null
-  >(null);
-  const [deleteTarget, setDeleteTarget] = useState<
-    AgencyCategoryL1 | AgencyCategoryL2 | null
-  >(null);
+  const [editingCategory, setEditingCategory] = useState<CategoryTreeNode | null>(
+    null
+  );
+  const [parentForCreate, setParentForCreate] = useState<CategoryTreeNode | null>(
+    null
+  );
+  const [deleteTarget, setDeleteTarget] = useState<CategoryTreeNode | null>(null);
   const [deleteDisplayName, setDeleteDisplayName] = useState("");
   const [toastError, setToastError] = useState<string | null>(null);
 
-  const level = tab === "level1" ? 1 : 2;
-  const { data: parentOptions = [] } = useAgencyCategoryParents();
+  const { data, isLoading, isError } = useAgencyCategoryTree();
+  const tree = data?.tree ?? [];
 
-  useEffect(() => {
-    setPage(1);
-  }, [tab]);
-
-  const openCreateForm = () => {
+  const openCreateRoot = () => {
     setFormMode("create");
     setEditingCategory(null);
+    setParentForCreate(null);
     setFormOpen(true);
     setToastError(null);
   };
 
-  const openEditForm = (category: AgencyCategoryL1 | AgencyCategoryL2) => {
+  const openCreateChild = (parent: CategoryTreeNode) => {
+    setFormMode("create");
+    setEditingCategory(null);
+    setParentForCreate(parent);
+    setFormOpen(true);
+    setToastError(null);
+  };
+
+  const openEditForm = (category: CategoryTreeNode) => {
     setFormMode("edit");
     setEditingCategory(category);
+    setParentForCreate(null);
     setFormOpen(true);
     setToastError(null);
   };
 
   const handleDeleteRequest = (
-    category: AgencyCategoryL1 | AgencyCategoryL2,
+    category: CategoryTreeNode,
     displayName: string
   ) => {
     setDeleteTarget(category);
     setDeleteDisplayName(displayName);
     setToastError(null);
   };
-
-  const tabs: { id: CategoryTab; label: string }[] = [
-    { id: "level1", label: t("tabL1") },
-    { id: "level2", label: t("tabL2") },
-  ];
 
   return (
     <div className="space-y-6">
@@ -79,33 +77,13 @@ export default function AgencyCategoriesPage() {
         </div>
         <button
           type="button"
-          onClick={openCreateForm}
+          onClick={openCreateRoot}
           className="inline-flex items-center justify-center gap-2 rounded-radius-lg bg-primary px-6 py-2.5 font-sarabun text-label font-bold text-surface-card shadow-level-1 transition-opacity hover:bg-primary-hover"
         >
           <PlusIcon />
-          {tab === "level1" ? t("addL1") : t("addL2")}
+          {t("addRoot")}
         </button>
       </header>
-
-      <div className="flex gap-8 border-b border-border-default">
-        {tabs.map((item) => {
-          const isActive = tab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setTab(item.id)}
-              className={`border-b-2 pb-3 font-kanit text-label font-bold transition-colors ${
-                isActive
-                  ? "border-primary-dark text-primary-dark"
-                  : "border-transparent text-text-muted hover:text-primary-dark"
-              }`}
-            >
-              {item.label}
-            </button>
-          );
-        })}
-      </div>
 
       {toastError && (
         <div
@@ -116,30 +94,36 @@ export default function AgencyCategoriesPage() {
         </div>
       )}
 
-      <CategoryTable
-        tab={tab}
-        page={page}
-        onPageChange={setPage}
+      {isError && (
+        <div className="rounded-radius-lg border border-status-error bg-status-error-bg px-6 py-4 font-sarabun text-label text-status-error">
+          {t("loadError")}
+        </div>
+      )}
+
+      <AgencyCategoryTree
+        nodes={tree}
+        isLoading={isLoading}
+        onAddRoot={openCreateRoot}
+        onAddChild={openCreateChild}
         onEdit={openEditForm}
         onDelete={handleDeleteRequest}
       />
 
       <CategoryForm
         open={formOpen}
-        level={level}
         mode={formMode}
         category={editingCategory}
-        parentOptions={parentOptions}
+        parent={parentForCreate}
         onClose={() => {
           setFormOpen(false);
           setEditingCategory(null);
+          setParentForCreate(null);
         }}
         onError={(message) => setToastError(message)}
       />
 
       <DeleteCategoryModal
         open={Boolean(deleteTarget)}
-        level={level}
         category={deleteTarget}
         displayName={deleteDisplayName}
         onClose={() => {

@@ -19,7 +19,7 @@ type SearchResultProps = {
   selectedAgencies: string[];
   selectedYears: string[];
   selectedFormats: string[];
-  selectedTag: string;
+  selectedTags: string[];
   selectedProvince: string;
   sort: SortOption;
   page: number;
@@ -184,7 +184,7 @@ export default function SearchResult(props: SearchResultProps) {
       props.keyword,
       props.filterQuery,
       props.selectedCategory,
-      props.selectedTag,
+      props.selectedTags,
       props.selectedProvince,
       props.page,
       props.sort,
@@ -194,12 +194,12 @@ export default function SearchResult(props: SearchResultProps) {
     ],
     queryFn: async () => {
       const keyword = (props.keyword || props.filterQuery || "").trim();
-      const filters: Record<string, string> = {};
+      const filters: Record<string, unknown> = {};
       if (props.selectedCategory) {
         filters.category_id = props.selectedCategory;
       }
-      if (props.selectedTag) {
-        filters.tag = props.selectedTag;
+      if (props.selectedTags.length > 0) {
+        filters.tags = props.selectedTags;
       }
       if (props.selectedProvince) {
         filters.province = props.selectedProvince;
@@ -208,10 +208,10 @@ export default function SearchResult(props: SearchResultProps) {
         filters.agency_user_id = props.selectedAgencies[0];
       }
       if (props.selectedYears.length > 0) {
-        filters.year = props.selectedYears[0];
+        filters.years = props.selectedYears.map((year) => Number.parseInt(year, 10));
       }
       if (props.selectedFormats.length > 0) {
-        filters.format = props.selectedFormats[0];
+        filters.formats = props.selectedFormats;
       }
 
       const hasKeyword = keyword.length >= 2;
@@ -305,7 +305,7 @@ export function parseSearchPageParams(searchParams: URLSearchParams) {
     selectedAgencies: parseListParam(searchParams.get("agency")),
     selectedYears: parseListParam(searchParams.get("year")),
     selectedFormats: parseListParam(searchParams.get("format")),
-    selectedTag: searchParams.get("tag") ?? "",
+    selectedTags: parseListParam(searchParams.get("tag")),
     selectedProvince: searchParams.get("province") ?? "",
     sort,
     page,

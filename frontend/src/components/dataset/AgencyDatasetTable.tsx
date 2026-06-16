@@ -9,6 +9,7 @@ import {
   useAgencyDatasets,
   type AgencyDatasetStatusFilter,
 } from "@/hooks/useAgencyDatasets";
+import { usePublishDataset } from "@/hooks/usePublishDataset";
 
 type AgencyDatasetTableProps = {
   status: AgencyDatasetStatusFilter;
@@ -94,6 +95,9 @@ export default function AgencyDatasetTable({
   const locale = useLocale();
   const base = `/${locale}`;
   const { data, isLoading, isError, error } = useAgencyDatasets(status, page);
+  const publishMutation = usePublishDataset();
+  const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
   const [downloadTarget, setDownloadTarget] = useState<{
     id: string;
     fileFormat: string | null;
@@ -143,8 +147,30 @@ export default function AgencyDatasetTable({
 
   const pages = getPageNumbers(currentPage, totalPages);
 
+  const handlePublish = async (row: AgencyDatasetRow) => {
+    setPublishError(null);
+    setPublishingId(row.id);
+    try {
+      await publishMutation.mutateAsync(row.id);
+    } catch (err) {
+      setPublishError(
+        err instanceof Error ? err.message : t("publishError")
+      );
+    } finally {
+      setPublishingId(null);
+    }
+  };
+
   return (
     <>
+      {publishError && (
+        <div
+          className="mb-4 rounded-radius-md border border-status-error bg-status-error-bg px-4 py-3 font-sarabun text-label text-status-error"
+          role="alert"
+        >
+          {publishError}
+        </div>
+      )}
       <div className="overflow-hidden rounded-radius-lg border border-border-default/80 bg-surface-card shadow-level-1">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
@@ -200,7 +226,19 @@ export default function AgencyDatasetTable({
                       {updated}
                     </td>
                     <td className="px-6 py-3">
-                      <div className="flex items-center justify-center gap-4">
+                      <div className="flex items-center justify-center gap-3">
+                        {row.status === "draft" && (
+                          <button
+                            type="button"
+                            onClick={() => void handlePublish(row)}
+                            disabled={publishingId === row.id}
+                            className="rounded-radius-sm bg-primary px-2.5 py-1 font-sarabun text-caption font-semibold text-surface-card transition-opacity hover:bg-primary-hover disabled:opacity-50"
+                          >
+                            {publishingId === row.id
+                              ? t("publishing")
+                              : t("publish")}
+                          </button>
+                        )}
                         <Link
                           href={`${base}/datasets/${row.id}/edit`}
                           className="text-text-muted transition-colors hover:text-primary-dark"

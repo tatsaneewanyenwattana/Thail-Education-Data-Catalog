@@ -7,5 +7,5 @@ from pydantic import BaseModel, Field
 class HeroImageResponse(BaseModel):
     image_url: str | None = Field(
         default=None,
-        description="Public URL to hero image (presigned MinIO URL when configured)",
+        description="Relative or absolute URL to hero image served via backend proxy",
     )

@@ -3,21 +3,31 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/services/api";
 import {
-  ADMIN_CATEGORY_PAGE_SIZE,
-  type AdminCategoriesResult,
-  type AdminCategory,
   type AdminCategoryInput,
-  type AdminSubcategory,
 } from "@/data/mockData";
 import {
   toCategoryMutationBody,
   toCategoryUpdateBody,
   type ApiCategory,
 } from "@/utils/categoryApi";
+import {
+  buildCategoryTree,
+  countCategoriesByLevel,
+  flattenCategoryTree,
+  type CategoryTreeNode,
+} from "@/utils/categoryTreeUtils";
+
+export type AdminCategoryTreeNode = Omit<CategoryTreeNode, "children"> & {
+  agencyName: string;
+  children: AdminCategoryTreeNode[];
+};
+
+export const ADMIN_AGENCY_PAGE_SIZE = 2;
 
 type AdminCategoriesFilters = {
   search?: string;
   page?: number;
+  adminOwnerLabel?: string;
 };
 
 type CategoriesListResponse = {
@@ -25,160 +35,178 @@ type CategoriesListResponse = {
   data: ApiCategory[];
 };
 
-type AdminUserApi = {
-  id: string;
-  agency_name: string | null;
+export type AdminAgencyCategoryGroup = {
+  agencyName: string;
+  categories: AdminCategoryTreeNode[];
 };
 
-type AdminUsersListResponse = {
-  success: boolean;
-  data: AdminUserApi[];
+export type AdminCategoriesResult = {
+  data: AdminCategoryTreeNode[];
+  groupedByAgency: AdminAgencyCategoryGroup[];
+  totalAgencyGroups: number;
+  totalRoots: number;
+  totalCategories: number;
+  countsByLevel: Record<number, number>;
+  page: number;
+  totalPages: number;
 };
 
-type AdminDatasetRowApi = {
-  category: string;
-  subcategory: string;
-};
-
-type AdminDatasetsListResponse = {
-  success: boolean;
-  data: AdminDatasetRowApi[];
-};
-
-function countDatasetsForCategory(
-  category: ApiCategory,
-  datasets: AdminDatasetRowApi[],
-  allCategories: ApiCategory[]
-): number {
-  if (category.level === 2) {
-    return datasets.filter((d) => d.subcategory === category.name_th).length;
+function buildDatasetCountMapFromCategories(
+  categories: ApiCategory[]
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const category of categories) {
+    counts[String(category.id)] = category.dataset_count ?? 0;
   }
-
-  const direct = datasets.filter(
-    (d) =>
-      d.category === category.name_th &&
-      (!d.subcategory || d.subcategory === "-")
-  ).length;
-
-  const childNames = new Set(
-    allCategories
-      .filter(
-        (c) => c.level === 2 && String(c.parent_id) === String(category.id)
-      )
-      .map((c) => c.name_th)
-  );
-  const viaChildren = datasets.filter((d) => childNames.has(d.subcategory)).length;
-
-  return direct + viaChildren;
+  return counts;
 }
 
-function buildAdminCategoryTree(
-  categories: ApiCategory[],
-  agencyByUserId: Map<string, string>,
-  datasets: AdminDatasetRowApi[]
-): AdminCategory[] {
-  const l1Raw = categories.filter((c) => c.level === 1);
-  const l2Raw = categories.filter((c) => c.level === 2);
-
-  const l2ByParent = new Map<string, AdminSubcategory[]>();
-  for (const c of l2Raw) {
-    const parentId = c.parent_id ? String(c.parent_id) : "";
-    const agencyName =
-      agencyByUserId.get(String(c.created_by)) ?? "—";
-    const sub: AdminSubcategory = {
-      id: String(c.id),
-      nameTh: c.name_th,
-      nameEn: c.name_en,
-      slug: c.slug,
-      agencyName,
-      datasetCount: countDatasetsForCategory(c, datasets, categories),
-    };
-    const list = l2ByParent.get(parentId) ?? [];
-    list.push(sub);
-    l2ByParent.set(parentId, list);
+function resolveAgencyLabel(
+  category: ApiCategory,
+  adminOwnerLabel: string
+): string {
+  if (category.creator_role === "admin") {
+    return adminOwnerLabel;
   }
+  const agencyName = category.agency_name?.trim();
+  if (agencyName) {
+    return agencyName;
+  }
+  return "—";
+}
 
-  return l1Raw.map((c) => {
-    const subcategories = l2ByParent.get(String(c.id)) ?? [];
-    const ownCount = countDatasetsForCategory(c, datasets, categories);
-    const subTotal = subcategories.reduce((sum, s) => sum + s.datasetCount, 0);
+function attachAgencyNames(
+  nodes: CategoryTreeNode[],
+  categories: ApiCategory[],
+  adminOwnerLabel: string
+): AdminCategoryTreeNode[] {
+  const categoryById = new Map(
+    categories.map((category) => [String(category.id), category] as const)
+  );
+
+  return nodes.map((node) => {
+    const source = categoryById.get(node.id);
+    const agencyName = source
+      ? resolveAgencyLabel(source, adminOwnerLabel)
+      : "—";
     return {
-      id: String(c.id),
-      nameTh: c.name_th,
-      nameEn: c.name_en,
-      slug: c.slug,
-      datasetCount: Math.max(ownCount, subTotal),
-      subcategories,
+      ...node,
+      agencyName,
+      children: attachAgencyNames(
+        node.children,
+        categories,
+        adminOwnerLabel
+      ),
     };
   });
 }
 
+function buildAdminCategoryTree(
+  categories: ApiCategory[],
+  adminOwnerLabel: string
+): AdminCategoryTreeNode[] {
+  const datasetCountByCategoryId =
+    buildDatasetCountMapFromCategories(categories);
+  const baseTree = buildCategoryTree(categories, datasetCountByCategoryId);
+  return attachAgencyNames(baseTree, categories, adminOwnerLabel);
+}
+
+function nodeMatchesKeyword(node: AdminCategoryTreeNode, keyword: string): boolean {
+  return (
+    node.nameTh.toLowerCase().includes(keyword) ||
+    node.nameEn.toLowerCase().includes(keyword) ||
+    node.slug.toLowerCase().includes(keyword) ||
+    node.agencyName.toLowerCase().includes(keyword)
+  );
+}
+
+function filterTreeByKeyword(
+  nodes: AdminCategoryTreeNode[],
+  keyword: string
+): AdminCategoryTreeNode[] {
+  const result: AdminCategoryTreeNode[] = [];
+
+  for (const node of nodes) {
+    const filteredChildren = filterTreeByKeyword(
+      node.children as AdminCategoryTreeNode[],
+      keyword
+    );
+    if (nodeMatchesKeyword(node, keyword) || filteredChildren.length > 0) {
+      result.push({
+        ...node,
+        children: filteredChildren,
+        childCount: filteredChildren.length,
+      });
+    }
+  }
+
+  return result;
+}
+
 function applyCategoryFilters(
-  tree: AdminCategory[],
+  tree: AdminCategoryTreeNode[],
   filters?: AdminCategoriesFilters
 ): AdminCategoriesResult {
   const keyword = filters?.search?.trim().toLowerCase() ?? "";
-  let filtered = tree;
+  const filtered = keyword ? filterTreeByKeyword(tree, keyword) : tree;
 
-  if (keyword) {
-    filtered = tree.filter((category) => {
-      const l1Match =
-        category.nameTh.toLowerCase().includes(keyword) ||
-        category.nameEn.toLowerCase().includes(keyword) ||
-        category.slug.toLowerCase().includes(keyword);
-      const l2Match = category.subcategories.some(
-        (sub) =>
-          sub.nameTh.toLowerCase().includes(keyword) ||
-          sub.nameEn.toLowerCase().includes(keyword) ||
-          sub.slug.toLowerCase().includes(keyword) ||
-          sub.agencyName.toLowerCase().includes(keyword)
-      );
-      return l1Match || l2Match;
-    });
-  }
-
-  const totalL1 = filtered.length;
-  const totalL2 = filtered.reduce(
-    (sum, category) => sum + category.subcategories.length,
-    0
+  const flat = flattenCategoryTree(filtered);
+  const totalRoots = filtered.length;
+  const totalCategories = flat.length;
+  const countsByLevel = countCategoriesByLevel(filtered);
+  const allGroups = groupRootsByAgency(filtered);
+  const totalAgencyGroups = allGroups.length;
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalAgencyGroups / ADMIN_AGENCY_PAGE_SIZE)
   );
-  const totalPages = Math.max(1, Math.ceil(totalL1 / ADMIN_CATEGORY_PAGE_SIZE));
   const safePage = Math.min(Math.max(filters?.page ?? 1, 1), totalPages);
-  const start = (safePage - 1) * ADMIN_CATEGORY_PAGE_SIZE;
+  const start = (safePage - 1) * ADMIN_AGENCY_PAGE_SIZE;
 
   return {
-    data: filtered.slice(start, start + ADMIN_CATEGORY_PAGE_SIZE),
-    totalL1,
-    totalL2,
+    data: filtered,
+    groupedByAgency: allGroups.slice(start, start + ADMIN_AGENCY_PAGE_SIZE),
+    totalAgencyGroups,
+    totalRoots,
+    totalCategories,
+    countsByLevel,
     page: safePage,
     totalPages,
   };
 }
 
+function groupRootsByAgency(
+  roots: AdminCategoryTreeNode[]
+): AdminAgencyCategoryGroup[] {
+  const groups = new Map<string, AdminCategoryTreeNode[]>();
+
+  for (const root of roots) {
+    const key = root.agencyName.trim() || "—";
+    const list = groups.get(key) ?? [];
+    list.push(root);
+    groups.set(key, list);
+  }
+
+  return Array.from(groups.entries())
+    .sort(([left], [right]) => left.localeCompare(right, "th"))
+    .map(([agencyName, categories]) => ({
+      agencyName,
+      categories: categories.sort((a, b) =>
+        a.nameTh.localeCompare(b.nameTh, "th")
+      ),
+    }));
+}
+
 async function fetchAdminCategories(
   filters?: AdminCategoriesFilters
 ): Promise<AdminCategoriesResult> {
-  const [catsRes, usersRes, datasetsRes] = await Promise.all([
-    apiClient.get<CategoriesListResponse>("/admin/categories"),
-    apiClient.get<AdminUsersListResponse>("/admin/users", {
-      params: { page: 1, page_size: 100 },
-    }),
-    apiClient.get<AdminDatasetsListResponse>("/datasets", {
-      params: { all: true, page: 1, page_size: 100, sort: "updated_at", order: "desc" },
-    }),
-  ]);
+  const catsRes = await apiClient.get<CategoriesListResponse>(
+    "/admin/categories"
+  );
 
   const categories = catsRes.data.data ?? [];
-  const agencyByUserId = new Map<string, string>();
-  for (const user of usersRes.data.data ?? []) {
-    const label = user.agency_name?.trim() || "";
-    if (label) {
-      agencyByUserId.set(String(user.id), label);
-    }
-  }
-
-  const datasets = datasetsRes.data.data ?? [];
-  const tree = buildAdminCategoryTree(categories, agencyByUserId, datasets);
+  const adminOwnerLabel = filters?.adminOwnerLabel?.trim() || "Admin";
+  const tree = buildAdminCategoryTree(categories, adminOwnerLabel);
   return applyCategoryFilters(tree, filters);
 }
 
@@ -192,12 +220,17 @@ export function useAdminCategories(filters?: AdminCategoriesFilters) {
   });
 }
 
-type CreateCategoryVariables = AdminCategoryInput;
+type CreateCategoryVariables = AdminCategoryInput & {
+  parentId?: string;
+};
 
 async function createCategory(variables: CreateCategoryVariables): Promise<void> {
   await apiClient.post(
     "/admin/categories",
-    toCategoryMutationBody(variables),
+    {
+      ...toCategoryMutationBody(variables),
+      parent_id: variables.parentId ?? null,
+    },
     {
       headers: {
         "Content-Type": "application/json; charset=UTF-8",
@@ -223,7 +256,6 @@ export const useAdminCreateCategory = useCreateCategory;
 
 type UpdateCategoryVariables = AdminCategoryInput & {
   id: string;
-  level: 1 | 2;
 };
 
 async function updateCategory(variables: UpdateCategoryVariables): Promise<void> {
@@ -252,7 +284,6 @@ export const useAdminUpdateCategory = useUpdateCategory;
 
 type DeleteCategoryVariables = {
   id: string;
-  level: 1 | 2;
 };
 
 async function deleteCategory(variables: DeleteCategoryVariables): Promise<void> {

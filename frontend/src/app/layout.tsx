@@ -9,6 +9,12 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning>
       <body className="font-sarabun bg-surface-page" suppressHydrationWarning>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "if(location.hostname==='localhost'){location.replace(location.href.replace('//localhost','//127.0.0.1'));}",
+          }}
+        />
         {children}
         <ToastContainer />
       </body>

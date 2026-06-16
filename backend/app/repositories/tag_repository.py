@@ -3,8 +3,11 @@
 
 import uuid
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.models.dataset_model import Dataset
+from app.models.dataset_tag_model import DatasetTag
 from app.models.tag_model import Tag
 
 
@@ -38,6 +41,38 @@ def get_all_tags(db: Session) -> list[Tag]:
         .order_by(Tag.name)
         .all()
     )
+
+
+def count_datasets_by_tag(db: Session) -> dict[uuid.UUID, int]:
+    rows = (
+        db.query(DatasetTag.tag_id, func.count(Dataset.id))
+        .join(Dataset, Dataset.id == DatasetTag.dataset_id)
+        .filter(Dataset.is_deleted.is_(False))
+        .group_by(DatasetTag.tag_id)
+        .all()
+    )
+    return {tag_id: count for tag_id, count in rows}
+
+
+def get_tag_names_by_category_id(
+    db: Session,
+    category_id: uuid.UUID,
+) -> list[str]:
+    """แท็กที่เคยใช้ใน Dataset ของหมวดหมู่นี้ เรียงตามความถี่"""
+    rows = (
+        db.query(Tag.name, func.count(Tag.name).label("usage_count"))
+        .join(DatasetTag, DatasetTag.tag_id == Tag.id)
+        .join(Dataset, Dataset.id == DatasetTag.dataset_id)
+        .filter(
+            Dataset.category_id == category_id,
+            Dataset.is_deleted.is_(False),
+            Tag.is_deleted.is_(False),
+        )
+        .group_by(Tag.name)
+        .order_by(func.count(Tag.name).desc(), Tag.name.asc())
+        .all()
+    )
+    return [row[0] for row in rows]
 
 
 def update_tag(db: Session, tag_id: uuid.UUID, name: str) -> Tag:

@@ -69,6 +69,25 @@ def create_subcategory(
     return success_response(data=result.model_dump(mode="json"))
 
 
+@router.get("/categories/{category_id}/tags", status_code=status.HTTP_200_OK)
+def get_category_tags(
+    category_id: uuid.UUID,
+    payload: dict = Depends(require_roles("agency", "admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    แท็กที่เคยใช้ใน Dataset ของหมวดหมู่นี้ (สำหรับ pre-fill ตอนอัปโหลด)
+    - Auth ✅ Agency/Admin
+    - Errors: CATEGORY_NOT_FOUND 404, CATEGORY_NOT_OWNED 403
+    """
+    tags = cat_service.get_category_suggested_tags(
+        db=db,
+        category_id=category_id,
+        current_user=payload,
+    )
+    return success_response(data=tags)
+
+
 @router.patch("/categories/{category_id}", status_code=status.HTTP_200_OK)
 def update_category(
     category_id: uuid.UUID,
@@ -111,7 +130,7 @@ def admin_list_categories(
     Admin: ดูรายการหมวดทุก Agency ตาม #20
     - Auth ✅ Admin
     """
-    items = cat_service.list_all_categories_admin(db=db)
+    items = cat_service.list_all_categories_admin_with_counts(db=db)
     return list_response(
         data=[c.model_dump(mode="json") for c in items],
         page=1,

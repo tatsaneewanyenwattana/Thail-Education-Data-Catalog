@@ -154,11 +154,28 @@ def get_stats_overview(db: Session) -> dict[str, Any]:
         .scalar()
         or 0
     )
+    total_categories = int(
+        db.query(func.count(Category.id))
+        .filter(Category.is_deleted.is_(False))
+        .scalar()
+        or 0
+    )
+    level_rows = (
+        db.query(Category.level, func.count(Category.id))
+        .filter(Category.is_deleted.is_(False))
+        .group_by(Category.level)
+        .all()
+    )
+    categories_by_level = {
+        str(int(row[0])): int(row[1]) for row in level_rows if row[0] is not None
+    }
 
     return {
         "total_datasets": int(total_datasets),
         "total_downloads": int(total_downloads),
         "total_agencies": int(total_agencies),
+        "total_categories": total_categories,
+        "categories_by_level": categories_by_level,
         "total_categories_level1": total_categories_level1,
         "total_categories_level2": total_categories_level2,
         "datasets_by_year": datasets_by_year,

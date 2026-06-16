@@ -1,9 +1,6 @@
 import apiClient from "@/services/api";
-import type {
-  AgencyCategoriesResponse,
-  AgencyCategoryL1,
-  AgencyCategoryL2,
-} from "@/data/mockData";
+import type { CategoryTreeNode } from "@/utils/categoryTreeUtils";
+import { buildCategoryTree } from "@/utils/categoryTreeUtils";
 
 export const AGENCY_CATEGORY_PAGE_SIZE = 4;
 
@@ -16,11 +13,14 @@ export type ApiCategory = {
   parent_id: string | null;
   created_by: string;
   created_at: string;
+  dataset_count?: number;
+  agency_name?: string | null;
+  creator_role?: string | null;
 };
 
-export type AgencyCategoriesCache = {
-  l1: AgencyCategoryL1[];
-  l2: AgencyCategoryL2[];
+export type AgencyCategoriesTreeCache = {
+  tree: CategoryTreeNode[];
+  flat: ApiCategory[];
 };
 
 type CategoriesListResponse = {
@@ -28,114 +28,27 @@ type CategoriesListResponse = {
   data: ApiCategory[];
 };
 
-type AgencyDatasetApi = {
-  category: string;
-  subcategory: string;
-};
-
-type AgencyDatasetsListResponse = {
-  success: boolean;
-  data: AgencyDatasetApi[];
-};
-
-function countDatasetsForCategory(
-  category: ApiCategory,
-  datasets: AgencyDatasetApi[],
-  allCategories: ApiCategory[]
-): number {
-  if (category.level === 2) {
-    return datasets.filter((d) => d.subcategory === category.name_th).length;
+function buildDatasetCountMapFromCategories(
+  categories: ApiCategory[]
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const category of categories) {
+    counts[String(category.id)] = category.dataset_count ?? 0;
   }
-
-  const direct = datasets.filter(
-    (d) =>
-      d.category === category.name_th &&
-      (!d.subcategory || d.subcategory === "-")
-  ).length;
-
-  const childNames = new Set(
-    allCategories
-      .filter(
-        (c) => c.level === 2 && String(c.parent_id) === String(category.id)
-      )
-      .map((c) => c.name_th)
-  );
-  const viaChildren = datasets.filter((d) => childNames.has(d.subcategory)).length;
-
-  return direct + viaChildren;
+  return counts;
 }
 
-function mapToCache(
-  categories: ApiCategory[],
-  datasets: AgencyDatasetApi[]
-): AgencyCategoriesCache {
-  const l1Raw = categories.filter((c) => c.level === 1);
-  const l2Raw = categories.filter((c) => c.level === 2);
-  const l1ById = new Map(l1Raw.map((c) => [String(c.id), c]));
-
-  const l1: AgencyCategoryL1[] = l1Raw.map((c) => ({
-    id: String(c.id),
-    nameTh: c.name_th,
-    nameEn: c.name_en,
-    slug: c.slug,
-    datasetCount: countDatasetsForCategory(c, datasets, categories),
-  }));
-
-  const l2: AgencyCategoryL2[] = l2Raw.map((c) => {
-    const parent = c.parent_id ? l1ById.get(String(c.parent_id)) : undefined;
-    return {
-      id: String(c.id),
-      nameTh: c.name_th,
-      nameEn: c.name_en,
-      slug: c.slug,
-      parentId: c.parent_id ? String(c.parent_id) : "",
-      parentNameTh: parent?.name_th ?? "",
-      parentNameEn: parent?.name_en ?? "",
-      datasetCount: countDatasetsForCategory(c, datasets, categories),
-    };
-  });
-
-  return { l1, l2 };
-}
-
-export async function fetchAgencyCategoriesCache(
-  userId: string
-): Promise<AgencyCategoriesCache> {
-  const [catsRes, datasetsRes] = await Promise.all([
-    apiClient.get<CategoriesListResponse>("/categories"),
-    apiClient.get<AgencyDatasetsListResponse>("/agency/datasets", {
-      params: { page: 1, page_size: 100 },
-    }),
-  ]);
-
-  const mine = (catsRes.data.data ?? []).filter(
-    (c) => String(c.created_by) === userId
+export async function fetchAgencyCategoriesTree(): Promise<AgencyCategoriesTreeCache> {
+  const catsRes = await apiClient.get<CategoriesListResponse>(
+    "/agency/categories"
   );
-  const datasets = datasetsRes.data.data ?? [];
-
-  return mapToCache(mine, datasets);
-}
-
-export function paginateAgencyCategories(
-  cache: AgencyCategoriesCache,
-  level: 1 | 2,
-  page: number
-): AgencyCategoriesResponse {
-  const list = level === 1 ? cache.l1 : cache.l2;
-  const totalPages = Math.max(
-    1,
-    Math.ceil(list.length / AGENCY_CATEGORY_PAGE_SIZE)
-  );
-  const safePage = Math.min(Math.max(page, 1), totalPages);
-  const start = (safePage - 1) * AGENCY_CATEGORY_PAGE_SIZE;
+  const categories = catsRes.data.data ?? [];
+  const datasetCountByCategoryId =
+    buildDatasetCountMapFromCategories(categories);
 
   return {
-    data: list.slice(start, start + AGENCY_CATEGORY_PAGE_SIZE) as
-      | AgencyCategoryL1[]
-      | AgencyCategoryL2[],
-    total: list.length,
-    page: safePage,
-    totalPages,
+    flat: categories,
+    tree: buildCategoryTree(categories, datasetCountByCategoryId),
   };
 }
 

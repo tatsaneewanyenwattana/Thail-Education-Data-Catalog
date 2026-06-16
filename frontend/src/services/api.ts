@@ -52,10 +52,11 @@ apiClient.interceptors.response.use(
         );
 
       if (!isLoginRequest && hadAuth && typeof window !== "undefined") {
+        const isOnLoginPage = window.location.pathname.includes("/login");
         localStorage.removeItem("token");
         localStorage.removeItem("auth");
 
-        if (!isPublicDatasetEndpoint) {
+        if (!isPublicDatasetEndpoint && !isOnLoginPage) {
           const locale = localStorage.getItem("locale") || "th";
           const pathLocale =
             window.location.pathname.split("/")[1] === "en" ? "en" : locale;

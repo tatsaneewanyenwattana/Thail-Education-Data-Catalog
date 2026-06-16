@@ -1,21 +1,24 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import CategoryForm from "@/components/admin/CategoryForm";
 import CategoryTree from "@/components/admin/CategoryTree";
-import DeleteCategoryModal, {
-  type DeleteCategoryTarget,
-} from "@/components/admin/DeleteCategoryModal";
+import DeleteCategoryModal from "@/components/admin/DeleteCategoryModal";
+import DatasetTagsOverview from "@/components/admin/DatasetTagsOverview";
 import TagForm from "@/components/admin/TagForm";
-import TagTable from "@/components/admin/TagTable";
-import type { AdminCategory, AdminSubcategory, AdminTag } from "@/data/mockData";
-import { useAdminCategories } from "@/hooks/useAdminCategories";
+import {
+  ADMIN_AGENCY_PAGE_SIZE,
+  useAdminCategories,
+  type AdminCategoryTreeNode,
+} from "@/hooks/useAdminCategories";
 import { useAdminTags } from "@/hooks/useAdminTags";
+import { MAX_CATEGORY_DEPTH } from "@/utils/categoryTreeUtils";
 import { toast } from "@/stores/toastStore";
 
 export default function AdminCategoriesPage() {
   const t = useTranslations("admin.categories");
+  const locale = useLocale();
 
   const [searchInput, setSearchInput] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
@@ -25,22 +28,25 @@ export default function AdminCategoriesPage() {
   const [categoryFormMode, setCategoryFormMode] = useState<"create" | "edit">(
     "create"
   );
-  const [categoryFormLevel, setCategoryFormLevel] = useState<1 | 2>(1);
-  const [editingCategory, setEditingCategory] = useState<
-    AdminCategory | AdminSubcategory | null
-  >(null);
+  const [editingCategory, setEditingCategory] =
+    useState<AdminCategoryTreeNode | null>(null);
+  const [parentForCreate, setParentForCreate] =
+    useState<AdminCategoryTreeNode | null>(null);
 
-  const [deleteTarget, setDeleteTarget] = useState<DeleteCategoryTarget | null>(
+  const [deleteTarget, setDeleteTarget] = useState<AdminCategoryTreeNode | null>(
     null
   );
+  const [deleteDisplayName, setDeleteDisplayName] = useState("");
 
   const [tagFormOpen, setTagFormOpen] = useState(false);
-  const [tagFormMode, setTagFormMode] = useState<"create" | "edit">("create");
-  const [editingTag, setEditingTag] = useState<AdminTag | null>(null);
 
   const categoryFilters = useMemo(
-    () => ({ search: appliedSearch || undefined, page }),
-    [appliedSearch, page]
+    () => ({
+      search: appliedSearch || undefined,
+      page,
+      adminOwnerLabel: t("adminOwner"),
+    }),
+    [appliedSearch, page, t]
   );
 
   const { data: categoriesData, isLoading: categoriesLoading } =
@@ -62,40 +68,44 @@ export default function AdminCategoriesPage() {
     setPage(1);
   };
 
-  const openCreateCategory = () => {
+  const openCreateRoot = () => {
     setCategoryFormMode("create");
-    setCategoryFormLevel(1);
     setEditingCategory(null);
+    setParentForCreate(null);
     setCategoryFormOpen(true);
   };
 
-  const openEditCategoryL1 = (category: AdminCategory) => {
+  const openCreateChild = (parent: AdminCategoryTreeNode) => {
+    setCategoryFormMode("create");
+    setEditingCategory(null);
+    setParentForCreate(parent);
+    setCategoryFormOpen(true);
+  };
+
+  const openEditCategory = (category: AdminCategoryTreeNode) => {
     setCategoryFormMode("edit");
-    setCategoryFormLevel(1);
     setEditingCategory(category);
+    setParentForCreate(null);
     setCategoryFormOpen(true);
   };
 
-  const openEditCategoryL2 = (subcategory: AdminSubcategory) => {
-    setCategoryFormMode("edit");
-    setCategoryFormLevel(2);
-    setEditingCategory(subcategory);
-    setCategoryFormOpen(true);
-  };
-
-  const openCreateTag = () => {
-    setTagFormMode("create");
-    setEditingTag(null);
-    setTagFormOpen(true);
-  };
-
-  const openEditTag = (tag: AdminTag) => {
-    setTagFormMode("edit");
-    setEditingTag(tag);
-    setTagFormOpen(true);
-  };
-
+  const totalCategories = categoriesData?.totalCategories ?? 0;
+  const totalAgencyGroups = categoriesData?.totalAgencyGroups ?? 0;
   const totalPages = categoriesData?.totalPages ?? 1;
+  const currentPage = categoriesData?.page ?? 1;
+  const agencyFrom =
+    totalAgencyGroups === 0
+      ? 0
+      : (currentPage - 1) * ADMIN_AGENCY_PAGE_SIZE + 1;
+  const agencyTo = Math.min(currentPage * ADMIN_AGENCY_PAGE_SIZE, totalAgencyGroups);
+
+  const levelSummary = useMemo(() => {
+    const counts = categoriesData?.countsByLevel ?? {};
+    return Array.from({ length: MAX_CATEGORY_DEPTH }, (_, index) => {
+      const level = index + 1;
+      return { level, count: counts[level] ?? 0 };
+    }).filter((item) => item.count > 0);
+  }, [categoriesData?.countsByLevel]);
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-0 pb-24">
@@ -107,15 +117,27 @@ export default function AdminCategoriesPage() {
           <p className="mt-1 font-sarabun text-body-md text-text-muted">
             {t("subtitle")}
           </p>
+          {levelSummary.length > 0 && (
+            <p className="mt-2 font-sarabun text-caption text-text-muted">
+              {t("levelSummary", {
+                total: categoriesData?.totalCategories ?? 0,
+                levels: levelSummary
+                  .map((item) =>
+                    t("levelCount", { level: item.level, count: item.count })
+                  )
+                  .join(locale === "th" ? " · " : " · "),
+              })}
+            </p>
+          )}
         </div>
         <div className="flex w-full gap-3 md:w-auto">
           <button
             type="button"
-            onClick={openCreateCategory}
+            onClick={openCreateRoot}
             className="flex flex-1 items-center justify-center gap-2 rounded-radius-lg bg-primary px-5 py-2.5 font-kanit text-label font-semibold text-surface-card shadow-level-1 transition-all hover:bg-primary-hover active:scale-95 md:flex-none"
           >
             <PlusIcon />
-            {t("addL1")}
+            {t("addRoot")}
           </button>
           <button
             type="button"
@@ -129,8 +151,8 @@ export default function AdminCategoriesPage() {
       </header>
 
       <div className="border-b border-border-default/50 bg-surface-card px-6 lg:px-8">
-        <div className="mb-4 pt-4 md:hidden">
-          <div className="relative">
+        <div className="py-4">
+          <div className="relative max-w-xl">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
               <SearchIcon />
             </span>
@@ -144,103 +166,117 @@ export default function AdminCategoriesPage() {
                 }
               }}
               placeholder={t("searchPlaceholder")}
-              className="h-10 w-full rounded-radius-sm border border-border-input bg-surface-card pl-10 pr-4 font-sarabun text-body-md focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+              className="h-10 w-full rounded-radius-sm border border-border-input bg-surface-card pl-10 pr-24 font-sarabun text-body-md focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
             />
+            <button
+              type="button"
+              onClick={applySearch}
+              className="absolute right-1 top-1/2 -translate-y-1/2 rounded-radius-sm bg-primary px-3 py-1.5 font-kanit text-caption font-semibold text-surface-card"
+            >
+              {t("searchAction")}
+            </button>
           </div>
         </div>
       </div>
 
       <div className="space-y-8 p-4 lg:p-8">
         <CategoryTree
-          categories={categoriesData?.data ?? []}
+          groups={categoriesData?.groupedByAgency ?? []}
           isLoading={categoriesLoading}
-          onEditL1={openEditCategoryL1}
-          onEditL2={openEditCategoryL2}
-          onDeleteL1={(category, displayName) =>
-            setDeleteTarget({ level: 1, category, displayName })
-          }
-          onDeleteL2={(subcategory, displayName) =>
-            setDeleteTarget({ level: 2, category: subcategory, displayName })
-          }
+          onAddRoot={openCreateRoot}
+          onAddChild={openCreateChild}
+          onEdit={openEditCategory}
+          onDelete={(category, displayName) => {
+            setDeleteTarget(category);
+            setDeleteDisplayName(displayName);
+          }}
         />
 
-        <div className="flex flex-col items-center justify-between gap-4 font-sarabun text-body-sm text-text-muted sm:flex-row">
-          <p>
-            {t("paginationSummary", {
-              l1: categoriesData?.totalL1 ?? 0,
-              l2: categoriesData?.totalL2 ?? 0,
-            })}
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPage((current) => Math.max(1, current - 1))}
-              disabled={page <= 1}
-              className="rounded-radius-lg p-1.5 text-text-muted transition-colors hover:bg-surface-container-low disabled:opacity-40"
-              aria-label={t("prevPage")}
-            >
-              <ChevronLeftIcon />
-            </button>
-            {Array.from({ length: totalPages }).map((_, index) => {
-              const pageNumber = index + 1;
-              return (
+        {totalAgencyGroups > 0 && (
+          <div className="flex flex-col items-center justify-between gap-4 font-sarabun text-body-sm text-text-muted sm:flex-row">
+            <p>
+              {t("agencyPaginationSummary", {
+                from: agencyFrom,
+                to: agencyTo,
+                total: totalAgencyGroups,
+              })}
+            </p>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
                 <button
-                  key={pageNumber}
                   type="button"
-                  onClick={() => setPage(pageNumber)}
-                  className={`flex h-9 w-9 items-center justify-center rounded-radius-lg font-sarabun text-label font-bold transition-colors ${
-                    page === pageNumber
-                      ? "bg-primary text-surface-card shadow-level-1"
-                      : "hover:bg-surface-container-low"
-                  }`}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  disabled={currentPage <= 1}
+                  className="rounded-radius-lg p-1.5 text-text-muted transition-colors hover:bg-surface-container-low disabled:opacity-40"
+                  aria-label={t("prevPage")}
                 >
-                  {pageNumber}
+                  <ChevronLeftIcon />
                 </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() =>
-                setPage((current) => Math.min(totalPages, current + 1))
-              }
-              disabled={page >= totalPages}
-              className="rounded-radius-lg p-1.5 text-text-muted transition-colors hover:bg-surface-container-low disabled:opacity-40"
-              aria-label={t("nextPage")}
-            >
-              <ChevronRightIcon />
-            </button>
+                {Array.from({ length: totalPages }).map((_, index) => {
+                  const pageNumber = index + 1;
+                  return (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      onClick={() => setPage(pageNumber)}
+                      className={`flex h-9 w-9 items-center justify-center rounded-radius-lg font-sarabun text-label font-bold transition-colors ${
+                        currentPage === pageNumber
+                          ? "bg-primary text-surface-card shadow-level-1"
+                          : "hover:bg-surface-container-low"
+                      }`}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPage((current) => Math.min(totalPages, current + 1))
+                  }
+                  disabled={currentPage >= totalPages}
+                  className="rounded-radius-lg p-1.5 text-text-muted transition-colors hover:bg-surface-container-low disabled:opacity-40"
+                  aria-label={t("nextPage")}
+                >
+                  <ChevronRightIcon />
+                </button>
+              </div>
+            )}
           </div>
-        </div>
+        )}
+
+        <p className="font-sarabun text-body-sm text-text-muted">
+          {t("listSummary", { total: totalCategories })}
+        </p>
 
         <section className="space-y-4 border-t border-border-default/50 pt-8">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <h2 className="font-kanit text-heading-2 text-text-primary">
-              จัดการแท็ก
-            </h2>
+            <div>
+              <h2 className="font-kanit text-heading-2 text-text-primary">
+                {t("tagsSectionTitle")}
+              </h2>
+              <p className="mt-1 font-sarabun text-body-sm text-text-muted">
+                {t("tagsSectionSubtitle")}
+              </p>
+            </div>
             <button
               type="button"
-              onClick={openCreateTag}
+              onClick={() => setTagFormOpen(true)}
               className="flex items-center justify-center gap-2 rounded-radius-lg bg-primary px-5 py-2 font-kanit text-label font-semibold text-surface-card shadow-level-1 transition-all hover:bg-primary-hover"
             >
               <PlusIcon />
               {t("addTag")}
             </button>
           </div>
-          <TagTable
-            tags={tags}
-            isLoading={tagsLoading}
-            onEdit={openEditTag}
-            onError={showError}
-            onSuccess={showToast}
-          />
+          <DatasetTagsOverview tags={tags} isLoading={tagsLoading} />
         </section>
       </div>
 
       <CategoryForm
         open={categoryFormOpen}
-        level={categoryFormLevel}
         mode={categoryFormMode}
         category={editingCategory}
+        parent={parentForCreate}
         onClose={() => setCategoryFormOpen(false)}
         onError={showError}
       />
@@ -248,6 +284,7 @@ export default function AdminCategoriesPage() {
       <DeleteCategoryModal
         open={Boolean(deleteTarget)}
         target={deleteTarget}
+        displayName={deleteDisplayName}
         onClose={() => setDeleteTarget(null)}
         onSuccess={() => showToast(t("deleteSuccess"))}
         onError={showError}
@@ -255,9 +292,9 @@ export default function AdminCategoriesPage() {
 
       <TagForm
         open={tagFormOpen}
-        mode={tagFormMode}
-        tag={editingTag}
+        mode="create"
         onClose={() => setTagFormOpen(false)}
+        onSuccess={() => showToast(t("tagCreateSuccess"))}
         onError={showError}
       />
     </div>

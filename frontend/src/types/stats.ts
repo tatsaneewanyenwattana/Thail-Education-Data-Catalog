@@ -4,6 +4,8 @@ export type StatsOverviewData = {
   total_datasets: number;
   total_downloads: number;
   total_agencies: number;
+  total_categories: number;
+  categories_by_level: Record<string, number>;
   total_categories_level1: number;
   total_categories_level2: number;
   datasets_by_year: { year: number; count: number }[];

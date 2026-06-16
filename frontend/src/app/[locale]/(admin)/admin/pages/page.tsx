@@ -3,9 +3,10 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import CreatePageModal from "@/components/admin/CreatePageModal";
 import HeroImageUpload from "@/components/admin/HeroImageUpload";
 import StaticPageCard from "@/components/admin/StaticPageCard";
-import { useAdminStaticPages } from "@/hooks/useAdminPageContent";
+import { useAdminStaticPages, useCreatePage } from "@/hooks/useAdminPageContent";
 
 function InfoIcon() {
   return (
@@ -33,8 +34,10 @@ export default function AdminPagesPage() {
   const searchParams = useSearchParams();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastError, setToastError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const { data: pages = [], isLoading } = useAdminStaticPages();
+  const createPageMutation = useCreatePage();
 
   useEffect(() => {
     if (searchParams.get("saved") === "1") {
@@ -57,6 +60,22 @@ export default function AdminPagesPage() {
     window.setTimeout(() => setToastError(null), 3000);
   };
 
+  const handleCreatePage = async (input: {
+    slug: string;
+    titleTh: string;
+    titleEn: string;
+    status: "draft" | "published";
+  }) => {
+    try {
+      const created = await createPageMutation.mutateAsync(input);
+      setCreateOpen(false);
+      showToast(t("create.success"));
+      router.push(`/${locale}/admin/pages/${created.slug}`);
+    } catch {
+      showError(t("create.error"));
+    }
+  };
+
   return (
     <div className="mx-auto max-w-container-max space-y-8 pb-24">
       <header className="rounded-radius-lg border border-border-default bg-surface-card px-6 py-5 shadow-sm">
@@ -75,9 +94,18 @@ export default function AdminPagesPage() {
           <h3 className="font-kanit text-lg font-bold text-text-primary">
             {t("pagesTitle")}
           </h3>
-          <div className="flex items-center gap-2 font-sarabun text-caption text-text-muted">
-            <InfoIcon />
-            {t("pagesHint")}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 font-sarabun text-caption text-text-muted">
+              <InfoIcon />
+              {t("pagesHint")}
+            </div>
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex items-center gap-2 rounded-radius-md bg-primary-dark px-4 py-2 font-sarabun text-label font-semibold text-white transition-colors hover:bg-primary-hover"
+            >
+              {t("create.button")}
+            </button>
           </div>
         </div>
 
@@ -93,6 +121,13 @@ export default function AdminPagesPage() {
           </div>
         )}
       </section>
+
+      <CreatePageModal
+        open={createOpen}
+        isSubmitting={createPageMutation.isPending}
+        onClose={() => setCreateOpen(false)}
+        onSubmit={handleCreatePage}
+      />
 
       {toastMessage ? <Toast message={toastMessage} variant="success" /> : null}
       {toastError ? <Toast message={toastError} variant="error" /> : null}

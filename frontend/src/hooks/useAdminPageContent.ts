@@ -6,11 +6,13 @@ import type {
   AdminPageEditorContent,
   AdminPageUpdateInput,
   AdminStaticPageMeta,
+  StaticPageStatus,
 } from "@/data/mockData";
 import {
   mapPageContent,
   mapPageListItem,
   toPageContentUpdateBody,
+  toPageCreateBody,
   type ApiPageContent,
 } from "@/utils/pageContentApi";
 
@@ -87,6 +89,31 @@ export function useUpdatePageContent() {
     onSuccess: (_, { slug }) => {
       queryClient.invalidateQueries({ queryKey: ["pages", slug] });
       queryClient.invalidateQueries({ queryKey: ["admin", "pages", slug] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "pages"] });
+    },
+  });
+}
+
+type CreatePageVariables = {
+  slug: string;
+  titleTh: string;
+  titleEn: string;
+  status: StaticPageStatus;
+};
+
+/** POST /api/v1/admin/pages */
+export function useCreatePage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreatePageVariables) => {
+      const res = await apiClient.post<PageContentResponse>(
+        "/admin/pages",
+        toPageCreateBody(input)
+      );
+      return mapPageListItem(res.data.data);
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "pages"] });
     },
   });

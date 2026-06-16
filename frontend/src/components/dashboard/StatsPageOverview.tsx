@@ -42,7 +42,9 @@ export default function StatsPageOverview() {
   const totalDatasets = overview.total_datasets.toLocaleString(locale);
   const totalAgencies = overview.total_agencies.toLocaleString(locale);
   const totalDownloads = formatCompactCount(overview.total_downloads, locale);
-  const totalCategories = overview.total_categories_level1.toLocaleString(locale);
+  const totalCategories = (
+    overview.total_categories ?? overview.total_categories_level1
+  ).toLocaleString(locale);
 
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">

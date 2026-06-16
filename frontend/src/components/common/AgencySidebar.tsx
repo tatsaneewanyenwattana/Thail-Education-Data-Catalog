@@ -241,19 +241,6 @@ export default function AgencySidebar() {
       match: (p) => p.startsWith(`${base}/manage/scholarships`),
     },
     {
-      href: `${base}/saved`,
-      labelKey: "saved",
-      icon: "saved",
-      match: (p) => p.startsWith(`${base}/saved`),
-    },
-    {
-      href: `${base}/dashboard/custom`,
-      labelKey: "customDashboard",
-      icon: "custom",
-      match: (p) => p.startsWith(`${base}/dashboard/custom`),
-      dividerBefore: true,
-    },
-    {
       href: `${base}/activity`,
       labelKey: "activityLog",
       icon: "activity",

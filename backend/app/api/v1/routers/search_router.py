@@ -25,12 +25,26 @@ def _get_es():
 
 
 @router.get("/search/filters", status_code=status.HTTP_200_OK)
-def search_filters_endpoint(db: Session = Depends(get_db)):
+def search_filters_endpoint(
+    category_id: uuid.UUID | None = None,
+    agency_user_id: uuid.UUID | None = None,
+    province: str | None = None,
+    db: Session = Depends(get_db),
+):
     """
     ตัวเลือก Filter สำหรับหน้าค้นหา — แสดงเฉพาะค่าที่มีใน Dataset ที่เผยแพร่แล้ว
+    รองรับ scope ตามหมวด/หน่วยงาน/จังหวัดที่เลือกอยู่
     - Auth ❌
     """
-    result = search_service.get_filter_options(db)
+    scope: dict = {}
+    if category_id is not None:
+        scope["category_id"] = str(category_id)
+    if agency_user_id is not None:
+        scope["agency_user_id"] = str(agency_user_id)
+    if province:
+        scope["province"] = province
+
+    result = search_service.get_filter_options(db, scope or None)
     return success_response(result.model_dump(mode="json"))
 
 
@@ -39,6 +53,7 @@ def search_datasets_endpoint(
     keyword: str | None = None,
     filters: str | None = None,
     pagination: PaginationParams = Depends(get_pagination_params),
+    db: Session = Depends(get_db),
 ):
     """
     ค้นหา Dataset ตาม #31
@@ -57,6 +72,7 @@ def search_datasets_endpoint(
         keyword=keyword,
         filters=filters_dict,
         pagination=pagination,
+        db=db,
     )
     return list_response(
         data=[i.model_dump(mode="json") for i in items],

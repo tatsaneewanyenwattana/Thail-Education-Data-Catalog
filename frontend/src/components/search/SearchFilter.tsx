@@ -25,7 +25,7 @@ type SearchFilterProps = {
   selectedAgencies: string[];
   selectedYears: string[];
   selectedFormats: string[];
-  selectedTag: string;
+  selectedTags: string[];
   selectedProvince: string;
   filterQuery: string;
   className?: string;
@@ -36,7 +36,7 @@ export default function SearchFilter({
   selectedAgencies,
   selectedYears,
   selectedFormats,
-  selectedTag,
+  selectedTags,
   selectedProvince,
   filterQuery,
   className = "",
@@ -44,7 +44,11 @@ export default function SearchFilter({
   const t = useTranslations("search");
   const locale = useLocale();
   const updateParams = useSearchParamsUpdate();
-  const { data: filterOptions } = useSearchFilters();
+  const { data: filterOptions } = useSearchFilters({
+    categoryId: selectedCategory,
+    agencyUserId: selectedAgencies[0] ?? null,
+    province: selectedProvince || null,
+  });
   const [localFilter, setLocalFilter] = useState(filterQuery);
   const [provinceQuery, setProvinceQuery] = useState("");
   const [provinceOpen, setProvinceOpen] = useState(false);
@@ -62,6 +66,11 @@ export default function SearchFilter({
   const formatOptions = useMemo(
     () => filterOptions?.formats ?? [],
     [filterOptions?.formats]
+  );
+
+  const tagOptions = useMemo(
+    () => filterOptions?.tags ?? [],
+    [filterOptions?.tags]
   );
 
   const provinceLabelMap = useMemo(() => {
@@ -92,6 +101,7 @@ export default function SearchFilter({
   const showAgencyFilter = agencyOptions.length > 0;
   const showYearFilter = yearOptions.length > 0;
   const showFormatFilter = formatOptions.length > 0;
+  const showTagFilter = tagOptions.length > 0;
   const showProvinceFilter = availableProvinces.length > 0;
   const showCategoryFilter = (filterOptions?.categories?.length ?? 0) > 0;
 
@@ -116,6 +126,11 @@ export default function SearchFilter({
   function toggleFormat(id: string) {
     const next = toggleListParam(selectedFormats, id);
     updateParams({ format: next.length ? next.join(",") : null, page: null });
+  }
+
+  function toggleTag(tag: string) {
+    const next = toggleListParam(selectedTags, tag);
+    updateParams({ tag: next.length ? next.join(",") : null, page: null });
   }
 
   function selectProvince(value: string) {
@@ -219,20 +234,36 @@ export default function SearchFilter({
         </>
       ) : null}
 
-      <div className="flex flex-col gap-3">
-        <span className="font-sarabun text-label font-medium text-text-secondary">
-          {t("tag")}
-        </span>
-        <input
-          type="text"
-          defaultValue={selectedTag}
-          onBlur={(e) =>
-            updateParams({ tag: e.target.value.trim() || null, page: null })
-          }
-          placeholder={t("tagPlaceholder")}
-          className="w-full rounded-radius-md border border-border-input px-3 py-2 font-sarabun text-label text-text-primary outline-none focus:border-border-focus focus:ring-1 focus:ring-primary-dark/30"
-        />
-      </div>
+      {showTagFilter ? (
+        <>
+          <hr className="border-border-default/60" />
+
+          <div className="flex flex-col gap-3">
+            <span className="font-sarabun text-label font-medium text-text-secondary">
+              {t("tag")}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {tagOptions.map((tag) => {
+                const active = selectedTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`rounded-radius-full border px-3 py-1 font-sarabun text-caption font-medium transition-colors ${
+                      active
+                        ? "border-primary/30 bg-primary text-white"
+                        : "border-border-default/80 bg-surface-container text-text-secondary hover:bg-primary-light"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      ) : null}
 
       {showYearFilter ? (
         <>
@@ -391,7 +422,7 @@ export function useSearchFilterParams(searchParams: URLSearchParams) {
     selectedAgencies: parseListParam(searchParams.get("agency")),
     selectedYears: parseListParam(searchParams.get("year")),
     selectedFormats: parseListParam(searchParams.get("format")),
-    selectedTag: searchParams.get("tag") ?? "",
+    selectedTags: parseListParam(searchParams.get("tag")),
     selectedProvince: searchParams.get("province") ?? "",
     filterQuery: searchParams.get("fq") ?? "",
   };

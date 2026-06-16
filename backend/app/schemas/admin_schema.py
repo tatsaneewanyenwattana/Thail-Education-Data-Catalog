@@ -127,6 +127,17 @@ class AnnouncementResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PageContentCreateRequest(BaseModel):
+    slug: str = Field(
+        min_length=2,
+        max_length=255,
+        pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    )
+    title_th: str = Field(min_length=2, max_length=255)
+    title_en: str = Field(min_length=2, max_length=255)
+    status: str = Field(default="draft", pattern=r"^(draft|published)$")
+
+
 class PageContentUpdateRequest(BaseModel):
     content_th: str = ""
     content_en: str = ""
@@ -138,6 +149,7 @@ class PageContentResponse(BaseModel):
     title_en: str
     content_th: str
     content_en: str
+    status: str
     updated_at: datetime
 
 

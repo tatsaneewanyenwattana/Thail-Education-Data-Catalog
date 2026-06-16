@@ -23,6 +23,13 @@ export type SearchFilterOptions = {
   years: number[];
   provinces: string[];
   formats: string[];
+  tags: string[];
+};
+
+export type SearchFilterScope = {
+  categoryId?: string | null;
+  agencyUserId?: string | null;
+  province?: string | null;
 };
 
 type SearchFiltersResponse = {
@@ -36,21 +43,43 @@ const EMPTY_FILTERS: SearchFilterOptions = {
   years: [],
   provinces: [],
   formats: [],
+  tags: [],
 };
 
-async function fetchSearchFilters(): Promise<SearchFilterOptions> {
-  const res = await apiClient.get<SearchFiltersResponse>("/search/filters");
+async function fetchSearchFilters(
+  scope: SearchFilterScope
+): Promise<SearchFilterOptions> {
+  const params: Record<string, string> = {};
+  if (scope.categoryId) {
+    params.category_id = scope.categoryId;
+  }
+  if (scope.agencyUserId) {
+    params.agency_user_id = scope.agencyUserId;
+  }
+  if (scope.province) {
+    params.province = scope.province;
+  }
+
+  const res = await apiClient.get<SearchFiltersResponse>("/search/filters", {
+    params,
+  });
   const body = res.data as SearchFiltersResponse;
   return body.data ?? EMPTY_FILTERS;
 }
 
-/** GET /api/v1/search/filters — ตัวเลือก filter จากข้อมูลจริง */
-export function useSearchFilters() {
+/** GET /api/v1/search/filters — ตัวเลือก filter จากข้อมูลจริง (scope ตามหมวด/หน่วยงานที่เลือก) */
+export function useSearchFilters(scope: SearchFilterScope = {}) {
   return useQuery({
-    queryKey: ["search", "filters"],
-    queryFn: fetchSearchFilters,
+    queryKey: [
+      "search",
+      "filters",
+      scope.categoryId ?? null,
+      scope.agencyUserId ?? null,
+      scope.province ?? null,
+    ],
+    queryFn: () => fetchSearchFilters(scope),
     retry: 2,
     staleTime: 1000 * 60 * 5,
-    placeholderData: EMPTY_FILTERS,
+    placeholderData: (previous) => previous ?? EMPTY_FILTERS,
   });
 }

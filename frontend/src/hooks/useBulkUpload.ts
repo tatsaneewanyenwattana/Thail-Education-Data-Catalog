@@ -50,6 +50,13 @@ async function bulkUpload(file: File): Promise<BulkUploadResult> {
   return mapBulkUploadResponse(res.data.data);
 }
 
+export async function downloadBulkUploadTemplate(): Promise<Blob> {
+  const res = await apiClient.get<Blob>("/datasets/bulk-upload/template", {
+    responseType: "blob",
+  });
+  return res.data;
+}
+
 export function useBulkUpload() {
   const queryClient = useQueryClient();
 

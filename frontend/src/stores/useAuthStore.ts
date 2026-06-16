@@ -13,16 +13,30 @@ export type User = {
 type AuthState = {
   user: User | null;
   token: string | null;
+  hasHydrated: boolean;
+  setHasHydrated: (value: boolean) => void;
   login: (token: string, user: User) => void;
   logout: () => void;
   initAuth: () => Promise<void>;
 };
 
+function mapMeToUser(me: User): User {
+  return {
+    id: String(me.id),
+    email: me.email,
+    role: me.role,
+    status: me.status,
+    agency_name: me.agency_name,
+  };
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       token: null,
       user: null,
+      hasHydrated: false,
+      setHasHydrated: (value) => set({ hasHydrated: value }),
       login: (token, user) => {
         localStorage.setItem("token", token);
         set({ token, user });
@@ -33,12 +47,20 @@ export const useAuthStore = create<AuthState>()(
         set({ token: null, user: null });
       },
       initAuth: async () => {
-        const token = localStorage.getItem("token");
-        if (!token) {
+        const storedToken = localStorage.getItem("token");
+        const { token: stateToken, user: stateUser } = get();
+
+        if (!storedToken) {
           set({ token: null, user: null });
           return;
         }
-        set({ token });
+
+        if (stateToken && stateUser) {
+          set({ token: stateToken });
+          return;
+        }
+
+        set({ token: storedToken });
         try {
           const res = await apiClient.get("/auth/me");
           const me = (res.data as { data?: User }).data;
@@ -46,14 +68,8 @@ export const useAuthStore = create<AuthState>()(
             throw new Error("no user");
           }
           set({
-            token,
-            user: {
-              id: String(me.id),
-              email: me.email,
-              role: me.role,
-              status: me.status,
-              agency_name: me.agency_name,
-            },
+            token: storedToken,
+            user: mapMeToUser(me),
           });
         } catch {
           localStorage.removeItem("token");
@@ -62,6 +78,16 @@ export const useAuthStore = create<AuthState>()(
         }
       },
     }),
-    { name: "auth" }
+    {
+      name: "auth",
+      skipHydration: true,
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+      }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
+    }
   )
 );

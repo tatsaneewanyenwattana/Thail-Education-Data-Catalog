@@ -12,6 +12,7 @@ from fastapi import BackgroundTasks, UploadFile
 
 import app.repositories.dataset_repository as dataset_repo
 import app.repositories.tag_repository as tag_repo
+import app.services.category_service as category_service
 import app.services.email_service as email_service
 from app.core.config import settings
 from app.core.errors import raise_app_error
@@ -32,6 +33,144 @@ from app.utils.quality_score import calculate_quality_score
 from sqlalchemy.orm import Session
 
 logger = get_logger(__name__)
+
+BULK_UPLOAD_METADATA_COLUMNS = frozenset(
+    {
+        "title",
+        "description",
+        "category_id",
+        "subcategory_id",
+        "license",
+        "tags",
+        "year",
+        "province",
+        "year_start",
+        "year_end",
+        "status",
+    }
+)
+
+BULK_UPLOAD_TEMPLATE_COLUMNS = [
+    "title",
+    "description",
+    "category_id",
+    "subcategory_id",
+    "license",
+    "tags",
+    "year",
+    "province",
+    "sample_value",
+]
+
+
+def generate_bulk_upload_template() -> bytes:
+    """สร้างไฟล์ Excel Template สำหรับ Bulk Upload"""
+    example_row = {
+        "title": "ตัวอย่าง Dataset",
+        "description": "คำอธิบายชุดข้อมูล",
+        "category_id": "",
+        "subcategory_id": "your-subcategory-slug",
+        "license": "open",
+        "tags": "",
+        "year": "2567",
+        "province": "กรุงเทพมหานคร",
+        "sample_value": 1000,
+    }
+    datasets_df = pd.DataFrame([example_row], columns=BULK_UPLOAD_TEMPLATE_COLUMNS)
+    guide_df = pd.DataFrame(
+        [
+            {
+                "column": "title",
+                "required": "ใช่",
+                "description": "ชื่อ Dataset (ขั้นต่ำ 3 ตัวอักษร)",
+            },
+            {
+                "column": "description",
+                "required": "ไม่",
+                "description": "คำอธิบาย Dataset",
+            },
+            {
+                "column": "category_id",
+                "required": "ไม่",
+                "description": "slug หรือ UUID หมวดระดับ 1 (ใช้เมื่อไม่ระบุ subcategory_id)",
+            },
+            {
+                "column": "subcategory_id",
+                "required": "แนะนำ",
+                "description": "slug หรือ UUID หมวดระดับ 2 (ใบ) ของหน่วยงานคุณ",
+            },
+            {
+                "column": "license",
+                "required": "ใช่",
+                "description": "open | conditional | cc",
+            },
+            {
+                "column": "tags",
+                "required": "ไม่",
+                "description": "ชื่อแท็กคั่นด้วยเครื่องหมายจุลภาค",
+            },
+            {
+                "column": "year",
+                "required": "ไม่",
+                "description": "ปี พ.ศ. 4 หลัก",
+            },
+            {
+                "column": "province",
+                "required": "ไม่",
+                "description": "จังหวัด",
+            },
+            {
+                "column": "sample_value",
+                "required": "ตัวอย่าง",
+                "description": "คอลัมน์ข้อมูลอื่นๆ ที่ไม่ใช่ metadata จะถูกบันทึกเป็นข้อมูลใน Dataset",
+            },
+        ]
+    )
+
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        datasets_df.to_excel(writer, index=False, sheet_name="datasets")
+        guide_df.to_excel(writer, index=False, sheet_name="guide")
+    return buffer.getvalue()
+
+
+def _bulk_cell_str(value: object) -> str | None:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _resolve_bulk_row_category_id(
+    db: Session,
+    row: pd.Series,
+    current_user: dict,
+) -> uuid.UUID | None:
+    import app.repositories.category_repository as cat_repo
+
+    subcategory_ref = _bulk_cell_str(row.get("subcategory_id"))
+    category_ref = _bulk_cell_str(row.get("category_id"))
+    reference = subcategory_ref or category_ref
+    if reference is None:
+        return None
+
+    category = None
+    try:
+        category = cat_repo.get_category_by_id(db, uuid.UUID(reference))
+    except ValueError:
+        category = cat_repo.get_category_by_slug(db, reference)
+
+    if category is None:
+        raise ValueError("ไม่พบหมวดหมู่ที่ระบุ")
+
+    if current_user.get("role") != "admin":
+        if str(category.created_by) != current_user["sub"]:
+            raise ValueError("ไม่มีสิทธิ์ใช้หมวดหมู่นี้")
+
+    if not cat_repo.is_leaf_category(db, category.id):
+        raise ValueError("ต้องเลือกหมวดหมู่ระดับย่อย (ใบ) เท่านั้น")
+
+    return category.id
 
 MAX_FILE_SIZE_BYTES = settings.MAX_FILE_SIZE_MB * 1024 * 1024
 
@@ -229,6 +368,51 @@ def record_dataset_view(db: Session, dataset_id: uuid.UUID) -> None:
     db.commit()
 
 
+def run_full_pii_scan(
+    dataset_id: uuid.UUID,
+    content: bytes,
+    content_type: str,
+) -> None:
+    from app.core.database import SessionLocal
+    from app.pii.detector import detect_pii
+    from app.pii.repository import save_scan_results
+
+    SCANNABLE = {
+        "text/csv",
+        "application/json",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel",
+    }
+
+    db = SessionLocal()
+    try:
+        if content_type not in SCANNABLE:
+            logger.warning(
+                f"Full PII scan skipped (unsupported type): {dataset_id}"
+            )
+            return
+
+        if content_type == "text/csv":
+            df = pd.read_csv(io.BytesIO(content))
+        elif content_type == "application/json":
+            df = pd.read_json(io.BytesIO(content))
+        else:
+            df = pd.read_excel(io.BytesIO(content))
+
+        result = detect_pii(df, sample_size=len(df))
+        save_scan_results(db, dataset_id, result.findings, "full")
+
+        if result.has_pii:
+            logger.warning(
+                f"Full PII scan found PII in dataset {dataset_id}: "
+                f"{[f.pii_type for f in result.findings]}"
+            )
+    except Exception as exc:
+        logger.error(f"Full PII scan error for dataset {dataset_id}: {exc}")
+    finally:
+        db.close()
+
+
 def upload(
     db: Session,
     minio_client,
@@ -272,6 +456,9 @@ def upload(
             buf = io.BytesIO()
             masked_df.to_excel(buf, index=False)
             masked_content = buf.getvalue()
+
+    if request.category_id is not None:
+        category_service.validate_category_is_leaf(db, request.category_id)
 
     object_name: str | None = None
     try:
@@ -340,7 +527,11 @@ def upload(
             action="dataset.upload",
             target_type="dataset",
             target_id=dataset.id,
-            detail={"masked_columns": masked_columns, "quality_score": quality_score},
+            detail={
+                "masked_columns": masked_columns,
+                "quality_score": quality_score,
+                "status": dataset.status,
+            },
             ip_address=ip_address,
         )
 
@@ -366,6 +557,12 @@ def upload(
         db.commit()
         email_service.notify_subscribers_new_dataset(background_tasks, db, dataset)
         email_service.notify_saved_search(background_tasks, db, dataset)
+        background_tasks.add_task(
+            run_full_pii_scan,
+            dataset.id,
+            content,
+            file.content_type or "",
+        )
     return _build_dataset_response(db, dataset.id)
 
 
@@ -608,6 +805,7 @@ def update_dataset(
     if request.license is not None:
         fields["license"] = request.license
     if request.category_id is not None:
+        category_service.validate_category_is_leaf(db, request.category_id)
         fields["category_id"] = request.category_id
     metadata_changed = (
         request.metadata is not None
@@ -856,12 +1054,20 @@ def bulk_upload(
             if license_val not in ("open", "conditional", "cc"):
                 raise ValueError("license must be open/conditional/cc")
 
+            category_id = _resolve_bulk_row_category_id(db, row, current_user)
+
             row_request = DatasetCreateRequest(
                 title=title,
-                description=str(row.get("description", "") or "").strip() or None,
+                description=_bulk_cell_str(row.get("description")),
                 license=license_val,
+                category_id=category_id,
             )
-            row_df = pd.DataFrame([row.to_dict()])
+            row_data = {
+                key: value
+                for key, value in row.to_dict().items()
+                if key not in BULK_UPLOAD_METADATA_COLUMNS
+            }
+            row_df = pd.DataFrame([row_data])
             masked_df, masked_columns = scan_and_mask(row_df)
             quality_score = calculate_quality_score(masked_df)
 
@@ -875,7 +1081,7 @@ def bulk_upload(
                 title=row_request.title,
                 description=row_request.description,
                 license=row_request.license,
-                category_id=None,
+                category_id=category_id,
                 metadata=None,
                 quality_score=quality_score,
             )
@@ -907,7 +1113,11 @@ def bulk_upload(
                 action="dataset.bulk_upload",
                 target_type="dataset",
                 target_id=dataset.id,
-                detail={"row": row_num, "masked_columns": masked_columns},
+                detail={
+                    "row": row_num,
+                    "masked_columns": masked_columns,
+                    "status": "published",
+                },
                 ip_address=ip_address,
             )
             db.commit()

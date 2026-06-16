@@ -8,6 +8,9 @@ type TagInputProps = {
   onChange: (tags: string[]) => void;
   maxTags?: number;
   error?: string;
+  /** แท็กที่เคยใช้ในหมวดหมู่ — คลิกเพื่อเพิ่ม */
+  suggestions?: string[];
+  suggestionsHint?: string;
 };
 
 export default function TagInput({
@@ -15,6 +18,8 @@ export default function TagInput({
   onChange,
   maxTags = 10,
   error,
+  suggestions = [],
+  suggestionsHint,
 }: TagInputProps) {
   const t = useTranslations("agency.upload");
   const [input, setInput] = useState("");
@@ -45,8 +50,34 @@ export default function TagInput({
     }
   };
 
+  const availableSuggestions = suggestions.filter(
+    (tag) => !value.includes(tag)
+  );
+
   return (
     <div>
+      {availableSuggestions.length > 0 && (
+        <div className="mb-3">
+          {suggestionsHint && (
+            <p className="mb-2 font-sarabun text-caption text-text-muted">
+              {suggestionsHint}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {availableSuggestions.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => addTag(tag)}
+                className="inline-flex items-center gap-1 rounded-radius-full border border-dashed border-primary-dark/40 bg-surface-page px-3 py-1 font-sarabun text-caption font-medium text-primary-dark transition-colors hover:border-primary-dark hover:bg-primary-light"
+              >
+                <PlusIcon />
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="mb-2 flex flex-wrap gap-2">
         {value.map((tag) => (
           <span
@@ -90,6 +121,14 @@ function CloseIcon() {
   return (
     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M18.3 5.71 12 12.41 5.7 5.71 4.29 7.12 10.59 13.41 4.3 19.71 5.71 21.12 12 14.82 18.29 21.12 19.7 19.71 13.41 13.41 19.7 7.12 18.3 5.71Z" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
     </svg>
   );
 }

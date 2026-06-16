@@ -131,6 +131,12 @@ class CategoryResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class CategoryWithDatasetCountResponse(CategoryResponse):
+    dataset_count: int = 0
+    agency_name: str | None = None
+    creator_role: str | None = None
+
+
 class TagCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=100)
 
@@ -145,5 +151,9 @@ class TagResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class TagWithDatasetCountResponse(TagResponse):
+    dataset_count: int = 0
 
 

@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
+import { useMemo } from "react";
 import SubcategoryCard from "@/components/dataset/SubcategoryCard";
 import { useCategories } from "@/hooks/useCategories";
 import { useCategoryDatasets } from "@/hooks/useCategoryDatasets";
 import {
-  applyDatasetCounts,
-  buildCategoryTreeFromApi,
+  applyDatasetCountsToTree,
+  buildPublicCategoryTree,
 } from "@/utils/publicCategoryApi";
+import { collectLeafNodes } from "@/utils/categoryTreeUtils";
 
 export default function CategoriesIndexContent() {
   const t = useTranslations("category");
@@ -17,10 +19,16 @@ export default function CategoriesIndexContent() {
   const base = `/${locale}`;
 
   const { data: categories = [], isLoading, isError } = useCategories();
-  const tree = buildCategoryTreeFromApi(categories);
-  const allCategoryIds = categories.map((c) => String(c.id));
-  const { data: datasets = [] } = useCategoryDatasets(allCategoryIds, categories);
-  const treeWithCounts = applyDatasetCounts(tree, datasets);
+  const tree = useMemo(
+    () => buildPublicCategoryTree(categories),
+    [categories]
+  );
+  const leafIds = useMemo(
+    () => collectLeafNodes(tree).map((node) => node.id),
+    [tree]
+  );
+  const { data: datasets = [] } = useCategoryDatasets(leafIds, categories);
+  const treeWithCounts = applyDatasetCountsToTree(tree, datasets);
 
   if (isLoading) {
     return (
@@ -81,15 +89,14 @@ export default function CategoriesIndexContent() {
                     {t("datasetCount", { count: category.datasetCount })}
                   </p>
                 </Link>
-
-                {category.subcategories.length > 0 && (
+                {category.children.length > 0 && (
                   <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-                    {category.subcategories.map((sub) => (
+                    {category.children.map((child) => (
                       <SubcategoryCard
-                        key={sub.slug}
-                        slug={sub.slug}
-                        name={isTh ? sub.nameTh : sub.nameEn}
-                        datasetCount={sub.datasetCount}
+                        key={child.slug}
+                        slug={child.slug}
+                        name={isTh ? child.nameTh : child.nameEn}
+                        datasetCount={child.datasetCount}
                       />
                     ))}
                   </div>

@@ -49,14 +49,53 @@ def list_agency_datasets(
     return [AgencyDatasetListItem(**item) for item in items], total
 
 
+def _classify_upload_history_activity(
+    action: str,
+    detail: dict | None,
+    entity_status: str | None,
+) -> str | None:
+    detail = detail or {}
+    if action in ("dataset.delete", "scholarship.delete"):
+        return "delete"
+    if action in ("dataset.update", "scholarship.update"):
+        return "update"
+    if action in ("dataset.upload", "dataset.bulk_upload", "scholarship.create"):
+        status = detail.get("status") or entity_status
+        if status == "draft":
+            return "draft"
+        return "upload"
+    return None
+
+
 def list_agency_activity_logs(
     db: Session,
     user_id: uuid.UUID,
     pagination: PaginationParams,
 ) -> tuple[list[AgencyActivityLogItem], int]:
-    items, total = agency_repo.list_agency_activity_logs(
+    rows, total = agency_repo.list_agency_activity_logs(
         db=db,
         user_id=user_id,
         pagination=pagination,
     )
-    return [AgencyActivityLogItem(**item) for item in items], total
+    items: list[AgencyActivityLogItem] = []
+    for row in rows:
+        activity_type = _classify_upload_history_activity(
+            row["action"],
+            row.get("detail"),
+            row.get("entity_status"),
+        )
+        if activity_type is None:
+            continue
+        item_type = row["target_type"]
+        if item_type not in ("dataset", "scholarship"):
+            continue
+        items.append(
+            AgencyActivityLogItem(
+                id=row["id"],
+                created_at=row["created_at"],
+                item_type=item_type,
+                activity_type=activity_type,
+                title=row.get("title"),
+            )
+        )
+    return items, total

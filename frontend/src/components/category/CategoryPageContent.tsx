@@ -11,12 +11,13 @@ import CategoryFilter, {
   type CategorySortOption,
 } from "@/components/search/CategoryFilter";
 import Pagination from "@/components/search/Pagination";
-import type { CategoryPageData, SearchResultMock } from "@/data/mockData";
+import type { SearchResultMock } from "@/data/mockData";
+import type { PublicCategoryPageData } from "@/utils/publicCategoryApi";
 
 const PAGE_SIZE = 10;
 
 type CategoryPageContentProps = {
-  pageData: CategoryPageData;
+  pageData: PublicCategoryPageData;
   datasets: SearchResultMock[];
 };
 
@@ -90,21 +91,13 @@ export default function CategoryPageContent({
 
   const base = `/${locale}`;
   const isTh = locale === "th";
-  const { category, subcategory, level } = pageData;
+  const { node, ancestors, children, isLeaf } = pageData;
 
-  const pageTitle = subcategory
-    ? isTh
-      ? subcategory.nameTh
-      : subcategory.nameEn
-    : isTh
-      ? category.nameTh
-      : category.nameEn;
-
-  const allDatasets = datasets;
+  const pageTitle = isTh ? node.nameTh : node.nameEn;
 
   const { totalCount, pageItems, totalPages } = useMemo(() => {
     const filtered = filterDatasets(
-      allDatasets,
+      datasets,
       selectedAgencies,
       selectedYears,
       selectedFormats
@@ -117,7 +110,7 @@ export default function CategoryPageContent({
     const pageItems = sorted.slice(start, start + PAGE_SIZE);
 
     return { totalCount, pageItems, totalPages };
-  }, [allDatasets, selectedAgencies, selectedYears, selectedFormats, sort, page]);
+  }, [datasets, selectedAgencies, selectedYears, selectedFormats, sort, page]);
 
   useEffect(() => {
     setMobileFilterOpen(false);
@@ -155,17 +148,17 @@ export default function CategoryPageContent({
             <Link href={`${base}/search`} className="hover:text-primary-dark">
               {t("breadcrumbCategories")}
             </Link>
-            {level === 2 && (
-              <>
+            {ancestors.map((ancestor) => (
+              <span key={ancestor.id} className="flex items-center gap-2">
                 <ChevronRight />
                 <Link
-                  href={`${base}/categories/${category.slug}`}
+                  href={`${base}/categories/${ancestor.slug}`}
                   className="hover:text-primary-dark"
                 >
-                  {isTh ? category.nameTh : category.nameEn}
+                  {isTh ? ancestor.nameTh : ancestor.nameEn}
                 </Link>
-              </>
-            )}
+              </span>
+            ))}
             <ChevronRight />
             <span className="line-clamp-1 text-text-secondary">{pageTitle}</span>
           </nav>
@@ -175,20 +168,22 @@ export default function CategoryPageContent({
               <h1 className="font-kanit text-heading-2 text-text-primary md:text-heading-1">
                 {pageTitle}
               </h1>
-              <p className="mt-1 font-sarabun text-label text-text-muted">
-                {t("foundCount", { count: totalCount })}
-              </p>
+              {isLeaf && (
+                <p className="mt-1 font-sarabun text-label text-text-muted">
+                  {t("foundCount", { count: totalCount })}
+                </p>
+              )}
             </div>
           </div>
 
-          {level === 1 && category.subcategories.length > 0 && (
+          {!isLeaf && children.length > 0 && (
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              {category.subcategories.map((sub) => (
+              {children.map((child) => (
                 <SubcategoryCard
-                  key={sub.slug}
-                  slug={sub.slug}
-                  name={isTh ? sub.nameTh : sub.nameEn}
-                  datasetCount={sub.datasetCount}
+                  key={child.slug}
+                  slug={child.slug}
+                  name={isTh ? child.nameTh : child.nameEn}
+                  datasetCount={child.datasetCount}
                 />
               ))}
             </div>
@@ -196,71 +191,73 @@ export default function CategoryPageContent({
         </div>
       </section>
 
-      <div className="mx-auto max-w-container-max px-4 py-spacing-4 md:px-spacing-10">
-        <div className="mb-4 flex items-center justify-between lg:hidden">
-          <button
-            type="button"
-            onClick={() => setMobileFilterOpen(true)}
-            className="flex min-h-[44px] items-center gap-2 rounded-radius-md border border-border-input bg-surface-card px-4 font-sarabun text-label font-medium text-text-primary shadow-level-1"
-          >
-            <svg className="h-5 w-5 text-primary-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+      {isLeaf && (
+        <div className="mx-auto max-w-container-max px-4 py-spacing-4 md:px-spacing-10">
+          <div className="mb-4 flex items-center justify-between lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileFilterOpen(true)}
+              className="flex min-h-[44px] items-center gap-2 rounded-radius-md border border-border-input bg-surface-card px-4 font-sarabun text-label font-medium text-text-primary shadow-level-1"
+            >
+              <svg className="h-5 w-5 text-primary-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                />
+              </svg>
+              {t("filter.showFilters")}
+            </button>
+          </div>
+
+          <div className="flex gap-spacing-6">
+            <aside className="hidden w-[280px] shrink-0 lg:block">
+              <div className="sticky top-[108px] rounded-radius-lg border border-border-default/80 bg-surface-card p-6 shadow-level-1">
+                {filterPanel}
+              </div>
+            </aside>
+
+            <section className="min-w-0 flex-1">
+              <p className="mb-6 font-sarabun text-label text-text-muted">
+                {t("datasets", { count: totalCount })}
+              </p>
+
+              {pageItems.length === 0 ? (
+                <div className="rounded-radius-lg border border-border-default bg-surface-card p-12 text-center">
+                  <p className="font-sarabun text-body-md text-text-secondary">
+                    {t("noResults")}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {pageItems.map((item) => (
+                    <DatasetCard
+                      key={item.id}
+                      id={item.id}
+                      title={isTh ? item.titleTh : item.titleEn}
+                      category={isTh ? item.categoryTh : item.categoryEn}
+                      agency={isTh ? item.agencyTh : item.agencyEn}
+                      status={item.status}
+                      downloadCount={item.downloadCount}
+                      createdAt={item.createdAt}
+                      updatedAt={item.updatedAt}
+                      publishedAt={item.publishedAt ?? item.createdAt}
+                      license={item.license}
+                      variant="popular"
+                    />
+                  ))}
+                </div>
+              )}
+
+              <Pagination
+                currentPage={Math.min(page, totalPages)}
+                totalPages={totalPages}
               />
-            </svg>
-            {t("filter.showFilters")}
-          </button>
+            </section>
+          </div>
         </div>
-
-        <div className="flex gap-spacing-6">
-          <aside className="hidden w-[280px] shrink-0 lg:block">
-            <div className="sticky top-[108px] rounded-radius-lg border border-border-default/80 bg-surface-card p-6 shadow-level-1">
-              {filterPanel}
-            </div>
-          </aside>
-
-          <section className="min-w-0 flex-1">
-            <p className="mb-6 font-sarabun text-label text-text-muted">
-              {t("datasets", { count: totalCount })}
-            </p>
-
-            {pageItems.length === 0 ? (
-              <div className="rounded-radius-lg border border-border-default bg-surface-card p-12 text-center">
-                <p className="font-sarabun text-body-md text-text-secondary">
-                  {t("noResults")}
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                {pageItems.map((item) => (
-                  <DatasetCard
-                    key={item.id}
-                    id={item.id}
-                    title={isTh ? item.titleTh : item.titleEn}
-                    category={isTh ? item.categoryTh : item.categoryEn}
-                    agency={isTh ? item.agencyTh : item.agencyEn}
-                    status={item.status}
-                    downloadCount={item.downloadCount}
-                    createdAt={item.createdAt}
-                    updatedAt={item.updatedAt}
-                    publishedAt={item.publishedAt ?? item.createdAt}
-                    license={item.license}
-                    variant="popular"
-                  />
-                ))}
-              </div>
-            )}
-
-            <Pagination
-              currentPage={Math.min(page, totalPages)}
-              totalPages={totalPages}
-            />
-          </section>
-        </div>
-      </div>
+      )}
 
       {mobileFilterOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">

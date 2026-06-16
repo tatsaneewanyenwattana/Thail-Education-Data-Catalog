@@ -4,6 +4,7 @@
 import uuid
 from typing import Any
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.category_model import Category
@@ -86,6 +87,24 @@ def soft_delete_category(db: Session, category_id: uuid.UUID) -> None:
     db.flush()
 
 
+def count_datasets_by_category(
+    db: Session,
+    *,
+    user_id: uuid.UUID | None = None,
+) -> dict[uuid.UUID, int]:
+    query = (
+        db.query(Dataset.category_id, func.count(Dataset.id))
+        .filter(
+            Dataset.is_deleted.is_(False),
+            Dataset.category_id.isnot(None),
+        )
+    )
+    if user_id is not None:
+        query = query.filter(Dataset.user_id == user_id)
+    rows = query.group_by(Dataset.category_id).all()
+    return {category_id: count for category_id, count in rows}
+
+
 def check_category_has_datasets(db: Session, category_id: uuid.UUID) -> bool:
     count = (
         db.query(Dataset)
@@ -110,15 +129,58 @@ def is_slug_taken(
     db: Session,
     slug: str,
     *,
-    parent_id: uuid.UUID | None,
     exclude_id: uuid.UUID | None = None,
 ) -> bool:
-    """เช็ค slug ซ้ำเฉพาะใน parent เดียวกัน (ไม่นับ soft-deleted)"""
+    """เช็ค slug ซ้ำทั้งระบบ (ไม่นับ soft-deleted)"""
     query = db.query(Category.id).filter(
         Category.slug == slug,
-        Category.parent_id == parent_id,
         Category.is_deleted.is_(False),
     )
     if exclude_id is not None:
         query = query.filter(Category.id != exclude_id)
     return query.first() is not None
+
+
+def check_category_has_children(db: Session, category_id: uuid.UUID) -> bool:
+    count = (
+        db.query(Category.id)
+        .filter(
+            Category.parent_id == category_id,
+            Category.is_deleted.is_(False),
+        )
+        .count()
+    )
+    return count > 0
+
+
+def is_leaf_category(db: Session, category_id: uuid.UUID) -> bool:
+    category = get_category_by_id(db, category_id)
+    if category is None:
+        return False
+    return not check_category_has_children(db, category_id)
+
+
+def get_descendant_leaf_category_ids(
+    db: Session, category_id: uuid.UUID
+) -> list[uuid.UUID]:
+    """รวบรวม UUID หมวดใบ (leaf) ทั้งหมดใต้หมวดที่ระบุ รวมตัวเองถ้าเป็น leaf"""
+    category = get_category_by_id(db, category_id)
+    if category is None:
+        return []
+
+    if is_leaf_category(db, category_id):
+        return [category_id]
+
+    child_rows = (
+        db.query(Category.id)
+        .filter(
+            Category.parent_id == category_id,
+            Category.is_deleted.is_(False),
+        )
+        .all()
+    )
+
+    result: list[uuid.UUID] = []
+    for (child_id,) in child_rows:
+        result.extend(get_descendant_leaf_category_ids(db, child_id))
+    return result

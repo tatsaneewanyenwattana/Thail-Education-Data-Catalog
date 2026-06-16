@@ -18,6 +18,9 @@ class PageContent(BaseModel):
     title_en: Mapped[str] = mapped_column(String(255), nullable=False)
     content_th: Mapped[str] = mapped_column(Text, nullable=False, default="", server_default="")
     content_en: Mapped[str] = mapped_column(Text, nullable=False, default="", server_default="")
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="published", server_default="published"
+    )
     updated_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", name="fk_page_contents_users"),

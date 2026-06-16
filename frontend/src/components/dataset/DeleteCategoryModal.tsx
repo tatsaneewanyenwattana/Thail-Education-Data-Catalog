@@ -1,13 +1,12 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { AgencyCategoryL1, AgencyCategoryL2 } from "@/data/mockData";
 import { useDeleteCategory } from "@/hooks/useDeleteCategory";
+import type { CategoryTreeNode } from "@/utils/categoryTreeUtils";
 
 type DeleteCategoryModalProps = {
   open: boolean;
-  level: 1 | 2;
-  category: AgencyCategoryL1 | AgencyCategoryL2 | null;
+  category: CategoryTreeNode | null;
   displayName: string;
   onClose: () => void;
   onError: (message: string) => void;
@@ -15,7 +14,6 @@ type DeleteCategoryModalProps = {
 
 export default function DeleteCategoryModal({
   open,
-  level,
   category,
   displayName,
   onClose,
@@ -29,19 +27,29 @@ export default function DeleteCategoryModal({
   }
 
   const hasDatasets = category.datasetCount > 0;
+  const hasChildren = category.childCount > 0;
+  const blocked = hasDatasets || hasChildren;
+
+  const blockMessage = hasChildren
+    ? t("deleteErrorChildren")
+    : t("deleteError");
 
   const handleDelete = async () => {
     try {
-      await deleteMutation.mutateAsync({ id: category.id, level });
+      await deleteMutation.mutateAsync({ id: category.id });
       onClose();
     } catch (error) {
       const code =
         error instanceof Error && "code" in error
           ? (error as Error & { code?: string }).code
           : "";
-      onError(
-        code === "CATEGORY_HAS_DATASETS" ? t("deleteError") : t("deleteError")
-      );
+      if (code === "CATEGORY_HAS_CHILDREN") {
+        onError(t("deleteErrorChildren"));
+      } else if (code === "CATEGORY_HAS_DATASETS") {
+        onError(t("deleteError"));
+      } else {
+        onError(t("deleteErrorGeneric"));
+      }
       onClose();
     }
   };
@@ -57,43 +65,43 @@ export default function DeleteCategoryModal({
         type="button"
         className="absolute inset-0 bg-surface-navy/40 backdrop-blur-sm"
         onClick={onClose}
-        aria-label={hasDatasets ? t("close") : t("cancel")}
+        aria-label={blocked ? t("close") : t("cancel")}
       />
       <div className="relative w-full max-w-md rounded-radius-lg bg-surface-card p-6 shadow-level-3">
         <button
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 text-text-muted transition-colors hover:text-text-primary"
-          aria-label={hasDatasets ? t("close") : t("cancel")}
+          aria-label={blocked ? t("close") : t("cancel")}
         >
           <CloseIcon />
         </button>
         <div className="flex flex-col items-center text-center">
           <div
             className={`mb-4 flex h-16 w-16 items-center justify-center rounded-radius-full ${
-              hasDatasets ? "bg-status-warning-bg" : "bg-status-error-bg"
+              blocked ? "bg-status-warning-bg" : "bg-status-error-bg"
             }`}
           >
-            <WarningIcon hasDatasets={hasDatasets} />
+            <WarningIcon blocked={blocked} />
           </div>
           <h2
             id="delete-category-title"
             className="mb-2 font-kanit text-heading-3 font-bold text-text-primary"
           >
-            {hasDatasets ? t("deleteError") : t("deleteTitle")}
+            {blocked ? blockMessage : t("deleteTitle")}
           </h2>
           <p className="mb-1 font-sarabun text-body-md text-text-secondary">
-            {hasDatasets
-              ? t("deleteError")
+            {blocked
+              ? blockMessage
               : t("deleteMsg", { name: displayName })}
           </p>
-          {!hasDatasets && (
+          {!blocked && (
             <p className="mb-8 font-sarabun text-label italic text-status-error">
               {t("deleteWarning")}
             </p>
           )}
           <div className="flex w-full gap-4">
-            {hasDatasets ? (
+            {blocked ? (
               <button
                 type="button"
                 onClick={onClose}
@@ -128,10 +136,10 @@ export default function DeleteCategoryModal({
   );
 }
 
-function WarningIcon({ hasDatasets }: { hasDatasets: boolean }) {
+function WarningIcon({ blocked }: { blocked: boolean }) {
   return (
     <svg
-      className={`h-8 w-8 ${hasDatasets ? "text-status-warning" : "text-status-error"}`}
+      className={`h-8 w-8 ${blocked ? "text-status-warning" : "text-status-error"}`}
       viewBox="0 0 24 24"
       fill="currentColor"
       aria-hidden

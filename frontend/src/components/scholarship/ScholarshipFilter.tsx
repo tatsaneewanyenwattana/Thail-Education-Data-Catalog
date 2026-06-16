@@ -23,11 +23,28 @@ export const TARGET_LEVEL_VALUES = [
   "any",
 ] as const satisfies readonly EducationLevel[];
 
-export function parseScholarshipFilterParams(searchParams: URLSearchParams) {
-  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const scholarshipType = searchParams.get("scholarship_type") ?? "";
-  const targetLevel = searchParams.get("target_level") ?? "";
-  const q = searchParams.get("q") ?? "";
+type SearchParamsInput = URLSearchParams | Record<string, string | string[] | undefined>;
+
+function readParam(
+  searchParams: SearchParamsInput,
+  key: string
+): string {
+  if (searchParams instanceof URLSearchParams) {
+    return searchParams.get(key) ?? "";
+  }
+
+  const value = searchParams[key];
+  if (Array.isArray(value)) {
+    return value[0] ?? "";
+  }
+  return value ?? "";
+}
+
+export function parseScholarshipFilterParams(searchParams: SearchParamsInput) {
+  const page = Math.max(1, Number(readParam(searchParams, "page") || "1") || 1);
+  const scholarshipType = readParam(searchParams, "scholarship_type");
+  const targetLevel = readParam(searchParams, "target_level");
+  const q = readParam(searchParams, "q");
 
   return {
     page,

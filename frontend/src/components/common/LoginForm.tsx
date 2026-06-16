@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -112,7 +112,6 @@ function EyeIcon({ off }: { off?: boolean }) {
 
 export default function LoginForm() {
   const t = useTranslations("auth.login");
-  const router = useRouter();
   const params = useParams();
   const locale = (params.locale as string) || "th";
   const login = useAuthStore((state) => state.login);
@@ -174,14 +173,12 @@ export default function LoginForm() {
       };
       login(token, authUser);
 
-      const redirectByRole = (role: User["role"]) => {
-        if (role === "admin") {
-          router.push(`/${locale}/admin`);
-        } else {
-          router.push(`/${locale}/dashboard`);
-        }
-      };
-      redirectByRole(authUser.role);
+      const targetPath =
+        authUser.role === "admin"
+          ? `/${locale}/admin`
+          : `/${locale}/dashboard`;
+
+      window.location.assign(targetPath);
     },
     onError: (error: Error) => {
       setToastMessage(error.message || t("errorInvalid"));

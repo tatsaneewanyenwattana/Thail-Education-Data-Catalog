@@ -2,10 +2,12 @@
 # Feature: Business Logic ตาม #5 #31 #56
 
 import uuid
+from typing import Any
 
 from pythainlp.tokenize import word_tokenize
 from sqlalchemy.orm import Session
 
+import app.repositories.category_repository as cat_repo
 import app.repositories.saved_search_repository as saved_search_repo
 import app.repositories.search_repository as search_repo
 from app.core.errors import raise_app_error
@@ -29,14 +31,27 @@ ALLOWED_FILTER_KEYS = {
     "category_id",
     "license",
     "year",
+    "years",
     "province",
     "agency_user_id",
     "tag",
+    "tags",
     "format",
+    "formats",
 }
 
 ALLOWED_LICENSES = {"open", "conditional", "cc"}
-ALLOWED_FORMATS = {"csv", "excel", "json", "xml"}
+ALLOWED_FORMATS = {"csv", "excel", "json", "xml", "pdf", "sql"}
+
+
+def _normalize_filter_list(value: Any) -> list[Any]:
+    if value is None or value == "":
+        return []
+    if isinstance(value, list):
+        return [item for item in value if item is not None and item != ""]
+    if isinstance(value, str) and "," in value:
+        return [part.strip() for part in value.split(",") if part.strip()]
+    return [value]
 
 
 def _tokenize_thai(keyword: str) -> str:
@@ -70,19 +85,30 @@ def _validate_filters(filters: dict | None) -> dict:
             if value not in ALLOWED_LICENSES:
                 raise_app_error("SEARCH_INVALID_FILTER")
             validated[key] = value
-        elif key == "year":
-            try:
-                validated[key] = int(value)
-            except (TypeError, ValueError):
-                raise_app_error("SEARCH_INVALID_FILTER")
+        elif key in ("year", "years"):
+            years: list[int] = []
+            for item in _normalize_filter_list(value):
+                try:
+                    years.append(int(item))
+                except (TypeError, ValueError):
+                    raise_app_error("SEARCH_INVALID_FILTER")
+            if years:
+                validated["years"] = years
         elif key == "province":
             validated[key] = str(value)
-        elif key == "tag":
-            validated[key] = str(value).strip()
-        elif key == "format":
-            if value not in ALLOWED_FORMATS:
-                raise_app_error("SEARCH_INVALID_FILTER")
-            validated[key] = value
+        elif key in ("tag", "tags"):
+            tags = [str(item).strip() for item in _normalize_filter_list(value) if str(item).strip()]
+            if tags:
+                validated["tags"] = tags
+        elif key in ("format", "formats"):
+            formats: list[str] = []
+            for item in _normalize_filter_list(value):
+                fmt = str(item).strip()
+                if fmt not in ALLOWED_FORMATS:
+                    raise_app_error("SEARCH_INVALID_FILTER")
+                formats.append(fmt)
+            if formats:
+                validated["formats"] = formats
     return validated
 
 
@@ -115,8 +141,16 @@ def _map_to_search_response(item: dict) -> SearchResponse:
     )
 
 
-def get_filter_options(db: Session) -> SearchFiltersResponse:
-    raw = search_repo.get_search_filter_options(db)
+def get_filter_options(
+    db: Session, scope: dict | None = None
+) -> SearchFiltersResponse:
+    validated_scope = _validate_filters(scope) if scope else {}
+    scope_payload = {
+        key: validated_scope[key]
+        for key in ("category_id", "agency_user_id", "province")
+        if key in validated_scope
+    }
+    raw = search_repo.get_search_filter_options(db, scope_payload or None)
     categories = [
         SearchFilterCategoryOption(
             id=c.id,
@@ -141,7 +175,26 @@ def get_filter_options(db: Session) -> SearchFiltersResponse:
         years=raw["years"],
         provinces=raw["provinces"],
         formats=raw["formats"],
+        tags=raw["tags"],
     )
+
+
+def _expand_category_filter(db: Session | None, filters: dict) -> dict:
+    if db is None or not filters.get("category_id"):
+        return filters
+
+    try:
+        category_id = uuid.UUID(str(filters["category_id"]))
+    except ValueError:
+        return filters
+
+    leaf_ids = cat_repo.get_descendant_leaf_category_ids(db, category_id)
+    if not leaf_ids:
+        return filters
+
+    expanded = dict(filters)
+    expanded["category_ids"] = [str(item) for item in leaf_ids]
+    return expanded
 
 
 def search(
@@ -149,9 +202,11 @@ def search(
     keyword: str | None,
     filters: dict | None,
     pagination: PaginationParams,
+    db: Session | None = None,
 ) -> tuple[list[SearchResponse], int]:
     kw = (keyword or "").strip()
     validated_filters = _validate_filters(filters)
+    validated_filters = _expand_category_filter(db, validated_filters)
 
     # อนุญาตให้ค้นแบบ filter-only ได้ (ไม่ต้องมี keyword) ตาม #31
     # แต่ถ้ามี keyword ต้องยาวอย่างน้อย 2 ตัวอักษร

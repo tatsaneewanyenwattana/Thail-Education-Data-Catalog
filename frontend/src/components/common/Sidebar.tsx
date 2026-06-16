@@ -120,19 +120,6 @@ export default function Sidebar({ variant }: SidebarProps) {
       icon: "categories",
       match: (p) => p.startsWith(`${base}/manage/categories`),
     },
-    {
-      href: `${base}/saved`,
-      labelKey: "saved",
-      icon: "saved",
-      match: (p) => p.startsWith(`${base}/saved`),
-    },
-    {
-      href: `${base}/dashboard/custom`,
-      labelKey: "customDashboard",
-      icon: "custom",
-      match: (p) => p.startsWith(`${base}/dashboard/custom`),
-      dividerBefore: true,
-    },
   ];
 
   return (

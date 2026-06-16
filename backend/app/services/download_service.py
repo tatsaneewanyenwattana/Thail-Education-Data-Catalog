@@ -73,7 +73,8 @@ def _fetch_file_content(minio_client: Minio, file_path: str) -> bytes:
         response.release_conn()
 
 
-def _infer_source_format(file_path: str) -> str:
+def _infer_source_format_from_path(file_path: str) -> str:
+    """สำรองเมื่อ DB ไม่มี file_format (ข้อมูลเก่า)"""
     ext = file_path.rsplit(".", 1)[-1].lower()
     mapping = {
         "json": "json",
@@ -85,6 +86,20 @@ def _infer_source_format(file_path: str) -> str:
         "sql": "sql",
     }
     return mapping.get(ext, "csv")
+
+
+def _get_source_format(
+    db: Session,
+    dataset_id: uuid.UUID,
+    file_path: str,
+) -> str:
+    """ใช้ file_format จาก DB เป็นหลัก — ไม่เดาจาก path ถ้ามีค่าใน DB"""
+    stored = dataset_repo.get_latest_dataset_file_format(db, dataset_id)
+    if stored:
+        fmt = stored.strip().lower()
+        if fmt in {"csv", "excel", "json", "pdf", "sql"}:
+            return fmt
+    return _infer_source_format_from_path(file_path)
 
 
 def _read_dataframe(content: bytes, source_format: str) -> pd.DataFrame:
@@ -178,7 +193,7 @@ def download(
 
     file_path = _get_latest_file_path(db, dataset_id)
     content = _fetch_file_content(minio_client, file_path)
-    source_format = _infer_source_format(file_path)
+    source_format = _get_source_format(db, dataset_id, file_path)
 
     if source_format in ("pdf", "sql"):
         if target_format != source_format:
@@ -237,7 +252,7 @@ def preview(
 
     file_path = _get_latest_file_path(db, dataset_id)
     content = _fetch_file_content(minio_client, file_path)
-    source_format = _infer_source_format(file_path)
+    source_format = _get_source_format(db, dataset_id, file_path)
 
     if source_format == "sql":
         lines = content.decode("utf-8", errors="replace").splitlines()
@@ -328,7 +343,7 @@ def export_pdf(
     try:
         file_path = _get_latest_file_path(db, dataset_id)
         content = _fetch_file_content(minio_client, file_path)
-        source_format = _infer_source_format(file_path)
+        source_format = _get_source_format(db, dataset_id, file_path)
         if source_format in ("pdf", "sql"):
             raise ValueError("tabular chart not available for pdf/sql")
         df = _read_dataframe(content, source_format).head(PREVIEW_ROW_LIMIT)

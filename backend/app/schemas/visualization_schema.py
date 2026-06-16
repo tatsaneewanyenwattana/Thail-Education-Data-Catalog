@@ -33,6 +33,8 @@ class StatsOverviewResponse(BaseModel):
     total_datasets: int
     total_downloads: int
     total_agencies: int
+    total_categories: int
+    categories_by_level: dict[str, int] = Field(default_factory=dict)
     total_categories_level1: int
     total_categories_level2: int
     datasets_by_year: list[DatasetYearStat]

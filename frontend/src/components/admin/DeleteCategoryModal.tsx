@@ -1,31 +1,24 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { AdminCategory, AdminSubcategory } from "@/data/mockData";
-import { useDeleteCategory } from "@/hooks/useAdminCategories";
-
-export type DeleteCategoryTarget =
-  | { level: 1; category: AdminCategory; displayName: string }
-  | { level: 2; category: AdminSubcategory; displayName: string };
+import {
+  useDeleteCategory,
+  type AdminCategoryTreeNode,
+} from "@/hooks/useAdminCategories";
 
 type DeleteCategoryModalProps = {
   open: boolean;
-  target: DeleteCategoryTarget | null;
+  target: AdminCategoryTreeNode | null;
+  displayName: string;
   onClose: () => void;
   onSuccess: () => void;
   onError: (message: string) => void;
 };
 
-function getDatasetCount(target: DeleteCategoryTarget): number {
-  if (target.level === 1) {
-    return target.category.datasetCount;
-  }
-  return target.category.datasetCount;
-}
-
 export default function DeleteCategoryModal({
   open,
   target,
+  displayName,
   onClose,
   onSuccess,
   onError,
@@ -37,15 +30,20 @@ export default function DeleteCategoryModal({
     return null;
   }
 
-  const datasetCount = getDatasetCount(target);
-  const hasDatasets = datasetCount > 0;
+  const hasDatasets = target.datasetCount > 0;
+  const hasChildren = target.childCount > 0;
+  const blocked = hasDatasets || hasChildren;
+
+  const blockMessage = hasChildren
+    ? t("deleteErrorChildren")
+    : t("deleteErrorDetail", {
+        name: displayName,
+        count: target.datasetCount,
+      });
 
   const handleDelete = async () => {
     try {
-      await deleteMutation.mutateAsync({
-        id: target.category.id,
-        level: target.level,
-      });
+      await deleteMutation.mutateAsync({ id: target.id });
       onSuccess();
       onClose();
     } catch {
@@ -69,29 +67,20 @@ export default function DeleteCategoryModal({
       />
       <div className="relative w-full max-w-md overflow-hidden rounded-radius-lg bg-surface-card p-8 shadow-level-3">
         <div className="flex flex-col items-center text-center">
-          <div
-            className={`mb-6 flex h-16 w-16 items-center justify-center rounded-radius-full ${
-              hasDatasets ? "bg-status-error-bg" : "bg-status-error-bg"
-            }`}
-          >
+          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-radius-full bg-status-error-bg">
             <WarningIcon />
           </div>
           <h2
             id="admin-delete-category-title"
             className="mb-2 font-kanit text-heading-3 font-bold text-text-primary"
           >
-            {hasDatasets ? t("deleteBlockedTitle") : t("deleteTitle")}
+            {blocked ? t("deleteBlockedTitle") : t("deleteTitle")}
           </h2>
           <p className="mb-6 px-4 font-sarabun text-body-md text-text-secondary">
-            {hasDatasets
-              ? t("deleteErrorDetail", {
-                  name: target.displayName,
-                  count: datasetCount,
-                })
-              : t("deleteMsg", { name: target.displayName })}
+            {blocked ? blockMessage : t("deleteMsg", { name: displayName })}
           </p>
           <div className="flex w-full flex-col gap-3">
-            {hasDatasets ? (
+            {blocked ? (
               <button
                 type="button"
                 onClick={onClose}

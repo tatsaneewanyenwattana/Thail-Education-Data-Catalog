@@ -67,3 +67,4 @@ class SearchFiltersResponse(BaseModel):
     years: list[int] = Field(default_factory=list)
     provinces: list[str] = Field(default_factory=list)
     formats: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)

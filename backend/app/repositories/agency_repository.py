@@ -13,7 +13,19 @@ from app.models.audit_log_model import AuditLog
 from app.models.category_model import Category
 from app.models.dataset_model import Dataset
 from app.models.download_log_model import DownloadLog
+from app.models.scholarship_model import Scholarship
 import app.repositories.dataset_repository as dataset_repo
+
+UPLOAD_HISTORY_ACTIONS = (
+    "dataset.upload",
+    "dataset.bulk_upload",
+    "dataset.update",
+    "dataset.delete",
+    "scholarship.create",
+    "scholarship.update",
+    "scholarship.delete",
+)
+ACTIVITY_LOG_DISPLAY_DAYS = 30
 
 _UNCATEGORIZED_TH = "ไม่ระบุหมวดหมู่"
 _UNCATEGORIZED_EN = "Uncategorized"
@@ -282,6 +294,7 @@ def list_agency_datasets(
                 "id": dataset.id,
                 "title": dataset.title,
                 "title_en": dataset.title,
+                "category_id": str(dataset.category_id) if dataset.category_id else None,
                 "category": cat_th,
                 "category_en": cat_en,
                 "subcategory": sub_th,
@@ -303,13 +316,29 @@ def list_agency_activity_logs(
     user_id: uuid.UUID,
     pagination: PaginationParams,
 ) -> tuple[list[dict[str, Any]], int]:
+    cutoff = datetime.now(timezone.utc) - timedelta(days=ACTIVITY_LOG_DISPLAY_DAYS)
     query = (
-        db.query(AuditLog, Dataset.title)
+        db.query(
+            AuditLog,
+            Dataset.title,
+            Dataset.status,
+            Scholarship.title,
+            Scholarship.status,
+        )
         .outerjoin(
             Dataset,
             (AuditLog.target_type == "dataset") & (AuditLog.target_id == Dataset.id),
         )
-        .filter(AuditLog.user_id == user_id)
+        .outerjoin(
+            Scholarship,
+            (AuditLog.target_type == "scholarship")
+            & (AuditLog.target_id == Scholarship.id),
+        )
+        .filter(
+            AuditLog.user_id == user_id,
+            AuditLog.action.in_(UPLOAD_HISTORY_ACTIONS),
+            AuditLog.created_at >= cutoff,
+        )
     )
     total = query.count()
     rows = (
@@ -320,15 +349,26 @@ def list_agency_activity_logs(
     )
 
     items: list[dict[str, Any]] = []
-    for log, dataset_title in rows:
+    for log, dataset_title, dataset_status, scholarship_title, scholarship_status in rows:
+        if log.target_type == "dataset":
+            title = dataset_title
+            entity_status = dataset_status
+        elif log.target_type == "scholarship":
+            title = scholarship_title
+            entity_status = scholarship_status
+        else:
+            title = None
+            entity_status = None
+
         items.append(
             {
+                "id": log.id,
                 "created_at": log.created_at,
                 "action": log.action,
                 "target_type": log.target_type,
-                "target_id": log.target_id,
-                "dataset_title": dataset_title,
-                "status": "success",
+                "title": title or (log.detail or {}).get("title"),
+                "entity_status": entity_status,
+                "detail": log.detail,
             }
         )
     return items, total

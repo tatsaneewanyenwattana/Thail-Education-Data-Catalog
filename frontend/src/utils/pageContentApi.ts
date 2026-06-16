@@ -12,21 +12,21 @@ export type ApiPageContent = {
   title_en: string;
   content_th: string;
   content_en: string;
+  status: string;
   updated_at: string;
 };
 
 const PAGE_UI_META: Record<
   string,
-  { route: string; icon: StaticPageIcon; status: StaticPageStatus }
+  { route: string; icon: StaticPageIcon; status?: StaticPageStatus }
 > = {
   "privacy-policy": {
     route: "/privacy-policy",
     icon: "policy",
-    status: "published",
   },
-  terms: { route: "/terms", icon: "gavel", status: "published" },
-  "api-docs": { route: "/api-docs", icon: "api", status: "published" },
-  "help-center": { route: "/help-center", icon: "help", status: "draft" },
+  terms: { route: "/terms", icon: "gavel" },
+  "api-docs": { route: "/api-docs", icon: "api" },
+  "help-center": { route: "/help-center", icon: "help" },
 };
 
 function formatUpdatedAt(iso: string): string {
@@ -83,18 +83,33 @@ export function mapApiPageToPublicContent(item: ApiPageContent): PageContentMock
 
 export function mapPageListItem(item: ApiPageContent): AdminStaticPageMeta {
   const ui = PAGE_UI_META[item.slug] ?? {
-    route: `/${item.slug}`,
+    route: `/pages/${item.slug}`,
     icon: "policy" as StaticPageIcon,
-    status: "published" as StaticPageStatus,
   };
+  const status: StaticPageStatus =
+    item.status === "draft" ? "draft" : "published";
   return {
     slug: item.slug,
     titleTh: item.title_th,
     titleEn: item.title_en,
     route: ui.route,
     icon: ui.icon,
-    status: ui.status,
+    status,
     updatedAt: formatUpdatedAt(item.updated_at),
+  };
+}
+
+export function toPageCreateBody(input: {
+  slug: string;
+  titleTh: string;
+  titleEn: string;
+  status: StaticPageStatus;
+}) {
+  return {
+    slug: input.slug,
+    title_th: input.titleTh,
+    title_en: input.titleEn,
+    status: input.status,
   };
 }
 

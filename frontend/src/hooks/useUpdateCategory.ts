@@ -10,7 +10,6 @@ import {
 
 type UpdateCategoryVariables = AgencyCategoryInput & {
   id: string;
-  level: 1 | 2;
   originalNameTh?: string;
   originalNameEn?: string;
 };
@@ -53,6 +52,7 @@ export function useUpdateCategory() {
     mutationFn: updateCategory,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agency", "categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 }

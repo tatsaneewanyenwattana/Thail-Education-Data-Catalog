@@ -1,9 +1,11 @@
 # Module: M2 Dataset
 # Feature: Dataset API Endpoints ตาม #20
 
+import io
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Query, Request, UploadFile, status
+from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -355,6 +357,25 @@ def restore_version(
         es_client=_get_es(),
     )
     return success_response(data=result.model_dump(mode="json"))
+
+
+@router.get("/datasets/bulk-upload/template")
+def download_bulk_upload_template(
+    payload: dict = Depends(require_roles("agency", "admin")),
+):
+    """
+    ดาวน์โหลด Excel Template สำหรับ Bulk Upload
+    - Auth ✅ Agency/Admin
+    """
+    del payload
+    content = dataset_service.generate_bulk_upload_template()
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": 'attachment; filename="bulk-upload-template.xlsx"'
+        },
+    )
 
 
 @router.post("/datasets/bulk-upload", status_code=status.HTTP_200_OK)

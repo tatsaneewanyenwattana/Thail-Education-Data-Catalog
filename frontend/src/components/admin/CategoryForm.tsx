@@ -1,14 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import type { AdminCategory, AdminSubcategory } from "@/data/mockData";
 import {
   useCreateCategory,
   useUpdateCategory,
+  type AdminCategoryTreeNode,
 } from "@/hooks/useAdminCategories";
 
 export type CategoryFormValues = {
@@ -19,9 +19,9 @@ export type CategoryFormValues = {
 
 type CategoryFormProps = {
   open: boolean;
-  level: 1 | 2;
   mode: "create" | "edit";
-  category?: AdminCategory | AdminSubcategory | null;
+  category?: AdminCategoryTreeNode | null;
+  parent?: AdminCategoryTreeNode | null;
   onClose: () => void;
   onError: (message: string) => void;
 };
@@ -38,13 +38,14 @@ function slugify(value: string): string {
 
 export default function CategoryForm({
   open,
-  level,
   mode,
   category,
+  parent,
   onClose,
   onError,
 }: CategoryFormProps) {
   const t = useTranslations("admin.categories");
+  const locale = useLocale();
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
   const slugTouched = useRef(false);
@@ -102,22 +103,29 @@ export default function CategoryForm({
   }
 
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const parentLabel = parent
+    ? locale === "th"
+      ? parent.nameTh
+      : parent.nameEn
+    : null;
 
   const title =
     mode === "create"
-      ? t("formTitleAddL1")
-      : level === 1
-        ? t("formTitleEditL1")
-        : t("formTitleEditL2");
+      ? parent
+        ? t("formTitleAddChild", { parent: parentLabel ?? "" })
+        : t("formTitleAddRoot")
+      : t("formTitleEdit");
 
   const onSubmit = async (values: CategoryFormValues) => {
     try {
       if (mode === "create") {
-        await createMutation.mutateAsync(values);
+        await createMutation.mutateAsync({
+          ...values,
+          parentId: parent?.id,
+        });
       } else if (category) {
         await updateMutation.mutateAsync({
           id: category.id,
-          level,
           ...values,
         });
       }
@@ -238,7 +246,7 @@ export default function CategoryForm({
             <div className="flex items-center gap-3 rounded-radius-lg border border-primary/20 bg-surface-container-lowest p-4">
               <InfoIcon />
               <p className="font-sarabun text-body-sm text-text-secondary">
-                {t("formInfoEmpty")}
+                {parent ? t("formInfoChild") : t("formInfoRoot")}
               </p>
             </div>
           )}

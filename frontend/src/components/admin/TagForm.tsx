@@ -17,6 +17,7 @@ type TagFormProps = {
   mode: "create" | "edit";
   tag?: AdminTag | null;
   onClose: () => void;
+  onSuccess?: () => void;
   onError: (message: string) => void;
 };
 
@@ -25,6 +26,7 @@ export default function TagForm({
   mode,
   tag,
   onClose,
+  onSuccess,
   onError,
 }: TagFormProps) {
   const t = useTranslations("admin.tags");
@@ -72,6 +74,7 @@ export default function TagForm({
       } else if (tag) {
         await updateMutation.mutateAsync({ id: tag.id, name: values.name });
       }
+      onSuccess?.();
       onClose();
     } catch (error) {
       if (error instanceof Error && error.message === "TAG_NAME_EXISTS") {

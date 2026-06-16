@@ -32,6 +32,7 @@ from app.schemas.admin_schema import (
     AnnouncementCreateRequest,
     AnnouncementUpdateRequest,
     AuditLogListFilters,
+    PageContentCreateRequest,
     PageContentUpdateRequest,
     UserRejectRequest,
     UserRoleChangeRequest,
@@ -378,7 +379,15 @@ def _serialize_email_log(log: EmailLog) -> dict:
 
 @router.get("/email-logs", status_code=status.HTTP_200_OK)
 def admin_email_logs(
-    status_filter: Literal["delivered", "failed", "bounced"] | None = Query(
+    status_filter: Literal[
+        "pending",
+        "sent",
+        "delivered",
+        "bounced",
+        "failed",
+        "complained",
+    ]
+    | None = Query(
         default=None,
         alias="status",
     ),
@@ -561,6 +570,22 @@ def delete_hero_image(
     - Auth ✅ Admin
     """
     result = hero_image_service.delete_hero_image(_get_minio())
+    return success_response(result.model_dump(mode="json"))
+
+
+@router.post("/pages", status_code=status.HTTP_201_CREATED)
+def admin_create_page(
+    request_body: PageContentCreateRequest,
+    payload: dict = Depends(require_roles("admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    สร้างหน้า Static ใหม่
+    - Auth ✅ Admin
+    """
+    result = page_content_service.create_page(
+        db, request=request_body, current_user=payload
+    )
     return success_response(result.model_dump(mode="json"))
 
 

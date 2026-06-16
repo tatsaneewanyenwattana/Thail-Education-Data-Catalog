@@ -308,6 +308,7 @@ export type SearchResultMock = {
   categoryTh: string;
   categoryEn: string;
   categoryId: string;
+  leafCategoryId?: string;
   subcategorySlug?: string;
   agencyTh: string;
   agencyEn: string;
@@ -2198,8 +2199,7 @@ export const mockAgencyDatasets: AgencyDatasetRow[] = [
 export type AgencyDatasetFormInitial = {
   title: string;
   description: string;
-  categoryLevel1: string;
-  categoryLevel2: string;
+  categoryId: string;
   license: DatasetLicense;
   tags: string[];
   yearStart?: number;
@@ -2739,8 +2739,7 @@ const mockAgencyDatasetFormById: Record<string, AgencyDatasetFormInitial> = {
     title: "ข้อมูลสถิติจำนวนนักเรียนรายจังหวัด ประจำปี 2566",
     description:
       "ข้อมูลจำนวนนักเรียนแยกตามจังหวัด ปีการศึกษา 2566 สำหรับวิเคราะห์ภาพรวมการศึกษาไทย",
-    categoryLevel1: "student-statistics",
-    categoryLevel2: "student-by-province",
+    categoryId: "",
     license: "open",
     tags: ["การศึกษา", "สถิติปี 2566"],
     yearStart: 2566,
@@ -2751,40 +2750,13 @@ const mockAgencyDatasetFormById: Record<string, AgencyDatasetFormInitial> = {
     title: "งบประมาณสนับสนุนการวิจัยรายปี (Draft)",
     description:
       "รายละเอียดงบประมาณสนับสนุนการวิจัยของหน่วยงาน แยกตามโครงการและปีงบประมาณ",
-    categoryLevel1: "teacher-statistics",
-    categoryLevel2: "teacher-by-subject",
+    categoryId: "",
     license: "conditional",
     tags: ["งบประมาณ", "วิจัย"],
     yearStart: 2567,
     province: "bangkok",
   },
 };
-
-function resolveCategorySlugs(
-  categoryTh: string,
-  subcategoryTh: string
-): { categoryLevel1: string; categoryLevel2: string } {
-  const category =
-    MOCK_CATEGORIES.find(
-      (item) =>
-        item.nameTh === categoryTh ||
-        categoryTh.includes(item.nameTh) ||
-        item.nameTh.includes(categoryTh)
-    ) ?? MOCK_CATEGORIES[0];
-
-  const subcategory =
-    category.subcategories.find(
-      (item) =>
-        item.nameTh === subcategoryTh ||
-        subcategoryTh.includes(item.nameTh) ||
-        item.nameTh.includes(subcategoryTh)
-    ) ?? category.subcategories[0];
-
-  return {
-    categoryLevel1: category.slug,
-    categoryLevel2: subcategory?.slug ?? "",
-  };
-}
 
 export function getAgencyDatasetFormInitial(
   id: string
@@ -2799,17 +2771,11 @@ export function getAgencyDatasetFormInitial(
     return null;
   }
 
-  const { categoryLevel1, categoryLevel2 } = resolveCategorySlugs(
-    row.category,
-    row.subcategory
-  );
-
   return {
     title: row.title,
     description:
       "รายละเอียดของชุดข้อมูล วัตถุประสงค์ และการนำไปใช้งานเชิงนโยบายการศึกษา",
-    categoryLevel1,
-    categoryLevel2,
+    categoryId: "",
     license: "open",
     tags: ["การศึกษา"],
     yearStart: 2567,

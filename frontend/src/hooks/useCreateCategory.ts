@@ -6,7 +6,7 @@ import type { AgencyCategoryInput } from "@/data/mockData";
 import { toCategoryMutationBody, type ApiCategory } from "@/utils/categoryApi";
 
 type CreateCategoryVariables = AgencyCategoryInput & {
-  level: 1 | 2;
+  parentId?: string;
 };
 
 type CategoryMutationResponse = {
@@ -23,7 +23,7 @@ async function createCategory(variables: CreateCategoryVariables): Promise<ApiCa
     },
   };
 
-  if (variables.level === 2 && variables.parentId) {
+  if (variables.parentId) {
     const res = await apiClient.post<CategoryMutationResponse>(
       `/categories/${variables.parentId}/subcategories`,
       body,
@@ -47,6 +47,7 @@ export function useCreateCategory() {
     mutationFn: createCategory,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agency", "categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 }

@@ -7,6 +7,7 @@ import type { AdminTag } from "@/data/mockData";
 type ApiTag = {
   id: string;
   name: string;
+  dataset_count?: number;
 };
 
 type TagsListResponse = {
@@ -18,27 +19,38 @@ function mapTag(item: ApiTag): AdminTag {
   return {
     id: String(item.id),
     name: item.name,
-    datasetCount: 0,
+    datasetCount: item.dataset_count ?? 0,
   };
 }
 
-async function fetchAdminTags(search?: string): Promise<AdminTag[]> {
+type FetchAdminTagsOptions = {
+  search?: string;
+  usedOnly?: boolean;
+};
+
+async function fetchAdminTags(
+  options?: FetchAdminTagsOptions
+): Promise<AdminTag[]> {
   const res = await apiClient.get<TagsListResponse>("/admin/tags");
   let tags = (res.data.data ?? []).map(mapTag);
 
-  if (search?.trim()) {
-    const keyword = search.trim().toLowerCase();
+  if (options?.usedOnly) {
+    tags = tags.filter((tag) => tag.datasetCount > 0);
+  }
+
+  if (options?.search?.trim()) {
+    const keyword = options.search.trim().toLowerCase();
     tags = tags.filter((tag) => tag.name.toLowerCase().includes(keyword));
   }
 
   return tags;
 }
 
-/** GET /api/v1/admin/tags */
-export function useAdminTags(search?: string) {
+/** GET /api/v1/admin/tags — read-only overview with dataset counts */
+export function useAdminTags(search?: string, usedOnly = false) {
   return useQuery({
-    queryKey: ["admin", "tags", search],
-    queryFn: () => fetchAdminTags(search),
+    queryKey: ["admin", "tags", search, usedOnly],
+    queryFn: () => fetchAdminTags({ search, usedOnly }),
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
@@ -56,6 +68,7 @@ export function useCreateTag() {
     mutationFn: createTag,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "tags"] });
+      queryClient.invalidateQueries({ queryKey: ["search", "filters"] });
     },
   });
 }

@@ -14,32 +14,45 @@ export default function AdminLayout({
   const router = useRouter();
   const params = useParams();
   const locale = (params.locale as string) || "th";
-  const { token, user, initAuth } = useAuthStore();
+  const { token, user, initAuth, hasHydrated } = useAuthStore();
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
+    if (!hasHydrated) return;
+
     let active = true;
-    void initAuth().finally(() => {
+    const bootstrap = async () => {
+      if (token && user) {
+        if (active) setAuthReady(true);
+        return;
+      }
+      await initAuth();
       if (active) setAuthReady(true);
-    });
+    };
+
+    void bootstrap();
     return () => {
       active = false;
     };
-  }, [initAuth]);
+  }, [hasHydrated, initAuth, token, user]);
 
   useEffect(() => {
     if (!authReady) return;
     if (!token) {
-      router.push(`/${locale}/login`);
+      router.replace(`/${locale}/login`);
       return;
     }
     if (user && user.role !== "admin") {
-      router.push(`/${locale}`);
+      router.replace(`/${locale}`);
     }
   }, [authReady, token, user, router, locale]);
 
-  if (!authReady) {
-    return null;
+  if (!hasHydrated || !authReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-surface-page font-sarabun text-body-md text-text-muted">
+        กำลังโหลด...
+      </div>
+    );
   }
 
   if (!token) {

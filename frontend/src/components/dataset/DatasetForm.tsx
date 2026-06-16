@@ -7,25 +7,22 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import CascadingCategorySelect from "@/components/dataset/CascadingCategorySelect";
+import CategoryTreePicker from "@/components/dataset/CategoryTreePicker";
 import {
   datasetFormSchema,
   type DatasetFormValues,
 } from "@/components/dataset/datasetFormSchema";
 import FileUploadZone from "@/components/dataset/FileUploadZone";
 import PIIWarning from "@/components/dataset/PIIWarning";
-import QualityScoreCard from "@/components/dataset/QualityScoreCard";
 import TagInput from "@/components/dataset/TagInput";
-import {
-  fetchMockFileAnalysis,
-  mockFileAnalysisResult,
-  type AgencyDatasetFormInitial,
-  type FileAnalysisResult,
-} from "@/data/mockData";
+import { type AgencyDatasetFormInitial } from "@/data/mockData";
 import { THAI_PROVINCES } from "@/data/thaiProvinces";
+import { useCategorySuggestedTags } from "@/hooks/useCategorySuggestedTags";
+import { usePIIScan } from "@/hooks/usePIIScan";
 import { useUpdateDataset } from "@/hooks/useUpdateDataset";
 import { useUploadDataset } from "@/hooks/useUploadDataset";
 import { useAuthStore } from "@/stores/useAuthStore";
+import type { PIIFinding, PIIScanResult } from "@/types/pii";
 import { fetchDatasetFormInitial } from "@/utils/datasetFormApi";
 
 type DatasetFormProps = {
@@ -45,6 +42,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
   const base = `/${locale}`;
   const isThai = locale === "th";
   const userRole = useAuthStore((s) => s.user?.role);
+  const { scanFile } = usePIIScan();
 
   const { data: initialFromApi, isLoading: isLoadingInitial } = useQuery({
     queryKey: ["datasets", datasetId, "form"],
@@ -61,9 +59,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
   }, [mode, initialFromApi]);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [analysis, setAnalysis] = useState<FileAnalysisResult | null>(
-    mode === "edit" ? mockFileAnalysisResult : null
-  );
+  const [analysis, setAnalysis] = useState<PIIScanResult | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [provinceQuery, setProvinceQuery] = useState("");
   const [provinceDropdownOpen, setProvinceDropdownOpen] = useState(false);
@@ -81,8 +77,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
   const emptyDefaults: DatasetFormValues = {
     title: "",
     description: "",
-    categoryLevel1: "",
-    categoryLevel2: "",
+    categoryId: "",
     license: "open",
     tags: [],
     yearStart: new Date().getFullYear() + 543,
@@ -95,6 +90,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     control,
     handleSubmit,
     setValue,
+    getValues,
     watch,
     reset,
     formState: { errors },
@@ -112,6 +108,22 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
   }, [initialData, reset]);
 
   const selectedProvince = watch("province");
+  const categoryId = watch("categoryId");
+
+  const { data: suggestedTags = [] } = useCategorySuggestedTags(
+    mode === "create" ? categoryId || undefined : undefined
+  );
+
+  useEffect(() => {
+    if (mode !== "create" || !categoryId) {
+      return;
+    }
+    const existingTags = getValues("tags") ?? [];
+    if (existingTags.length > 0) {
+      return;
+    }
+    setValue("tags", suggestedTags.slice(0, 10), { shouldDirty: true });
+  }, [categoryId, suggestedTags, mode, setValue, getValues]);
 
   useEffect(() => {
     const selected = THAI_PROVINCES.find(
@@ -196,10 +208,8 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     );
   }
 
-  const piiColumns =
-    isThai
-      ? (analysis?.piiColumnsTh ?? [])
-      : (analysis?.piiColumnsEn ?? []);
+  const piiFindings: PIIFinding[] = analysis?.findings ?? [];
+  const hasPii = piiFindings.length > 0;
 
   const handleSelectProvince = (value: string) => {
     setValue("province", value, { shouldValidate: true, shouldDirty: true });
@@ -230,8 +240,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     const formData = new FormData();
     formData.append("title", values.title);
     formData.append("description", values.description);
-    formData.append("categoryLevel1", values.categoryLevel1);
-    formData.append("categoryLevel2", values.categoryLevel2);
+    formData.append("categoryId", values.categoryId);
     formData.append("license", values.license);
     formData.append("status", status);
     values.tags.forEach((tag) => formData.append("tags[]", tag));
@@ -278,16 +287,14 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     }
   };
 
-  const handleAnalyzed = (result: FileAnalysisResult, file: File) => {
+  const handleAnalyzed = (result: PIIScanResult, file: File) => {
     setAnalysis(result);
     setSelectedFile(file);
     setFileError(null);
   };
 
-  const handleEditFileReanalyze = async () => {
-    // TODO: เชื่อม POST /api/v1/datasets/analyze เมื่อ Backend เพิ่ม endpoint นี้
-    const result = await fetchMockFileAnalysis();
-    setAnalysis(result);
+  const handleEditFileReanalyze = () => {
+    setAnalysis(null);
   };
 
   return (
@@ -319,7 +326,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
         {mode === "edit" && !selectedFile && (
           <button
             type="button"
-            onClick={() => void handleEditFileReanalyze()}
+            onClick={handleEditFileReanalyze}
             className="mt-2 font-sarabun text-label text-primary-dark hover:underline"
           >
             {t("replaceFile")}
@@ -330,10 +337,9 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
             {fileError}
           </p>
         )}
-        {analysis && (
-          <div className="mt-spacing-6 grid grid-cols-1 gap-spacing-6 md:grid-cols-2">
-            <QualityScoreCard score={analysis.qualityScore} />
-            <PIIWarning columns={piiColumns} />
+        {analysis && hasPii && (
+          <div className="-mx-spacing-6 mt-spacing-6">
+            <PIIWarning findings={piiFindings} />
           </div>
         )}
       </section>
@@ -386,12 +392,10 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
               )}
             </div>
 
-            <CascadingCategorySelect
+            <CategoryTreePicker
               control={control}
-              setValue={setValue}
               errors={{
-                categoryLevel1: errors.categoryLevel1,
-                categoryLevel2: errors.categoryLevel2,
+                categoryId: errors.categoryId,
               }}
             />
 
@@ -407,6 +411,10 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
                     value={field.value ?? []}
                     onChange={field.onChange}
                     error={errors.tags?.message ? t("fieldTagsMax") : undefined}
+                    suggestions={suggestedTags}
+                    suggestionsHint={
+                      suggestedTags.length > 0 ? t("fieldTagsCategoryHint") : undefined
+                    }
                   />
                 )}
               />
@@ -523,15 +531,22 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
             {isSubmitting && submitStatus === "draft" && <Spinner />}
             {t("saveDraft")}
           </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            onClick={() => setSubmitStatus("published")}
-            className="inline-flex items-center justify-center gap-2 rounded-radius-xl bg-primary px-10 py-2.5 font-sarabun text-label font-medium text-surface-card shadow-level-1 transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {isSubmitting && submitStatus === "published" && <Spinner />}
-            {t("publish")}
-          </button>
+          <div className="flex flex-col items-end gap-1">
+            <button
+              type="submit"
+              disabled={isSubmitting || hasPii}
+              onClick={() => setSubmitStatus("published")}
+              className="inline-flex items-center justify-center gap-2 rounded-radius-xl bg-primary px-10 py-2.5 font-sarabun text-label font-medium text-surface-card shadow-level-1 transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {isSubmitting && submitStatus === "published" && <Spinner />}
+              {t("publish")}
+            </button>
+            {hasPii && (
+              <p className="font-sarabun text-caption text-status-error">
+                {t("piiBlockPublish")}
+              </p>
+            )}
+          </div>
         </div>
       </form>
     </div>

@@ -5,10 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import BulkUploadResult from "@/components/dataset/BulkUploadResult";
 import BulkUploadZone from "@/components/dataset/BulkUploadZone";
-import {
-  createBulkUploadTemplateBlob,
-  type BulkUploadResult as BulkUploadResultData,
-} from "@/data/mockData";
+import type { BulkUploadResult as BulkUploadResultData } from "@/data/mockData";
+import { downloadBulkUploadTemplate } from "@/hooks/useBulkUpload";
 
 export default function BulkUploadPage() {
   const t = useTranslations("agency.bulk");
@@ -19,16 +17,25 @@ export default function BulkUploadPage() {
     null
   );
   const [resetKey, setResetKey] = useState(0);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
+  const [templateError, setTemplateError] = useState<string | null>(null);
 
-  const handleDownloadTemplate = () => {
-    // TODO: GET /api/v1/agency/datasets/bulk-template
-    const blob = createBulkUploadTemplateBlob();
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "bulk-upload-template.xlsx";
-    anchor.click();
-    URL.revokeObjectURL(url);
+  const handleDownloadTemplate = async () => {
+    setTemplateError(null);
+    setIsDownloadingTemplate(true);
+    try {
+      const blob = await downloadBulkUploadTemplate();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "bulk-upload-template.xlsx";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setTemplateError(t("templateDownloadError"));
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
   };
 
   const handleUploadAgain = () => {
@@ -65,11 +72,17 @@ export default function BulkUploadPage() {
         <button
           type="button"
           onClick={handleDownloadTemplate}
-          className="inline-flex items-center gap-2 rounded-radius-full border-2 border-primary-dark px-6 py-2.5 font-sarabun text-label font-medium text-primary-dark transition-colors hover:bg-primary-light"
+          disabled={isDownloadingTemplate}
+          className="inline-flex items-center gap-2 rounded-radius-full border-2 border-primary-dark px-6 py-2.5 font-sarabun text-label font-medium text-primary-dark transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-60"
         >
           <DownloadIcon />
-          {t("downloadTemplate")}
+          {isDownloadingTemplate ? t("templateDownloading") : t("downloadTemplate")}
         </button>
+        {templateError && (
+          <p className="mt-2 font-sarabun text-body-sm text-error" role="alert">
+            {templateError}
+          </p>
+        )}
       </section>
 
       <BulkUploadZone

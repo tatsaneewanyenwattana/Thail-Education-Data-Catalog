@@ -51,8 +51,12 @@ type ListResponse = {
 
 const PAGE_SIZE = 10;
 
+function normalizeStatus(raw: string): AgencyDatasetRow["status"] {
+  const status = raw?.toLowerCase?.() ?? raw;
+  return status === "published" ? "published" : "draft";
+}
+
 function mapDataset(item: ApiAgencyDataset): AgencyDatasetRow {
-  const status = item.status as AgencyDatasetRow["status"];
   return {
     id: String(item.id),
     title: item.title,
@@ -61,10 +65,7 @@ function mapDataset(item: ApiAgencyDataset): AgencyDatasetRow {
     categoryEn: item.categoryEn ?? item.category_en ?? item.category,
     subcategory: item.subcategory,
     subcategoryEn: item.subcategoryEn ?? item.subcategory_en ?? item.subcategory,
-    status:
-      status === "published" || status === "draft"
-        ? status
-        : "draft",
+    status: normalizeStatus(item.status),
     qualityScore: item.qualityScore ?? item.quality_score ?? 0,
     downloadCount: item.downloadCount ?? item.download_count ?? 0,
     updatedAt: item.updatedAt ?? item.updated_at ?? new Date().toISOString(),

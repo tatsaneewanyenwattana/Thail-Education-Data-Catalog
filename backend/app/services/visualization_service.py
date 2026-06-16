@@ -79,6 +79,8 @@ def get_stats_overview(db: Session) -> StatsOverviewResponse:
         total_datasets=data["total_datasets"],
         total_downloads=data["total_downloads"],
         total_agencies=data["total_agencies"],
+        total_categories=data["total_categories"],
+        categories_by_level=data["categories_by_level"],
         total_categories_level1=data["total_categories_level1"],
         total_categories_level2=data["total_categories_level2"],
         datasets_by_year=[

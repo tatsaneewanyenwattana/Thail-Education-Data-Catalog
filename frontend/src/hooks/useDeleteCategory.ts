@@ -5,7 +5,6 @@ import apiClient from "@/services/api";
 
 type DeleteCategoryVariables = {
   id: string;
-  level: 1 | 2;
 };
 
 async function deleteCategory(variables: DeleteCategoryVariables): Promise<void> {
@@ -20,6 +19,7 @@ export function useDeleteCategory() {
     retry: 0,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agency", "categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 }

@@ -12,7 +12,7 @@ export type EmailLogStatus =
   | "complained";
 
 export type AdminEmailLogsFilters = {
-  status?: "delivered" | "failed" | "bounced";
+  status?: EmailLogStatus;
   recipient_email?: string;
   template_name?: string;
   date_from?: string;

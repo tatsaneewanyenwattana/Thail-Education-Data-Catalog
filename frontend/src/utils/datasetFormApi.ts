@@ -2,13 +2,6 @@ import apiClient from "@/services/api";
 import type { DatasetFormValues } from "@/components/dataset/datasetFormSchema";
 import type { AgencyDatasetFormInitial } from "@/data/mockData";
 
-type ApiCategory = {
-  id: string;
-  slug: string;
-  level: number;
-  parent_id: string | null;
-};
-
 type ApiDataset = {
   id: string;
   title: string;
@@ -19,27 +12,6 @@ type ApiDataset = {
   dataset_metadata?: Record<string, unknown> | null;
   status: string;
 };
-
-let categoriesCache: ApiCategory[] | null = null;
-
-async function fetchCategories(): Promise<ApiCategory[]> {
-  if (categoriesCache) {
-    return categoriesCache;
-  }
-  const res = await apiClient.get<{ data: ApiCategory[] }>("/categories");
-  categoriesCache = res.data.data ?? [];
-  return categoriesCache;
-}
-
-export function resolveCategoryId(
-  level2Slug: string,
-  categories: ApiCategory[]
-): string | undefined {
-  const match = categories.find(
-    (c) => c.slug === level2Slug && c.level === 2
-  );
-  return match?.id;
-}
 
 function buildMetadata(formData: FormData): Record<string, unknown> | null {
   const meta: Record<string, unknown> = {};
@@ -61,9 +33,7 @@ function buildMetadata(formData: FormData): Record<string, unknown> | null {
 export async function toUploadApiFormData(
   formData: FormData
 ): Promise<FormData> {
-  const categories = await fetchCategories();
-  const level2Slug = String(formData.get("categoryLevel2") ?? "");
-  const categoryId = resolveCategoryId(level2Slug, categories);
+  const categoryId = String(formData.get("categoryId") ?? "");
 
   const apiForm = new FormData();
   const file = formData.get("file");
@@ -88,6 +58,10 @@ export async function toUploadApiFormData(
     .map((tag) => String(tag).trim())
     .filter(Boolean);
   apiForm.append("tags", JSON.stringify(tags));
+  const statusVal = formData.get("status");
+  if (statusVal === "draft" || statusVal === "published") {
+    apiForm.append("status", String(statusVal));
+  }
   return apiForm;
 }
 
@@ -103,9 +77,7 @@ export type DatasetUpdateBody = {
 export async function toUpdateApiBody(
   formData: FormData
 ): Promise<DatasetUpdateBody> {
-  const categories = await fetchCategories();
-  const level2Slug = String(formData.get("categoryLevel2") ?? "");
-  const categoryId = resolveCategoryId(level2Slug, categories);
+  const categoryId = String(formData.get("categoryId") ?? "");
 
   const body: DatasetUpdateBody = {
     title: String(formData.get("title") ?? ""),
@@ -130,36 +102,20 @@ export async function fetchDatasetFormInitial(
   datasetId: string
 ): Promise<AgencyDatasetFormInitial | null> {
   try {
-    const [datasetRes, categories] = await Promise.all([
-      apiClient.get<{ data: ApiDataset }>(`/datasets/${datasetId}`),
-      fetchCategories(),
-    ]);
+    const datasetRes = await apiClient.get<{ data: ApiDataset }>(
+      `/datasets/${datasetId}`
+    );
     const ds = datasetRes.data.data;
     if (!ds) {
       return null;
     }
 
     const meta = ds.metadata ?? ds.dataset_metadata ?? {};
-    let categoryLevel1 = "";
-    let categoryLevel2 = "";
-    if (ds.category_id) {
-      const level2 = categories.find((c) => c.id === ds.category_id);
-      if (level2) {
-        categoryLevel2 = level2.slug;
-        if (level2.parent_id) {
-          const level1 = categories.find((c) => c.id === level2.parent_id);
-          if (level1) {
-            categoryLevel1 = level1.slug;
-          }
-        }
-      }
-    }
 
     return {
       title: ds.title,
       description: ds.description ?? "",
-      categoryLevel1,
-      categoryLevel2,
+      categoryId: ds.category_id ?? "",
       license: ds.license as AgencyDatasetFormInitial["license"],
       tags: [],
       yearStart:

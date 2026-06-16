@@ -53,12 +53,17 @@ ERROR_DEFINITIONS: dict[str, tuple[int, str]] = {
     "CATEGORY_NOT_FOUND": (404, "ไม่พบหมวดหมู่"),
     "CATEGORY_SLUG_EXISTS": (409, "ชื่อซ้ำในระบบ"),
     "CATEGORY_PARENT_NOT_FOUND": (404, "ไม่พบหมวดหมู่ระดับบนสุด"),
-    "CATEGORY_MAX_DEPTH_REACHED": (400, "เกิน 2 ระดับ"),
+    "CATEGORY_MAX_DEPTH_REACHED": (400, "เกินจำนวนระดับที่กำหนด"),
     "CATEGORY_HAS_DATASETS": (400, "ลบไม่ได้เพราะมี Dataset อยู่"),
+    "CATEGORY_HAS_CHILDREN": (400, "ลบไม่ได้เพราะมีหมวดหมู่ย่อยอยู่"),
+    "CATEGORY_NOT_LEAF": (400, "Dataset ต้องผูกกับหมวดหมู่ปลายทางเท่านั้น"),
     "CATEGORY_PERMISSION_DENIED": (403, "ไม่ใช่เจ้าของหมวดหมู่นี้"),
     "CATEGORY_NOT_OWNED": (403, "หมวดหมู่นี้เป็นของ Agency อื่น"),
     "TAG_NOT_FOUND": (404, "ไม่พบแท็ก"),
     "TAG_NAME_EXISTS": (409, "ชื่อแท็กนี้มีในระบบแล้ว"),
+    # Page
+    "PAGE_SLUG_EXISTS": (409, "Slug นี้มีในระบบแล้ว"),
+    "PAGE_NOT_FOUND": (404, "ไม่พบหน้าที่ต้องการ"),
     # System
     "VALIDATION_ERROR": (422, "ข้อมูลที่ส่งมาไม่ถูกต้อง"),
     "RATE_LIMIT_EXCEEDED": (429, "เรียก API เกินจำนวนที่กำหนด"),

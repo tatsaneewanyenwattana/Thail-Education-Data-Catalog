@@ -41,6 +41,7 @@ class AgencyDatasetListItem(BaseModel):
     id: uuid.UUID
     title: str
     title_en: str = Field(serialization_alias="titleEn")
+    category_id: uuid.UUID | None = Field(default=None, serialization_alias="categoryId")
     category: str
     category_en: str = Field(serialization_alias="categoryEn")
     subcategory: str
@@ -55,12 +56,13 @@ class AgencyDatasetListItem(BaseModel):
 
 
 class AgencyActivityLogItem(BaseModel):
+    id: uuid.UUID
     created_at: datetime
-    action: str
-    target_type: str
-    target_id: uuid.UUID | None
-    dataset_title: str | None = None
-    status: str
+    item_type: str = Field(serialization_alias="itemType")
+    activity_type: str = Field(serialization_alias="activityType")
+    title: str | None = None
+
+    model_config = {"populate_by_name": True}
 
 
 class AgencyActivityLogListResponse(BaseModel):

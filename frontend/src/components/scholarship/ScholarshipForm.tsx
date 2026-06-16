@@ -257,8 +257,8 @@ export default function ScholarshipForm({
           </label>
           <textarea
             id="eligibility"
-            rows={4}
-            className={inputClass}
+            rows={10}
+            className={`${inputClass} min-h-[240px] resize-y`}
             {...register("eligibility")}
           />
           {errors.eligibility && (

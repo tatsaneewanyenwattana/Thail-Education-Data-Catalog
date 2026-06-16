@@ -6,11 +6,13 @@ import CategoryPageContent from "@/components/category/CategoryPageContent";
 import { useCategories } from "@/hooks/useCategories";
 import { useCategoryDatasets } from "@/hooks/useCategoryDatasets";
 import {
-  applyDatasetCounts,
-  buildCategoryTreeFromApi,
-  findCategoryPageBySlug,
+  applyDatasetCountsToTree,
+  buildPublicCategoryTree,
+  findPublicCategoryPageBySlug,
   getCategoryFilterIds,
+  getSubtreeLeafFilterIds,
 } from "@/utils/publicCategoryApi";
+import { collectLeafNodes } from "@/utils/categoryTreeUtils";
 
 type CategorySlugPageClientProps = {
   slug: string;
@@ -22,30 +24,45 @@ export default function CategorySlugPageClient({
   const { data: categories = [], isLoading, isError } = useCategories();
 
   const tree = useMemo(
-    () => buildCategoryTreeFromApi(categories),
+    () => buildPublicCategoryTree(categories),
     [categories]
   );
 
   const pageData = useMemo(
-    () => findCategoryPageBySlug(slug, tree),
+    () => findPublicCategoryPageBySlug(slug, tree),
     [slug, tree]
   );
 
-  const filterIds = useMemo(() => {
-    if (!pageData) return [];
-    return getCategoryFilterIds(pageData, categories);
-  }, [pageData, categories]);
+  const datasetQueryIds = useMemo(() => {
+    if (!pageData) {
+      return [];
+    }
+    if (pageData.isLeaf) {
+      return getCategoryFilterIds(pageData);
+    }
+    return getSubtreeLeafFilterIds(pageData.node);
+  }, [pageData]);
 
   const { data: datasets = [], isLoading: datasetsLoading } =
-    useCategoryDatasets(filterIds, categories);
+    useCategoryDatasets(datasetQueryIds, categories);
 
   const pageDataWithCounts = useMemo(() => {
-    if (!pageData) return null;
-    const treeWithCounts = applyDatasetCounts(tree, datasets);
-    return findCategoryPageBySlug(slug, treeWithCounts);
+    if (!pageData) {
+      return null;
+    }
+    const treeWithCounts = applyDatasetCountsToTree(tree, datasets);
+    return findPublicCategoryPageBySlug(slug, treeWithCounts);
   }, [pageData, tree, datasets, slug]);
 
-  if (isLoading || datasetsLoading) {
+  const needsDatasetLoad = pageData?.isLeaf ?? false;
+  const allLeafIds = useMemo(
+    () => collectLeafNodes(tree).map((node) => node.id),
+    [tree]
+  );
+  const waitingForCounts =
+    !pageData?.isLeaf && pageData != null && allLeafIds.length > 0;
+
+  if (isLoading || (needsDatasetLoad && datasetsLoading) || (waitingForCounts && datasetsLoading)) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center font-sarabun text-body-md text-text-muted">
         Loading...
@@ -60,7 +77,7 @@ export default function CategorySlugPageClient({
   return (
     <CategoryPageContent
       pageData={pageDataWithCounts}
-      datasets={datasets}
+      datasets={pageDataWithCounts.isLeaf ? datasets : []}
     />
   );
 }

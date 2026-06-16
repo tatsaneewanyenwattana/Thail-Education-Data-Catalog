@@ -22,6 +22,7 @@ def create(
     title_en: str,
     content_th: str = "",
     content_en: str = "",
+    status: str = "published",
     updated_by=None,
 ) -> PageContent:
     row = PageContent(
@@ -30,6 +31,7 @@ def create(
         title_en=title_en,
         content_th=content_th,
         content_en=content_en,
+        status=status,
         updated_by=updated_by,
     )
     db.add(row)

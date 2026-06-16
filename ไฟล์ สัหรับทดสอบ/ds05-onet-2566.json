@@ -1,0 +1,422 @@
+[
+  {
+    "school_name": "โรงเรียนทดสอบบางรัก",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 62.6,
+    "student_count": 133,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางรัก",
+    "subject": "ภาษาไทย",
+    "avg_score": 80.1,
+    "student_count": 133,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบดุสิต",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 57.4,
+    "student_count": 137,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบดุสิต",
+    "subject": "ภาษาไทย",
+    "avg_score": 59.7,
+    "student_count": 137,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบพระนคร",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 62.8,
+    "student_count": 111,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบพระนคร",
+    "subject": "ภาษาไทย",
+    "avg_score": 61.7,
+    "student_count": 111,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบึงกุ่ม",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 49.4,
+    "student_count": 167,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบึงกุ่ม",
+    "subject": "ภาษาไทย",
+    "avg_score": 78.7,
+    "student_count": 167,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบลาดพร้าว",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 71.3,
+    "student_count": 115,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบลาดพร้าว",
+    "subject": "ภาษาไทย",
+    "avg_score": 60.1,
+    "student_count": 115,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางเขน",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 71.6,
+    "student_count": 98,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางเขน",
+    "subject": "ภาษาไทย",
+    "avg_score": 67.6,
+    "student_count": 98,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบจตุจักร",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 65.5,
+    "student_count": 159,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบจตุจักร",
+    "subject": "ภาษาไทย",
+    "avg_score": 64.0,
+    "student_count": 159,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบหลักสี่",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 47.8,
+    "student_count": 146,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบหลักสี่",
+    "subject": "ภาษาไทย",
+    "avg_score": 52.1,
+    "student_count": 146,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบดอนเมือง",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 60.7,
+    "student_count": 102,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบดอนเมือง",
+    "subject": "ภาษาไทย",
+    "avg_score": 68.7,
+    "student_count": 102,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบสาทร",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 53.8,
+    "student_count": 190,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบสาทร",
+    "subject": "ภาษาไทย",
+    "avg_score": 77.0,
+    "student_count": 190,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางนา",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 51.0,
+    "student_count": 95,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางนา",
+    "subject": "ภาษาไทย",
+    "avg_score": 55.0,
+    "student_count": 95,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบลาดกระบัง",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 76.3,
+    "student_count": 114,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบลาดกระบัง",
+    "subject": "ภาษาไทย",
+    "avg_score": 57.2,
+    "student_count": 114,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบมีนบุรี",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 77.9,
+    "student_count": 138,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบมีนบุรี",
+    "subject": "ภาษาไทย",
+    "avg_score": 63.2,
+    "student_count": 138,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบหนองจอก",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 43.6,
+    "student_count": 118,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบหนองจอก",
+    "subject": "ภาษาไทย",
+    "avg_score": 51.2,
+    "student_count": 118,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบคลองสาน",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 73.0,
+    "student_count": 101,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบคลองสาน",
+    "subject": "ภาษาไทย",
+    "avg_score": 65.9,
+    "student_count": 101,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบธนบุรี",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 63.7,
+    "student_count": 164,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบธนบุรี",
+    "subject": "ภาษาไทย",
+    "avg_score": 76.2,
+    "student_count": 164,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบราษฎร์บูรณะ",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 55.7,
+    "student_count": 163,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบราษฎร์บูรณะ",
+    "subject": "ภาษาไทย",
+    "avg_score": 71.1,
+    "student_count": 163,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบทุ่งครุ",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 52.2,
+    "student_count": 200,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบทุ่งครุ",
+    "subject": "ภาษาไทย",
+    "avg_score": 67.1,
+    "student_count": 200,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางมด",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 66.3,
+    "student_count": 185,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางมด",
+    "subject": "ภาษาไทย",
+    "avg_score": 77.4,
+    "student_count": 185,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบจอมทอง",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 58.4,
+    "student_count": 102,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบจอมทอง",
+    "subject": "ภาษาไทย",
+    "avg_score": 54.8,
+    "student_count": 102,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบภาษีเจริญ",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 66.7,
+    "student_count": 179,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบภาษีเจริญ",
+    "subject": "ภาษาไทย",
+    "avg_score": 68.2,
+    "student_count": 179,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางแค",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 65.8,
+    "student_count": 102,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางแค",
+    "subject": "ภาษาไทย",
+    "avg_score": 62.0,
+    "student_count": 102,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบหนองแขม",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 46.8,
+    "student_count": 141,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบหนองแขม",
+    "subject": "ภาษาไทย",
+    "avg_score": 69.2,
+    "student_count": 141,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางบอน",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 69.6,
+    "student_count": 178,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางบอน",
+    "subject": "ภาษาไทย",
+    "avg_score": 53.6,
+    "student_count": 178,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบทวีวัฒนา",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 77.4,
+    "student_count": 124,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบทวีวัฒนา",
+    "subject": "ภาษาไทย",
+    "avg_score": 74.8,
+    "student_count": 124,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบตลิ่งชัน",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 76.9,
+    "student_count": 121,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบตลิ่งชัน",
+    "subject": "ภาษาไทย",
+    "avg_score": 53.1,
+    "student_count": 121,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางกอกน้อย",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 64.1,
+    "student_count": 135,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบบางกอกน้อย",
+    "subject": "ภาษาไทย",
+    "avg_score": 55.3,
+    "student_count": 135,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบดินแดง",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 43.6,
+    "student_count": 108,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบดินแดง",
+    "subject": "ภาษาไทย",
+    "avg_score": 75.8,
+    "student_count": 108,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบห้วยขวาง",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 42.1,
+    "student_count": 80,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบห้วยขวาง",
+    "subject": "ภาษาไทย",
+    "avg_score": 80.3,
+    "student_count": 80,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบวังทองหลาง",
+    "subject": "คณิตศาสตร์",
+    "avg_score": 46.8,
+    "student_count": 149,
+    "academic_year": 2566
+  },
+  {
+    "school_name": "โรงเรียนทดสอบวังทองหลาง",
+    "subject": "ภาษาไทย",
+    "avg_score": 63.9,
+    "student_count": 149,
+    "academic_year": 2566
+  }
+]

@@ -162,7 +162,11 @@ def search_datasets(
     must_clauses: list[dict] = [{"term": {"status": "published"}}]
 
     if filters:
-        if filters.get("category_id"):
+        if filters.get("category_ids"):
+            category_ids = [str(item) for item in filters["category_ids"]]
+            if category_ids:
+                must_clauses.append({"terms": {"category_id": category_ids}})
+        elif filters.get("category_id"):
             must_clauses.append({"term": {"category_id": str(filters["category_id"])}})
         if filters.get("license"):
             must_clauses.append({"term": {"license": filters["license"]}})
@@ -170,7 +174,21 @@ def search_datasets(
             must_clauses.append(
                 {"term": {"user_id": str(filters["agency_user_id"])}}
             )
-        if filters.get("year") is not None:
+        if filters.get("years"):
+            year_values = [int(item) for item in filters["years"]]
+            must_clauses.append(
+                {
+                    "bool": {
+                        "should": [
+                            {"terms": {"metadata.year": year_values}},
+                            {"terms": {"metadata.year_start": year_values}},
+                            {"terms": {"metadata.year_end": year_values}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                }
+            )
+        elif filters.get("year") is not None:
             year_val = int(filters["year"])
             must_clauses.append(
                 {
@@ -188,9 +206,13 @@ def search_datasets(
             must_clauses.append(
                 {"term": {"metadata.province": filters["province"]}}
             )
-        if filters.get("format"):
+        if filters.get("formats"):
+            must_clauses.append({"terms": {"file_format": filters["formats"]}})
+        elif filters.get("format"):
             must_clauses.append({"term": {"file_format": filters["format"]}})
-        if filters.get("tag"):
+        if filters.get("tags"):
+            must_clauses.append({"terms": {"tags": filters["tags"]}})
+        elif filters.get("tag"):
             must_clauses.append(
                 {
                     "wildcard": {

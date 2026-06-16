@@ -95,11 +95,18 @@ function getCategoriesFooter(
   overview: StatsOverviewData,
   t: StatsFooterTranslator
 ): string {
-  if (overview.total_categories_level1 === 0) {
+  const total =
+    overview.total_categories ??
+    overview.total_categories_level1 + overview.total_categories_level2;
+
+  if (total === 0) {
     return t("categoriesNoteEmpty");
   }
 
-  return t("categoriesNote", {
-    subcategories: overview.total_categories_level2,
-  });
+  const maxLevel = Object.keys(overview.categories_by_level ?? {})
+    .map((level) => Number(level))
+    .filter((level) => !Number.isNaN(level))
+    .reduce((max, level) => Math.max(max, level), 1);
+
+  return t("categoriesNote", { maxLevel });
 }

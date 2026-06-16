@@ -2,7 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { DragEvent, useRef, useState } from "react";
-import { fetchMockFileAnalysis, type FileAnalysisResult } from "@/data/mockData";
+import { usePIIScan } from "@/hooks/usePIIScan";
+import type { PIIScanResult } from "@/types/pii";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 const ACCEPTED_EXTENSIONS = [
@@ -26,7 +27,7 @@ const ACCEPTED_MIME_TYPES = [
 ];
 
 type FileUploadZoneProps = {
-  onAnalyzed: (result: FileAnalysisResult, file: File) => void;
+  onAnalyzed: (result: PIIScanResult, file: File) => void;
   disabled?: boolean;
 };
 
@@ -45,6 +46,7 @@ export default function FileUploadZone({
   disabled = false,
 }: FileUploadZoneProps) {
   const t = useTranslations("agency.upload");
+  const { scanFile } = usePIIScan();
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -76,12 +78,12 @@ export default function FileUploadZone({
     }, 100);
 
     try {
-      // TODO: เชื่อม POST /api/v1/datasets/analyze เมื่อ Backend เพิ่ม endpoint นี้
-      const result = await fetchMockFileAnalysis();
+      const result = await scanFile(file);
       setProgress(100);
       onAnalyzed(result, file);
     } catch {
       setError(t("fileUploadFailed"));
+      return;
     } finally {
       window.clearInterval(progressInterval);
       setIsUploading(false);
