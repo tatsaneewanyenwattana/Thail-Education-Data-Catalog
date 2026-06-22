@@ -28,25 +28,30 @@ export default function CodeBlock({
   }, [code]);
 
   return (
-    <div className="overflow-hidden rounded-radius-lg shadow-level-1">
+    <div className="overflow-hidden rounded-xl border border-border-default/40 shadow-level-1">
       {showHeader && (
-        <div className="flex items-center justify-between bg-surface-navy px-4 py-2">
-          <span className="font-sarabun text-caption uppercase text-text-muted">
+        <div className="flex items-center justify-between border-b border-blue-100 px-5 py-2.5" style={{ backgroundColor: "#e3f2fd" }}>
+          <span className="font-sarabun text-caption font-bold uppercase" style={{ color: "#1565c0" }}>
             {t("response")}
           </span>
-          <span className="font-sarabun text-caption text-text-muted">
+          <span className="font-sarabun text-caption font-semibold" style={{ color: "#1976d2" }}>
             {label}
           </span>
         </div>
       )}
-      <div className="relative bg-text-primary p-4">
-        <pre className="overflow-x-auto font-mono text-code text-surface-card">
+      <div className="relative px-5 py-4" style={{ backgroundColor: "#f5f9ff" }}>
+        <pre className="overflow-x-auto font-mono text-body-md leading-relaxed" style={{ color: "#1a3a2a" }}>
           <code>{code}</code>
         </pre>
         <button
           type="button"
           onClick={handleCopy}
-          className="absolute right-4 top-4 flex items-center gap-1 font-sarabun text-caption text-text-muted transition-colors hover:text-surface-card"
+          className="absolute right-4 top-3 flex items-center gap-1 rounded-lg border px-3 py-1.5 font-sarabun text-caption font-semibold transition-colors"
+          style={{
+            color: copied ? "#00695c" : "#1565c0",
+            borderColor: copied ? "#00695c" : "#90caf9",
+            backgroundColor: copied ? "#e8f5e9" : "#ffffff",
+          }}
           aria-label={t("copy")}
         >
           <CopyIcon />
@@ -60,8 +65,8 @@ export default function CodeBlock({
 function CopyIcon() {
   return (
     <svg
-      width="18"
-      height="18"
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

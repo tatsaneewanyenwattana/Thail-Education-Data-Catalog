@@ -81,58 +81,69 @@ export default function ApiDocsPage() {
 
   return (
     <>
-      <div className="border-b border-border-default bg-surface-card">
-        <div className="mx-auto max-w-container-max px-4 py-spacing-8 md:px-spacing-10">
-          <nav className="mb-spacing-4 flex items-center gap-2 font-sarabun text-label text-text-muted">
-            <Link href={`/${locale}`} className="transition-colors hover:text-primary-dark">
+      <div className="bg-surface-card px-4 pb-6 pt-4 md:px-spacing-10">
+        <div className="mx-auto max-w-container-max">
+          <nav className="mb-4 flex items-center gap-1.5 font-sarabun text-caption text-text-muted">
+            <Link href={`/${locale}`} className="transition-colors" style={{ color: "#00695c" }}>
               {t("breadcrumbHome")}
             </Link>
-            <span aria-hidden>/</span>
-            <span className="font-medium text-primary-dark">
+            <span>{">"}</span>
+            <span style={{ color: "#00695c" }}>
               {t("breadcrumbCurrent")}
             </span>
           </nav>
 
-          <div className="grid gap-spacing-8 lg:grid-cols-[1fr_320px] lg:items-end">
-            <div>
-              <p className="mb-3 inline-flex rounded-radius-full bg-primary-light px-4 py-1 font-sarabun text-caption font-semibold uppercase tracking-[0.18em] text-primary-dark">
+          <div className="overflow-hidden rounded-2xl p-8 md:p-10" style={{ backgroundColor: "#004d40" }}>
+            <div className="relative">
+              <p className="mb-3 inline-flex rounded-full px-4 py-1 font-sarabun text-caption font-semibold uppercase tracking-[0.18em]" style={{ backgroundColor: "rgba(255,255,255,0.15)", color: "#a5d6a7" }}>
                 {t("portalEyebrow")}
               </p>
-              <h1 className="font-kanit text-heading-1 text-text-primary">
+              <h1 className="mb-3 font-kanit text-[2rem] font-bold text-white md:text-[2.5rem]">
                 {pageTitle}
               </h1>
-              <p className="mt-spacing-3 max-w-3xl font-sarabun text-body-lg text-text-secondary">
+              <p className="max-w-3xl font-sarabun text-body-lg leading-relaxed text-white/85">
                 {pageDescription}
               </p>
+              <div className="pointer-events-none absolute -right-4 -top-4 hidden opacity-20 md:block">
+                <svg width="120" height="120" viewBox="0 0 24 24" fill="white" aria-hidden>
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+              </div>
             </div>
+          </div>
 
-            <div className="rounded-radius-xl border border-primary/20 bg-primary-light p-5">
-              <p className="font-sarabun text-caption font-semibold uppercase tracking-[0.18em] text-primary-dark">
-                {t("baseUrl")}
-              </p>
-              <code className="mt-2 block break-all rounded-radius-md bg-surface-card px-3 py-2 font-mono text-code text-text-primary">
-                {docs?.baseUrl ?? "http://127.0.0.1:8000/api/v1"}
-              </code>
-              <p className="mt-3 font-sarabun text-caption text-text-secondary">
-                {t("versionLabel")}: {version}
-              </p>
+          <div className="mt-5 flex flex-wrap items-center gap-4 rounded-2xl border border-border-default/60 bg-white px-6 py-4 shadow-level-1">
+            <p className="font-sarabun text-label font-bold uppercase tracking-wider text-text-muted">
+              {t("baseUrl")}
+            </p>
+            <code className="flex-1 break-all rounded-xl bg-gray-50 px-4 py-2.5 font-mono text-body-md" style={{ color: "#1a3a2a" }}>
+              {docs?.baseUrl ?? "http://127.0.0.1:8000/api/v1"}
+            </code>
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 font-sarabun text-caption font-semibold" style={{ color: "#00695c" }}>
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#00c853" }} />
+                Server Status: Online
+              </span>
+              <span className="rounded-full border px-3 py-1 font-mono text-caption font-semibold" style={{ borderColor: "#00897b", color: "#00695c" }}>
+                {version} stable
+              </span>
             </div>
           </div>
 
           {isError && (
-            <p className="mt-spacing-4 rounded-radius-md border border-status-warning bg-status-warning-bg px-4 py-3 font-sarabun text-body-md text-status-warning">
+            <p className="mt-4 rounded-2xl border border-status-warning bg-status-warning-bg px-4 py-3 font-sarabun text-body-md text-status-warning">
               {t("fallback")}
             </p>
           )}
           {isFetching && !isLoading && (
-            <p className="mt-spacing-4 font-sarabun text-caption text-text-muted">
+            <p className="mt-4 font-sarabun text-caption text-text-muted">
               {t("loading")}
             </p>
           )}
         </div>
       </div>
 
-      <div className="mx-auto flex max-w-container-max gap-spacing-6 px-4 md:px-spacing-10">
+      <div className="mx-auto flex max-w-[1400px] gap-8 px-4 md:px-spacing-10">
         <ApiSidebar
           items={navItems}
           locale={locale}
@@ -142,8 +153,8 @@ export default function ApiDocsPage() {
           title={t("sidebarTitle")}
         />
 
-        <main className="min-w-0 flex-1 py-spacing-8">
-          <div className="space-y-spacing-12">
+        <main className="min-w-0 flex-1 py-8">
+          <div className="space-y-10">
             <QuickStart
               steps={QUICK_START_STEPS}
               locale={locale}
@@ -157,16 +168,22 @@ export default function ApiDocsPage() {
                 id={group.id}
                 className="scroll-mt-28 space-y-spacing-6"
               >
-                <div className="rounded-radius-xl border border-border-default bg-surface-card p-5 shadow-level-1 md:p-6">
-                  <p className="mb-2 font-sarabun text-caption font-semibold uppercase tracking-[0.18em] text-primary-dark">
-                    {t("endpointGroupLabel")}
-                  </p>
-                  <h2 className="font-kanit text-heading-2 text-text-primary">
-                    {getLocalizedText(group.title, locale)}
-                  </h2>
-                  <p className="mt-2 max-w-2xl font-sarabun text-body-md text-text-secondary">
-                    {getLocalizedText(group.description, locale)}
-                  </p>
+                <div className="rounded-2xl border border-border-default/60 bg-white p-6 shadow-level-1 md:p-8">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: "#e8f5e9", color: "#00695c" }}>
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="font-kanit text-[1.5rem] font-bold" style={{ color: "#1a3a2a" }}>
+                        {getLocalizedText(group.title, locale)}
+                      </h2>
+                      <p className="mt-1 max-w-2xl font-sarabun text-body-md text-text-secondary">
+                        {getLocalizedText(group.description, locale)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
