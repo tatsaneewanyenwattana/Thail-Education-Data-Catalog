@@ -102,7 +102,7 @@ def download_dataset(
     - **Errors**: DOWNLOAD_PURPOSE_REQUIRED, DOWNLOAD_INVALID_FORMAT,
       DATASET_NOT_FOUND, FILE_NOT_FOUND
     """
-    file_bytes, media_type, filename = download_service.download(
+    file_content, media_type, filename = download_service.download(
         db=db,
         minio_client=_get_minio(),
         dataset_id=id,
@@ -131,8 +131,9 @@ def download_dataset(
     if file_format == "csv":
         response_headers["Content-Type"] = "text/csv; charset=utf-8-sig"
 
+    body = io.BytesIO(file_content) if isinstance(file_content, bytes) else file_content
     return StreamingResponse(
-        io.BytesIO(file_bytes),
+        body,
         media_type=media_type,
         headers=response_headers,
     )

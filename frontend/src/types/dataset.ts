@@ -11,6 +11,7 @@ export type ApiDataset = {
   metadata?: Record<string, unknown> | null;
   quality_score: number | null;
   download_count: number;
+  api_download_count?: number;
   view_count?: number;
   published_at: string | null;
   created_at: string;

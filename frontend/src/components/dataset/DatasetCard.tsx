@@ -124,6 +124,10 @@ export default function DatasetCard({
   agency,
   status,
   downloadCount,
+  apiDownloadCount = 0,
+  viewCount = 0,
+  qualityScore,
+  fileFormat,
   updatedAt,
   createdAt,
   publishedAt,
@@ -187,11 +191,28 @@ export default function DatasetCard({
         {title}
       </h3>
 
-      <div className="mb-3 flex items-center gap-1.5 font-sarabun text-caption text-text-muted">
-        <DownloadIcon />
-        <span>
+      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 font-sarabun text-caption text-text-muted">
+        <span className="flex items-center gap-1">
+          <DownloadIcon />
           {formatDownloadCount(downloadCount, locale)} {t("downloadsUnit")}
         </span>
+        {apiDownloadCount > 0 && (
+          <span className="flex items-center gap-1">
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+            </svg>
+            API {formatDownloadCount(apiDownloadCount, locale)}
+          </span>
+        )}
+        {viewCount > 0 && (
+          <span className="flex items-center gap-1">
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            {formatDownloadCount(viewCount, locale)}
+          </span>
+        )}
       </div>
 
       <div className="mb-6 flex items-start gap-2 font-sarabun text-label text-text-secondary">
@@ -203,11 +224,20 @@ export default function DatasetCard({
 
       {variant === "popular" ? (
         <div className="mt-auto flex items-center justify-between border-t border-border-default/80 pt-4">
-          <div className="flex items-center gap-4 font-sarabun text-caption font-medium text-text-muted">
-            <span className="flex items-center gap-1">
-              <DownloadIcon />
-              {formatDownloadCount(downloadCount, locale)}
-            </span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-sarabun text-caption font-medium text-text-muted">
+            {qualityScore != null && (
+              <span className="flex items-center gap-1" title={t("qualityScore")}>
+                <svg className="h-3.5 w-3.5 text-status-published" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                {qualityScore}
+              </span>
+            )}
+            {fileFormat && (
+              <span className="rounded-radius-sm bg-status-error-bg px-1.5 py-0.5 text-[11px] font-bold uppercase text-status-error">
+                {fileFormat}
+              </span>
+            )}
             <span>
               {isUpdated
                 ? t("updatedLatest", { date: formatAbsoluteDate(updatedAt, locale) })

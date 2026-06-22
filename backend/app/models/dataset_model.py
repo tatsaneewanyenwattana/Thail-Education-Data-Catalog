@@ -55,6 +55,9 @@ class Dataset(SoftDeleteMixin, BaseModel):
     download_count: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
     )
+    api_download_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )
     view_count: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
     )

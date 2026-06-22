@@ -70,6 +70,7 @@ class DatasetResponse(BaseModel):
     metadata: dict[str, Any] | None = Field(None, validation_alias="dataset_metadata")
     quality_score: int | None
     download_count: int
+    api_download_count: int
     view_count: int
     reject_comment: str | None
     published_at: datetime | None
@@ -82,6 +83,15 @@ class DatasetResponse(BaseModel):
     file_format: str | None = None
 
     model_config = {"from_attributes": True, "populate_by_name": True}
+
+
+class RateRequest(BaseModel):
+    score: int = Field(ge=1, le=5)
+
+
+class RateResponse(BaseModel):
+    rating_avg: float
+    rating_count: int
 
 
 class DatasetVersionResponse(BaseModel):

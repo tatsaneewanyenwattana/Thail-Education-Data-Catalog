@@ -255,6 +255,28 @@ data: {
 }`,
       },
       {
+        id: "datasets-citation",
+        method: "GET",
+        path: "/datasets/{id}/citation",
+        title: {
+          th: "อ้างอิง Dataset",
+          en: "Dataset Citation",
+        },
+        description: {
+          th: "สร้างรูปแบบอ้างอิงสำหรับ Dataset ในรูปแบบ APA และ Vancouver",
+          en: "Generate citation formats (APA and Vancouver) for a dataset.",
+        },
+        permissions: ["Public"],
+        requestExample: "GET /api/v1/datasets/{id}/citation",
+        responseExample: `{
+  "status": "success",
+  "data": {
+    "apa": "สำนักงานตัวอย่าง. (2569). ข้อมูลนักเรียน ปี 2569 [Dataset]. Thai EduData Insight.",
+    "vancouver": "สำนักงานตัวอย่าง. ข้อมูลนักเรียน ปี 2569 [Dataset]. Thai EduData Insight; 2569."
+  }
+}`,
+      },
+      {
         id: "datasets-delete",
         method: "DELETE",
         path: "/datasets/{id}",
@@ -273,6 +295,158 @@ Authorization: Bearer {your_token}`,
   "success": true,
   "data": null,
   "message": "ok"
+}`,
+      },
+    ],
+  },
+  {
+    id: "public-api",
+    title: {
+      th: "Public API (ดึงข้อมูลไปใช้)",
+      en: "Public API (Data Access)",
+    },
+    description: {
+      th: "Endpoint สำหรับดึงข้อมูล Dataset ไปใช้งานโดยไม่ต้องล็อกอิน (จำกัด 60 ครั้ง/นาที ต่อ IP)",
+      en: "Endpoints for accessing datasets without authentication (rate limited to 60 requests/min per IP).",
+    },
+    endpoints: [
+      {
+        id: "public-datasets-list",
+        method: "GET",
+        path: "/public/datasets",
+        title: {
+          th: "รายการ Dataset ที่เผยแพร่แล้ว",
+          en: "List Published Datasets",
+        },
+        description: {
+          th: "ดึงรายการ Dataset ทั้งหมดที่เผยแพร่แล้ว พร้อม Pagination",
+          en: "List all published datasets with pagination.",
+        },
+        permissions: ["Public"],
+        requestExample: "GET /api/v1/public/datasets?page=1&page_size=20",
+        responseExample: `{
+  "status": "success",
+  "data": [
+    {
+      "id": "uuid",
+      "title": "ข้อมูลนักเรียน ปี 2569",
+      "status": "published",
+      "download_count": 120,
+      "view_count": 450
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "page_size": 20,
+    "total_items": 50,
+    "total_pages": 3
+  }
+}`,
+      },
+      {
+        id: "public-datasets-detail",
+        method: "GET",
+        path: "/public/datasets/{id}",
+        title: {
+          th: "รายละเอียด Dataset",
+          en: "Dataset Detail",
+        },
+        description: {
+          th: "ดูรายละเอียดของ Dataset แต่ละตัว เช่น ชื่อ คำอธิบาย หน่วยงาน หมวดหมู่ สัญญาอนุญาต",
+          en: "View dataset details such as title, description, agency, category, and license.",
+        },
+        permissions: ["Public"],
+        requestExample: "GET /api/v1/public/datasets/{id}",
+        responseExample: `{
+  "status": "success",
+  "data": {
+    "id": "uuid",
+    "title": "ข้อมูลนักเรียน ปี 2569",
+    "description": "ข้อมูลจำนวนนักเรียนรายจังหวัด",
+    "license": "open",
+    "category": "การศึกษาขั้นพื้นฐาน",
+    "agency_name": "สำนักงานตัวอย่าง",
+    "download_count": 120,
+    "view_count": 450
+  }
+}`,
+      },
+      {
+        id: "public-datasets-preview",
+        method: "GET",
+        path: "/public/datasets/{id}/preview",
+        title: {
+          th: "ดูตัวอย่างข้อมูล",
+          en: "Preview Dataset",
+        },
+        description: {
+          th: "ดูข้อมูลตัวอย่าง 100 แถวแรกของ Dataset โดยไม่ต้องดาวน์โหลด",
+          en: "Preview the first 100 rows of a dataset without downloading.",
+        },
+        permissions: ["Public"],
+        requestExample: "GET /api/v1/public/datasets/{id}/preview",
+        responseExample: `{
+  "status": "success",
+  "data": {
+    "columns": ["จังหวัด", "จำนวนนักเรียน", "ปี"],
+    "rows": [
+      ["กรุงเทพฯ", 150000, 2569],
+      ["เชียงใหม่", 85000, 2569]
+    ],
+    "total_preview_rows": 100
+  }
+}`,
+      },
+      {
+        id: "public-datasets-download",
+        method: "GET",
+        path: "/public/datasets/{id}/download",
+        title: {
+          th: "ดาวน์โหลด Dataset",
+          en: "Download Dataset",
+        },
+        description: {
+          th: "ดาวน์โหลดข้อมูลจริงในรูปแบบที่ต้องการ: csv, excel, json, xml, pdf, sql",
+          en: "Download dataset in the desired format: csv, excel, json, xml, pdf, sql.",
+        },
+        permissions: ["Public"],
+        requestExample: `GET /api/v1/public/datasets/{id}/download?purpose=research&format=csv`,
+        responseExample: `# Response: ไฟล์ข้อมูลที่เลือก (streaming)
+# Content-Type ตาม format:
+#   csv   → text/csv
+#   excel → application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+#   json  → application/json
+#   xml   → application/xml
+#   pdf   → application/pdf
+#   sql   → application/sql
+
+# Query Parameters:
+#   purpose (required) — วัตถุประสงค์ เช่น research, education, analysis
+#   format  (required) — รูปแบบไฟล์: csv, excel, json, xml, pdf, sql`,
+      },
+      {
+        id: "public-datasets-stats",
+        method: "GET",
+        path: "/public/datasets/{id}/stats",
+        title: {
+          th: "สถิติ Dataset",
+          en: "Dataset Statistics",
+        },
+        description: {
+          th: "ดูสถิติของ Dataset เช่น ยอดดู ยอดดาวน์โหลด คะแนนเฉลี่ย",
+          en: "View dataset statistics such as views, downloads, and average rating.",
+        },
+        permissions: ["Public"],
+        requestExample: "GET /api/v1/public/datasets/{id}/stats",
+        responseExample: `{
+  "status": "success",
+  "data": {
+    "view_count": 450,
+    "download_count": 120,
+    "api_download_count": 35,
+    "rating_avg": 4.2,
+    "rating_count": 15
+  }
 }`,
       },
     ],
@@ -358,6 +532,191 @@ Authorization: Bearer {your_token}`,
     "total_preview_rows": 100
   },
   "message": "ok"
+}`,
+      },
+    ],
+  },
+  {
+    id: "categories-tags",
+    title: {
+      th: "หมวดหมู่ & แท็ก",
+      en: "Categories & Tags",
+    },
+    description: {
+      th: "ดูรายการหมวดหมู่และแท็กสำหรับกรองข้อมูล",
+      en: "Browse categories and tags for filtering datasets.",
+    },
+    endpoints: [
+      {
+        id: "categories-list",
+        method: "GET",
+        path: "/categories",
+        title: {
+          th: "รายการหมวดหมู่",
+          en: "List Categories",
+        },
+        description: {
+          th: "ดูรายการหมวดหมู่ทั้งหมดที่มี Dataset เผยแพร่แล้ว แยกตามหน่วยงาน",
+          en: "List all categories with published datasets, grouped by agency.",
+        },
+        permissions: ["Public"],
+        requestExample: "GET /api/v1/categories",
+        responseExample: `{
+  "status": "success",
+  "data": [
+    {
+      "id": "uuid",
+      "name": "การศึกษาขั้นพื้นฐาน",
+      "dataset_count": 25,
+      "subcategories": [
+        { "id": "uuid", "name": "ประถมศึกษา" },
+        { "id": "uuid", "name": "มัธยมศึกษา" }
+      ]
+    }
+  ]
+}`,
+      },
+      {
+        id: "tags-list",
+        method: "GET",
+        path: "/tags",
+        title: {
+          th: "รายการแท็ก",
+          en: "List Tags",
+        },
+        description: {
+          th: "ดูรายการแท็กทั้งหมดสำหรับใช้ในการค้นหาและกรอง",
+          en: "List all tags for use in searching and filtering.",
+        },
+        permissions: ["Public"],
+        requestExample: "GET /api/v1/tags",
+        responseExample: `{
+  "status": "success",
+  "data": [
+    { "id": "uuid", "name": "นักเรียน" },
+    { "id": "uuid", "name": "งบประมาณ" },
+    { "id": "uuid", "name": "ทุนการศึกษา" }
+  ]
+}`,
+      },
+    ],
+  },
+  {
+    id: "statistics",
+    title: {
+      th: "สถิติ & ภาพรวม",
+      en: "Statistics & Overview",
+    },
+    description: {
+      th: "ดูสถิติภาพรวมของระบบ Dataset ยอดนิยม และ Dataset ใหม่ล่าสุด",
+      en: "View system statistics, trending datasets, and latest releases.",
+    },
+    endpoints: [
+      {
+        id: "stats-overview",
+        method: "GET",
+        path: "/stats/overview",
+        title: {
+          th: "ภาพรวมระบบ",
+          en: "System Overview",
+        },
+        description: {
+          th: "ดูสถิติรวมของระบบ เช่น จำนวน Dataset ทั้งหมด ยอดดาวน์โหลดรวม จำนวนหน่วยงาน",
+          en: "View system-wide statistics: total datasets, downloads, agencies, etc.",
+        },
+        permissions: ["Public"],
+        requestExample: "GET /api/v1/stats/overview",
+        responseExample: `{
+  "status": "success",
+  "data": {
+    "total_datasets": 150,
+    "total_downloads": 5200,
+    "total_agencies": 12,
+    "total_views": 28000
+  }
+}`,
+      },
+      {
+        id: "stats-trending",
+        method: "GET",
+        path: "/stats/trending",
+        title: {
+          th: "Dataset ยอดนิยม",
+          en: "Trending Datasets",
+        },
+        description: {
+          th: "ดู Dataset ที่ได้รับความนิยมสูงสุด เรียงตามยอดดาวน์โหลดและเข้าชม",
+          en: "View the most popular datasets ranked by downloads and views.",
+        },
+        permissions: ["Public"],
+        requestExample: "GET /api/v1/stats/trending?limit=10",
+        responseExample: `{
+  "status": "success",
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "title": "ข้อมูลนักเรียน ปี 2569",
+        "download_count": 120,
+        "view_count": 450
+      }
+    ]
+  }
+}`,
+      },
+      {
+        id: "stats-new-releases",
+        method: "GET",
+        path: "/stats/new-releases",
+        title: {
+          th: "Dataset ใหม่ล่าสุด",
+          en: "New Releases",
+        },
+        description: {
+          th: "ดู Dataset ที่เพิ่มเข้ามาล่าสุดในระบบ",
+          en: "View the most recently published datasets.",
+        },
+        permissions: ["Public"],
+        requestExample: "GET /api/v1/stats/new-releases?limit=10",
+        responseExample: `{
+  "status": "success",
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "title": "งบประมาณการศึกษา 2570",
+        "published_at": "2026-06-15T10:00:00Z"
+      }
+    ]
+  }
+}`,
+      },
+      {
+        id: "stats-by-category",
+        method: "GET",
+        path: "/stats/by-category",
+        title: {
+          th: "สถิติแยกตามหมวดหมู่",
+          en: "Stats by Category",
+        },
+        description: {
+          th: "ดูจำนวน Dataset และแนวโน้มรายปีแยกตามหมวดหมู่",
+          en: "View dataset counts and yearly trends grouped by category.",
+        },
+        permissions: ["Public"],
+        requestExample: "GET /api/v1/stats/by-category?category_id={uuid}",
+        responseExample: `{
+  "status": "success",
+  "data": {
+    "categories": [
+      { "name": "การศึกษาขั้นพื้นฐาน", "count": 45 },
+      { "name": "อุดมศึกษา", "count": 30 }
+    ],
+    "yearly_trend": [
+      { "year": 2568, "count": 20 },
+      { "year": 2569, "count": 35 }
+    ]
+  }
 }`,
       },
     ],

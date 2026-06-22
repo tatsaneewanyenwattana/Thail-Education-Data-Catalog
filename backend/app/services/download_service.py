@@ -5,6 +5,7 @@ import io
 import json
 import uuid
 from datetime import datetime, timezone
+from collections.abc import Iterator
 from typing import Any
 
 import matplotlib
@@ -68,6 +69,18 @@ def _fetch_file_content(minio_client: Minio, file_path: str) -> bytes:
     response = minio_client.get_object(settings.MINIO_BUCKET_NAME, file_path)
     try:
         return response.read()
+    finally:
+        response.close()
+        response.release_conn()
+
+
+def _stream_file_content(
+    minio_client: Minio, file_path: str, chunk_size: int = 64 * 1024
+) -> Iterator[bytes]:
+    response = minio_client.get_object(settings.MINIO_BUCKET_NAME, file_path)
+    try:
+        for chunk in response.stream(chunk_size):
+            yield chunk
     finally:
         response.close()
         response.release_conn()
@@ -186,13 +199,12 @@ def download(
     user_id: uuid.UUID | None,
     ip_address: str,
     source: str = "web",
-) -> tuple[bytes, str, str]:
+) -> tuple[bytes | Iterator[bytes], str, str]:
     cleaned_purpose = _validate_purpose(purpose)
     target_format = _validate_download_format(file_format)
     dataset = _get_published_dataset(db, dataset_id)
 
     file_path = _get_latest_file_path(db, dataset_id)
-    content = _fetch_file_content(minio_client, file_path)
     source_format = _get_source_format(db, dataset_id, file_path)
 
     if source_format in ("pdf", "sql"):
@@ -206,16 +218,21 @@ def download(
             "pdf": "application/pdf",
             "sql": "text/plain; charset=utf-8",
         }
-        file_bytes = content
+        file_content: bytes | Iterator[bytes] = _stream_file_content(
+            minio_client, file_path
+        )
         media_type = media_types[source_format]
         filename = f"{safe_name}.{source_format}"
     else:
         if target_format in ("pdf", "sql"):
             raise_app_error("DOWNLOAD_INVALID_FORMAT")
+        content = _fetch_file_content(minio_client, file_path)
         df = _read_dataframe(content, source_format)
-        file_bytes, media_type, filename = _convert_dataframe_to_bytes(
+        del content
+        file_content, media_type, filename = _convert_dataframe_to_bytes(
             df, target_format, dataset.title
         )
+        del df
 
     try:
         download_repo.create_download_log(
@@ -227,13 +244,13 @@ def download(
             file_format=target_format,
             source=source,
         )
-        download_repo.increment_download_count(db, dataset_id)
+        download_repo.increment_download_count(db, dataset_id, source=source)
         db.commit()
     except Exception:
         db.rollback()
         raise
 
-    return file_bytes, media_type, filename
+    return file_content, media_type, filename
 
 
 def preview(

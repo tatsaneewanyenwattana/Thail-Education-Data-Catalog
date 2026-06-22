@@ -163,7 +163,7 @@ def public_download_dataset(
     ดาวน์โหลด Dataset ตาม #20
     - Auth ❌
     """
-    file_bytes, media_type, filename = download_service.download(
+    file_content, media_type, filename = download_service.download(
         db=db,
         minio_client=_get_minio(),
         dataset_id=id,
@@ -188,8 +188,9 @@ def public_download_dataset(
         f'attachment; filename="{ascii_filename}"; '
         f"filename*=UTF-8''{filename_encoded}"
     )
+    body = io.BytesIO(file_content) if isinstance(file_content, bytes) else file_content
     return StreamingResponse(
-        io.BytesIO(file_bytes),
+        body,
         media_type=media_type,
         headers={"Content-Disposition": content_disposition},
     )

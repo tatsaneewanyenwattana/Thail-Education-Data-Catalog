@@ -31,7 +31,9 @@ def create_download_log(
     return log
 
 
-def increment_download_count(db: Session, dataset_id: uuid.UUID) -> None:
+def increment_download_count(
+    db: Session, dataset_id: uuid.UUID, source: str = "web"
+) -> None:
     from app.core.errors import raise_app_error
 
     dataset = (
@@ -42,4 +44,6 @@ def increment_download_count(db: Session, dataset_id: uuid.UUID) -> None:
     if dataset is None:
         raise_app_error("DATASET_NOT_FOUND")
     dataset.download_count += 1
+    if source == "api":
+        dataset.api_download_count += 1
     db.flush()

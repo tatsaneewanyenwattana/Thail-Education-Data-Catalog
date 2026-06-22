@@ -10,6 +10,7 @@ import { useDatasetCitation } from "@/hooks/useDatasetCitation";
 import { useDatasetPreview } from "@/hooks/useDatasetPreview";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { mapPreviewToTable } from "@/utils/datasetDetailMappers";
+import ApiAccessModal from "./ApiAccessModal";
 import CitationBox from "./CitationBox";
 import DatasetRating from "./DatasetRating";
 import DatasetTags from "./DatasetTags";
@@ -71,6 +72,7 @@ export default function DatasetDetail({
 
   const [activeTab, setActiveTab] = useState<DetailTab>("preview");
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [apiAccessOpen, setApiAccessOpen] = useState(false);
 
   const { user } = useAuthStore();
   const addBookmarkMutation = useAddBookmark();
@@ -202,6 +204,16 @@ export default function DatasetDetail({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4" />
                 </svg>
               </Link>
+              <button
+                type="button"
+                onClick={() => setApiAccessOpen(true)}
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-radius-md border border-border-input p-2.5 text-text-secondary transition-colors hover:bg-surface-container"
+                aria-label={tDetail("apiAccess")}
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.25 6.75L22.5 12l-5.25 5.25M6.75 17.25L1.5 12l5.25-5.25M14.25 3.75l-4.5 16.5" />
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -223,11 +235,9 @@ export default function DatasetDetail({
 
             <DatasetRating
               datasetId={datasetId}
-              datasetOwnerId={datasetOwnerId ?? ""}
               isPublished={isPublished ?? false}
               initialAvg={ratingAvg ?? 0}
               initialCount={ratingCount ?? 0}
-              initialUserRating={userRating ?? null}
               viewCount={viewCount ?? 0}
             />
           </div>
@@ -336,6 +346,13 @@ export default function DatasetDetail({
         onClose={() => setDownloadOpen(false)}
         datasetId={datasetId}
         sourceFileFormat={sourceFileFormat}
+      />
+
+      <ApiAccessModal
+        open={apiAccessOpen}
+        onClose={() => setApiAccessOpen(false)}
+        datasetId={datasetId}
+        previewData={previewQuery.data ?? null}
       />
     </>
   );

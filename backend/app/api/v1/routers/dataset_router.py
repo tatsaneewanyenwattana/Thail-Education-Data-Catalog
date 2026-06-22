@@ -24,7 +24,7 @@ from app.core.security import (
     validate_token_in_redis,
     validate_user_status,
 )
-from app.schemas.dataset_schema import DatasetCreateRequest, DatasetUpdateRequest
+from app.schemas.dataset_schema import DatasetCreateRequest, DatasetUpdateRequest, RateRequest
 
 router = APIRouter()
 _bearer_optional = HTTPBearer(auto_error=False)
@@ -416,3 +416,36 @@ def get_quality_score(
         db=db, dataset_id=dataset_id, current_user=payload
     )
     return success_response(data={"quality_score": score})
+
+
+@router.post("/datasets/{dataset_id}/rate", status_code=status.HTTP_200_OK)
+def rate_dataset(
+    dataset_id: uuid.UUID,
+    body: RateRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    ให้คะแนน Dataset (Visitor เท่านั้น, วันละ 1 ครั้งต่อ IP)
+    - Auth ❌
+    """
+    import app.repositories.rating_repository as rating_repo
+    from app.models.dataset_model import Dataset
+
+    ip = get_client_ip(request)
+    dataset = db.query(Dataset).filter(
+        Dataset.id == dataset_id,
+        Dataset.is_deleted.is_(False),
+        Dataset.status == "published",
+    ).first()
+    if dataset is None:
+        raise_app_error("DATASET_NOT_FOUND")
+
+    if rating_repo.has_voted_today(db, dataset_id, ip):
+        raise_app_error("VALIDATION_ERROR", message="วันนี้ให้คะแนน dataset นี้แล้ว")
+
+    rating_repo.create_rating(db, dataset_id, ip, body.score)
+    db.commit()
+
+    stats = rating_repo.get_rating_stats(db, dataset_id)
+    return success_response(data=stats)
