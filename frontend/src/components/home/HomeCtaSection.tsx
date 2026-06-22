@@ -10,30 +10,45 @@ export default async function HomeCtaSection({ locale }: HomeCtaSectionProps) {
 
   return (
     <section className="px-4 py-12 md:px-10 md:py-16">
-      <div className="relative mx-auto flex max-w-container-max flex-col items-center justify-between gap-8 overflow-hidden rounded-radius-xl bg-surface-navy p-8 md:flex-row md:p-12">
-        <div
-          className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-radius-full bg-primary/20 blur-3xl"
-          aria-hidden
-        />
-        <div className="relative z-10 max-w-xl text-center md:text-left">
-          <h2 className="font-kanit text-heading-1 text-white">{t("title")}</h2>
-          <p className="mt-4 font-sarabun text-body-lg text-white/80">
-            {t("subtitle")}
-          </p>
+      <div className="mx-auto grid max-w-container-max grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="relative overflow-hidden rounded-2xl bg-surface-navy p-8 md:p-10">
+          <div
+            className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-radius-full bg-primary/20 blur-3xl"
+            aria-hidden
+          />
+          <div className="relative z-10">
+            <h3 className="font-kanit text-heading-2 text-white">
+              {t("title")}
+            </h3>
+            <p className="mt-3 font-sarabun text-body-md text-white/75">
+              {t("subtitle")}
+            </p>
+            <Link
+              href={`/${locale}/register`}
+              className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-lg px-8 font-sarabun text-label font-bold transition-colors"
+              style={{ backgroundColor: "white", color: "#33691e" }}
+            >
+              {t("register")}
+            </Link>
+          </div>
         </div>
-        <div className="relative z-10 flex w-full flex-col gap-3 sm:flex-row sm:justify-center md:w-auto">
-          <Link
-            href={`/${locale}/register`}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-radius-lg bg-primary px-8 font-sarabun text-label font-bold text-white shadow-level-2 transition-colors hover:bg-primary-hover"
-          >
-            {t("register")}
-          </Link>
-          <Link
-            href={`/${locale}/privacy-policy`}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-radius-lg border border-white/30 px-8 font-sarabun text-label font-bold text-white transition-colors hover:bg-white/10"
-          >
-            {t("manual")}
-          </Link>
+
+        <div className="relative overflow-hidden rounded-2xl p-8 md:p-10" style={{ backgroundColor: "#f5f5f5" }}>
+          <div className="relative z-10">
+            <h3 className="font-kanit text-heading-2 text-text-primary">
+              {t("manualTitle")}
+            </h3>
+            <p className="mt-3 font-sarabun text-body-md text-text-secondary">
+              {t("manualSubtitle")}
+            </p>
+            <Link
+              href={`/${locale}/api-docs`}
+              className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-lg px-8 font-sarabun text-label font-bold text-white transition-colors"
+              style={{ backgroundColor: "#33691e" }}
+            >
+              {t("manual")}
+            </Link>
+          </div>
         </div>
       </div>
     </section>

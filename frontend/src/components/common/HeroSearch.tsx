@@ -4,7 +4,6 @@ import { useHeroImage } from "@/hooks/useHeroImage";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
-import StatsOverview from "@/components/common/StatsOverview";
 
 function SearchIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
@@ -46,7 +45,7 @@ export default function HeroSearch() {
 
   return (
     <section
-      className={`relative overflow-hidden py-16 text-white md:py-24 ${
+      className={`relative flex min-h-[60vh] items-center justify-center overflow-hidden text-white md:min-h-[70vh] ${
         heroUrl ? "" : "bg-gradient-to-br from-primary-dark to-primary"
       }`}
     >
@@ -56,7 +55,7 @@ export default function HeroSearch() {
           <img
             src={heroUrl}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover object-[center_30%]"
             aria-hidden
           />
           <div
@@ -84,7 +83,7 @@ export default function HeroSearch() {
 
         <form
           onSubmit={handleSearch}
-          className="mt-8 flex w-full max-w-2xl flex-col gap-2 rounded-radius-lg bg-surface-card p-2 shadow-level-3 sm:flex-row"
+          className="mt-8 flex w-full max-w-2xl flex-col gap-2 rounded-2xl bg-surface-card p-2 shadow-level-3 sm:flex-row"
         >
           <input
             type="search"
@@ -96,14 +95,14 @@ export default function HeroSearch() {
           />
           <button
             type="submit"
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-radius-sm bg-primary-dark px-8 font-sarabun text-label font-bold text-white transition-colors hover:bg-primary-hover"
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg px-8 font-sarabun text-label font-bold transition-colors"
+            style={{ backgroundColor: "#f9a825", color: "#33691e" }}
           >
             <SearchIcon />
             {t("searchButton")}
           </button>
         </form>
 
-        <StatsOverview />
       </div>
     </section>
   );

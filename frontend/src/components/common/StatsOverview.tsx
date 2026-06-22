@@ -19,7 +19,7 @@ export default function StatsOverview() {
 
   if (isLoading) {
     return (
-      <div className="mt-12 grid w-full max-w-4xl grid-cols-1 gap-6 border-t border-white/20 pt-12 sm:grid-cols-3 sm:gap-6">
+      <div className="grid w-full max-w-4xl grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-6">
         <StatSkeleton />
         <StatSkeleton />
         <StatSkeleton />
@@ -47,13 +47,13 @@ export default function StatsOverview() {
   ];
 
   return (
-    <div className="mt-12 grid w-full max-w-4xl grid-cols-1 gap-6 border-t border-white/20 pt-12 sm:grid-cols-3 sm:gap-6">
+    <div className="grid w-full max-w-4xl grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-6">
       {items.map((item) => (
-        <div key={item.label} className="flex flex-col text-center sm:text-left">
-          <span className="font-kanit text-[40px] font-bold leading-none text-white md:text-display">
+        <div key={item.label} className="flex flex-col text-center">
+          <span className="font-kanit text-[40px] font-bold leading-none md:text-display" style={{ color: "#f9a825" }}>
             {item.value}
           </span>
-          <span className="mt-1 font-sarabun text-label font-medium uppercase tracking-wide text-white/80">
+          <span className="mt-1 font-sarabun text-label font-medium uppercase tracking-wide text-text-muted">
             {item.label}
           </span>
         </div>
