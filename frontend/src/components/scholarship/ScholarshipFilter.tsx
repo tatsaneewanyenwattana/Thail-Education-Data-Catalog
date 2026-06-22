@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { type FormEvent, useEffect, useState } from "react";
 import { useSearchParamsUpdate } from "@/components/search/useSearchParamsUpdate";
 import type { EducationLevel, ScholarshipType } from "@/hooks/useScholarships";
 
@@ -74,132 +73,135 @@ export function parseScholarshipFilterParams(
   };
 }
 
+const LEVEL_CHECKBOX_VALUES: EducationLevel[] = [
+  "high_school",
+  "bachelor",
+  "master",
+  "doctoral",
+];
+
 export default function ScholarshipFilter() {
-  const t = useTranslations("scholarship");
   const tFilter = useTranslations("scholarship.filter");
   const tTypes = useTranslations("scholarship.types");
   const tLevels = useTranslations("scholarship.levels");
   const searchParams = useSearchParams();
   const updateParams = useSearchParamsUpdate();
 
-  const { scholarship_type, target_level, application_status, q } =
+  const { scholarship_type, target_level, application_status } =
     parseScholarshipFilterParams(searchParams);
-  const [keyword, setKeyword] = useState(q);
 
-  useEffect(() => {
-    setKeyword(q);
-  }, [q]);
-
-  const handleSearch = (event: FormEvent) => {
-    event.preventDefault();
-    updateParams({ q: keyword.trim() || null });
+  const handleClearAll = () => {
+    updateParams({
+      q: null,
+      scholarship_type: null,
+      target_level: null,
+      application_status: null,
+      page: null,
+    });
   };
 
+  const hasAnyFilter = scholarship_type || target_level || application_status;
+
   return (
-    <div className="space-y-4">
-      <form
-        onSubmit={handleSearch}
-        className="flex flex-col gap-3 rounded-radius-lg border border-border-default/80 bg-surface-card p-4 sm:flex-row sm:items-end"
-      >
-        <div className="flex-1">
-          <label
-            htmlFor="scholarship-search"
-            className="mb-2 block font-sarabun text-label font-medium text-text-primary"
-          >
-            {tFilter("search")}
-          </label>
-          <input
-            id="scholarship-search"
-            type="search"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            placeholder={tFilter("searchPlaceholder")}
-            className="min-h-[44px] w-full rounded-radius-md border border-border-input bg-surface-page px-4 font-sarabun text-body-sm text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-        </div>
-        <button
-          type="submit"
-          className="inline-flex min-h-[44px] items-center justify-center rounded-radius-md bg-primary px-6 font-sarabun text-label font-semibold text-white transition-colors hover:bg-primary-hover"
-        >
-          {tFilter("searchButton")}
-        </button>
-      </form>
+    <div className="rounded-2xl border border-border-default/60 bg-white p-5 shadow-level-1">
+      <div className="mb-5 flex items-center gap-2">
+        <svg className="h-5 w-5" style={{ color: "#00695c" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+        </svg>
+        <h3 className="font-kanit text-body-md font-bold" style={{ color: "#1a3a2a" }}>
+          {tFilter("title")}
+        </h3>
+      </div>
 
-      <div className="flex flex-col gap-4 rounded-radius-lg border border-border-default/80 bg-surface-card p-4 md:flex-row md:flex-wrap md:items-end md:gap-6">
-        <div className="flex-1 md:min-w-[200px]">
-          <label
-            htmlFor="scholarship-type-filter"
-            className="mb-2 block font-sarabun text-label font-medium text-text-primary"
-          >
-            {tFilter("type")}
-          </label>
-          <select
-            id="scholarship-type-filter"
-            value={scholarship_type}
-            onChange={(event) =>
-              updateParams({ scholarship_type: event.target.value || null })
-            }
-            className="min-h-[44px] w-full rounded-radius-md border border-border-input bg-surface-page px-3 font-sarabun text-body-sm text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          >
-            <option value="">{t("common.all")}</option>
-            {SCHOLARSHIP_TYPE_VALUES.map((value) => (
-              <option key={value} value={value}>
-                {tTypes(value)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex-1 md:min-w-[200px]">
-          <label
-            htmlFor="target-level-filter"
-            className="mb-2 block font-sarabun text-label font-medium text-text-primary"
-          >
-            {tFilter("level")}
-          </label>
-          <select
-            id="target-level-filter"
-            value={target_level}
-            onChange={(event) =>
-              updateParams({ target_level: event.target.value || null })
-            }
-            className="min-h-[44px] w-full rounded-radius-md border border-border-input bg-surface-page px-3 font-sarabun text-body-sm text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          >
-            <option value="">{t("common.all")}</option>
-            {TARGET_LEVEL_VALUES.map((value) => (
-              <option key={value} value={value}>
-                {tLevels(value)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex-1 md:min-w-[200px]">
-          <label
-            htmlFor="application-status-filter"
-            className="mb-2 block font-sarabun text-label font-medium text-text-primary"
-          >
-            {tFilter("applicationStatus")}
-          </label>
-          <select
-            id="application-status-filter"
-            value={application_status}
-            onChange={(event) =>
-              updateParams({
-                application_status: event.target.value || null,
-              })
-            }
-            className="min-h-[44px] w-full rounded-radius-md border border-border-input bg-surface-page px-3 font-sarabun text-body-sm text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          >
-            <option value="">{t("common.all")}</option>
-            {APPLICATION_STATUS_VALUES.map((value) => (
-              <option key={value} value={value}>
-                {tFilter(`applicationStatus_${value}`)}
-              </option>
-            ))}
-          </select>
+      {/* ระดับการศึกษา */}
+      <div className="mb-5">
+        <p className="mb-3 font-sarabun text-label font-bold" style={{ color: "#1a3a2a" }}>
+          {tFilter("level")}
+        </p>
+        <div className="flex flex-col gap-2">
+          {LEVEL_CHECKBOX_VALUES.map((level) => (
+            <label key={level} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1 transition-colors hover:bg-gray-50">
+              <input
+                type="checkbox"
+                checked={target_level === level}
+                onChange={() =>
+                  updateParams({ target_level: target_level === level ? null : level, page: null })
+                }
+                className="h-4.5 w-4.5 rounded accent-primary-dark"
+              />
+              <span className="font-sarabun text-label text-text-secondary">
+                {tLevels(level)}
+              </span>
+            </label>
+          ))}
         </div>
       </div>
+
+      <hr className="mb-5 border-border-default/40" />
+
+      {/* ประเภททุน */}
+      <div className="mb-5">
+        <p className="mb-3 font-sarabun text-label font-bold" style={{ color: "#1a3a2a" }}>
+          {tFilter("type")}
+        </p>
+        <select
+          value={scholarship_type}
+          onChange={(e) =>
+            updateParams({ scholarship_type: e.target.value || null, page: null })
+          }
+          className="w-full rounded-xl border border-border-default/60 bg-white px-3 py-2.5 font-sarabun text-label text-text-primary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+        >
+          <option value="">{tFilter("allTypes")}</option>
+          {SCHOLARSHIP_TYPE_VALUES.map((value) => (
+            <option key={value} value={value}>
+              {tTypes(value)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <hr className="mb-5 border-border-default/40" />
+
+      {/* สถานะ */}
+      <div className="mb-6">
+        <p className="mb-3 font-sarabun text-label font-bold" style={{ color: "#1a3a2a" }}>
+          {tFilter("applicationStatus")}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {APPLICATION_STATUS_VALUES.map((status) => {
+            const active = application_status === status;
+            const isOpen = status === "open";
+            return (
+              <button
+                key={status}
+                type="button"
+                onClick={() =>
+                  updateParams({ application_status: active ? null : status, page: null })
+                }
+                className="rounded-full px-4 py-2 font-sarabun text-caption font-bold transition-all"
+                style={
+                  active
+                    ? { backgroundColor: isOpen ? "#00695c" : "#c41411", color: "#ffffff" }
+                    : { backgroundColor: "#f5f5f5", color: "#6b7280" }
+                }
+              >
+                {tFilter(`applicationStatus_${status}`)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ล้างตัวกรอง */}
+      <button
+        type="button"
+        onClick={handleClearAll}
+        disabled={!hasAnyFilter}
+        className="w-full rounded-2xl border-2 py-2.5 font-sarabun text-label font-bold transition-all hover:opacity-80 disabled:opacity-40"
+        style={{ borderColor: "#00897b", color: "#0d5302" }}
+      >
+        {tFilter("clearAll")}
+      </button>
     </div>
   );
 }

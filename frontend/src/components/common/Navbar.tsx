@@ -223,21 +223,23 @@ export default function Navbar({ variant }: NavbarProps) {
             Thai EduData Insight
           </Link>
 
-          <div className="relative mx-4 hidden max-w-xl flex-1 md:flex">
-            <input
-              type="search"
-              readOnly
-              onFocus={() => {
-                window.location.href = `${base}/search`;
-              }}
-              placeholder={t("searchPlaceholder")}
-              className="h-10 w-full cursor-pointer rounded-radius-sm border border-border-input bg-surface-card px-4 pr-10 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
-              aria-label={t("search")}
-            />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-muted">
-              <SearchIcon className="h-5 w-5" />
-            </span>
-          </div>
+          {!pathname.startsWith(`${base}/datasets/`) && !pathname.startsWith(`${base}/search`) && !pathname.startsWith(`${base}/scholarship`) && (
+            <div className="relative mx-4 hidden max-w-xl flex-1 md:flex">
+              <input
+                type="search"
+                readOnly
+                onFocus={() => {
+                  window.location.href = `${base}/search`;
+                }}
+                placeholder={t("searchPlaceholder")}
+                className="h-10 w-full cursor-pointer rounded-radius-sm border border-border-input bg-surface-card px-4 pr-10 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+                aria-label={t("search")}
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-muted">
+                <SearchIcon className="h-5 w-5" />
+              </span>
+            </div>
+          )}
 
           <div className="flex items-center gap-3 md:gap-4">
             <NotificationBell />
