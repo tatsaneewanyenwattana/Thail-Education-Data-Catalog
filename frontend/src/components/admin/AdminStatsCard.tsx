@@ -23,15 +23,15 @@ export default function AdminStatsCard({
 
   return (
     <div
-      className={`rounded-radius-lg border p-6 shadow-level-1 transition-all hover:-translate-y-1 hover:shadow-level-2 ${
+      className={`rounded-2xl border p-6 transition-all hover:-translate-y-1 ${
         isWarning
-          ? "border-status-warning/10 bg-status-warning-bg"
-          : "border-border-default/80 bg-surface-card"
+          ? "border-status-warning/10 bg-status-warning-bg shadow-md"
+          : "border-white/80 bg-white shadow-md hover:shadow-lg"
       }`}
     >
-      <div className="mb-4 flex items-start justify-between">
+      <div className="mb-5 flex items-start justify-between">
         <div
-          className={`flex h-12 w-12 items-center justify-center rounded-radius-md ${
+          className={`flex h-14 w-14 items-center justify-center rounded-full ${
             isWarning ? "bg-surface-card/50 text-status-warning" : iconClassName
           }`}
         >
@@ -47,12 +47,10 @@ export default function AdminStatsCard({
         {label}
       </p>
       <p
-        className={`font-kanit text-heading-2 font-bold leading-tight ${
+        className={`font-kanit text-[36px] font-bold leading-tight ${
           isWarning
             ? "text-status-warning"
-            : value.includes(",")
-              ? "text-text-primary"
-              : "text-primary-dark"
+            : "text-primary-dark"
         }`}
       >
         {value}

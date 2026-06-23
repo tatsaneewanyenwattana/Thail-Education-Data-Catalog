@@ -1449,6 +1449,7 @@
       "rejecting": "กำลังปฏิเสธ...",
       "suspending": "กำลังระงับ...",
       "actionError": "ดำเนินการไม่สำเร็จ กรุณาลองใหม่",
+      "activeUsers": "Active Users",
       "empty": "ไม่พบผู้ใช้งาน",
       "paginationSummary": "แสดงผล {start} - {end} จากทั้งหมด {total} รายการ",
       "status": {
@@ -1491,6 +1492,16 @@
       "empty": "ไม่พบ Dataset",
       "paginationSummary": "แสดง {start} ถึง {end} จากทั้งหมด {total} รายการ",
       "actionError": "ดำเนินการไม่สำเร็จ กรุณาลองใหม่",
+      "breadcrumbHome": "Home",
+      "breadcrumbDatasets": "Dataset Management",
+      "totalDatasets": "Total Datasets",
+      "publishedDatasets": "Published",
+      "draftPending": "Draft / Pending",
+      "qualityAvg": "Quality Avg.",
+      "activeStatus": "Active status",
+      "awaitingReview": "Awaiting review",
+      "uploadDataset": "Upload Dataset",
+      "owningAgency": "หน่วยงาน",
       "status": {
         "published": "Published",
         "draft": "Draft",
@@ -1570,7 +1581,14 @@
       "saveError": "บันทึกไม่สำเร็จ กรุณาลองใหม่",
       "paginationSummary": "แสดง {roots} หมวดระดับบนสุด จากทั้งหมด {total} หมวด",
       "prevPage": "หน้าก่อน",
-      "nextPage": "หน้าถัดไป"
+      "nextPage": "หน้าถัดไป",
+      "breadcrumbHome": "Portal",
+      "breadcrumbManagement": "Management",
+      "breadcrumbCategories": "Categories & Tags",
+      "tabAgency": "หมวดหมู่ของหน่วยงาน",
+      "tabAdmin": "หมวดหมู่ของแอดมิน",
+      "paginationCategorySummary": "แสดง {start}-{end} จากทั้งหมด {total} หมวดหมู่",
+      "colSlug": "Slug"
     },
     "tags": {
       "colName": "ชื่อแท็ก",
@@ -1635,7 +1653,14 @@
       "empty": "ยังไม่มีประกาศ",
       "paginationSummary": "Showing {start}-{end} of {total} announcements",
       "prevPage": "Previous",
-      "nextPage": "Next"
+      "nextPage": "Next",
+      "activeAnnouncements": "ประกาศที่เปิดใช้งาน",
+      "scheduledReminders": "การแจ้งเตือนตามกำหนดการ",
+      "totalViews": "ยอดผู้เข้าชมประกาศรวม",
+      "systemOnline": "System Online",
+      "upcoming": "Upcoming",
+      "today": "Today",
+      "colCategory": "หมวดหมู่"
     },
     "pages": {
       "title": "จัดการหน้า Static",
@@ -1688,7 +1713,20 @@
         "creating": "กำลังสร้าง...",
         "success": "สร้างหน้าสำเร็จ",
         "error": "สร้างหน้าไม่สำเร็จ กรุณาลองใหม่"
-      }
+      },
+      "breadcrumbAdmin": "Admin",
+      "breadcrumbContent": "Content Management",
+      "breadcrumbPages": "Static Pages",
+      "heroSectionTitle": "Homepage Hero Configuration",
+      "activeBackground": "ACTIVE BACKGROUND",
+      "defaultHeroLabel": "Default Portal Hero",
+      "lastModified": "Last modified: {date} by Admin",
+      "uploadNew": "Upload New Background",
+      "documentsTitle": "Official Documents Directory",
+      "lastEdit": "Last Edit",
+      "totalViews": "Total Views",
+      "addNewPage": "เพิ่มหน้าใหม่",
+      "addNewPageDesc": "สร้างเอกสารหรือหน้า Static ใหม่"
     },
     "auditLogs": {
       "title": "Audit Log",
@@ -1717,7 +1755,10 @@
       "empty": "ไม่พบรายการ Audit Log",
       "paginationSummary": "แสดง {start} - {end} จากทั้งหมด {total} รายการ",
       "prevPage": "หน้าก่อน",
-      "nextPage": "หน้าถัดไป"
+      "nextPage": "หน้าถัดไป",
+      "statSessions": "Active Sessions Today",
+      "statDeletions": "Deletion Events",
+      "statUploads": "New Dataset Uploads"
     },
     "emailLogs": {
       "title": "ประวัติอีเมล",

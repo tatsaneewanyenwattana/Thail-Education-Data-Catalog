@@ -1,15 +1,12 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState, type ReactNode } from "react";
-import type {
-  AdminAgencyCategoryGroup,
-  AdminCategoryTreeNode,
-} from "@/hooks/useAdminCategories";
+import { useState, type ReactNode } from "react";
+import type { AdminCategoryTreeNode } from "@/hooks/useAdminCategories";
 import { canAddChild } from "@/utils/categoryTreeUtils";
 
 type CategoryTreeProps = {
-  groups: AdminAgencyCategoryGroup[];
+  categories: AdminCategoryTreeNode[];
   isLoading?: boolean;
   onAddRoot: () => void;
   onAddChild: (parent: AdminCategoryTreeNode) => void;
@@ -45,72 +42,75 @@ function TreeRow({
   const label = locale === "th" ? node.nameTh : node.nameEn;
   const hasChildren = node.children.length > 0;
   const isExpanded = expanded.has(node.id);
+  const isRoot = depth === 0;
 
   return (
     <>
-      <div
-        className={`grid min-h-[48px] grid-cols-12 items-center gap-4 px-6 transition-colors hover:bg-surface-container-lowest ${
-          depth > 0 ? "bg-surface-page/50" : ""
+      <tr
+        className={`transition-colors ${
+          isRoot ? "hover:bg-gray-50/50" : "bg-gray-50/30 hover:bg-gray-100/50"
         }`}
-        style={{ paddingLeft: `${24 + depth * 20}px` }}
       >
-        <div className="col-span-5 flex items-center gap-2 md:col-span-5">
-          {hasChildren ? (
-            <button
-              type="button"
-              onClick={() => onToggle(node.id)}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-radius-sm text-primary"
-              aria-expanded={isExpanded}
+        {/* Name + Slug */}
+        <td className="px-6 py-4" style={{ paddingLeft: `${24 + depth * 28}px` }}>
+          <div className="flex items-center gap-2">
+            {hasChildren ? (
+              <button
+                type="button"
+                onClick={() => onToggle(node.id)}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-primary-dark transition-colors hover:bg-blue-50"
+                aria-expanded={isExpanded}
+              >
+                <ChevronIcon expanded={isExpanded} />
+              </button>
+            ) : (
+              <span className="inline-block h-7 w-7 shrink-0" />
+            )}
+            <span
+              className={`font-sarabun ${
+                isRoot
+                  ? "text-body-md font-semibold text-text-primary"
+                  : "text-label text-text-primary"
+              }`}
             >
-              <ChevronIcon expanded={isExpanded} />
-            </button>
-          ) : (
-            <span className="inline-block h-7 w-7 shrink-0" />
-          )}
-          <span
-            className={`font-sarabun text-body-sm ${
-              depth === 0
-                ? "font-kanit text-[15px] font-semibold text-text-primary"
-                : "text-text-primary"
-            }`}
-          >
-            {label}
-          </span>
-          <span className="rounded-radius-full bg-surface-container px-2 py-0.5 font-sarabun text-caption text-text-muted">
-            {t("levelBadge", { level: node.level })}
-          </span>
-        </div>
-        <div className="col-span-3 hidden font-sarabun text-body-sm text-text-secondary md:col-span-3 md:block">
+              {label}
+            </span>
+          </div>
+        </td>
+        {/* Agency */}
+        <td className="hidden px-6 py-4 font-sarabun text-label text-text-muted md:table-cell">
           {node.agencyName}
-        </div>
-        <div className="col-span-3 text-center md:col-span-2">
-          <span className="rounded-radius-full bg-status-published-bg px-3 py-1 font-sarabun text-caption font-bold text-status-published">
+        </td>
+        {/* Dataset count */}
+        <td className="px-6 py-4 text-center">
+          <span className="font-sarabun text-body-md font-bold text-primary-dark">
             {formatCount(node.datasetCount, locale)}
           </span>
-        </div>
-        <div className="col-span-4 flex justify-end gap-1 md:col-span-2 md:gap-2">
-          {canAddChild(node) && (
-            <ActionButton
-              label={t("addChild")}
-              onClick={() => onAddChild(node)}
-              small
-            >
-              <PlusIcon />
+        </td>
+        {/* Actions */}
+        <td className="px-6 py-4">
+          <div className="flex justify-end gap-1">
+            {canAddChild(node) && (
+              <ActionButton
+                label={t("addChild")}
+                onClick={() => onAddChild(node)}
+              >
+                <PlusIcon />
+              </ActionButton>
+            )}
+            <ActionButton label={t("edit")} onClick={() => onEdit(node)}>
+              <EditIcon />
             </ActionButton>
-          )}
-          <ActionButton label={t("edit")} onClick={() => onEdit(node)} small>
-            <EditIcon />
-          </ActionButton>
-          <ActionButton
-            label={t("delete")}
-            onClick={() => onDelete(node, label)}
-            small
-            danger
-          >
-            <DeleteIcon />
-          </ActionButton>
-        </div>
-      </div>
+            <ActionButton
+              label={t("delete")}
+              onClick={() => onDelete(node, label)}
+              danger
+            >
+              <DeleteIcon />
+            </ActionButton>
+          </div>
+        </td>
+      </tr>
       {hasChildren &&
         isExpanded &&
         node.children.map((child) => (
@@ -132,7 +132,7 @@ function TreeRow({
 }
 
 export default function CategoryTree({
-  groups,
+  categories,
   isLoading,
   onAddRoot,
   onAddChild,
@@ -142,22 +142,6 @@ export default function CategoryTree({
   const t = useTranslations("admin.categories");
   const locale = useLocale();
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
-
-  useEffect(() => {
-    const rootIds = groups.flatMap((group) =>
-      group.categories.map((category) => category.id)
-    );
-    if (rootIds.length === 0) {
-      setExpanded(new Set());
-      return;
-    }
-    setExpanded((current) => {
-      if (current.size > 0) {
-        return current;
-      }
-      return new Set(rootIds);
-    });
-  }, [groups]);
 
   const toggleExpand = (id: string) => {
     setExpanded((current) => {
@@ -173,27 +157,24 @@ export default function CategoryTree({
 
   if (isLoading) {
     return (
-      <div className="overflow-hidden rounded-radius-lg border border-border-default bg-surface-card shadow-level-1">
+      <div className="overflow-hidden rounded-2xl border border-white/80 bg-white shadow-md">
         <div className="animate-pulse space-y-3 p-6">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-12 rounded-radius-sm bg-surface-container"
-            />
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="h-12 rounded-xl bg-gray-100" />
           ))}
         </div>
       </div>
     );
   }
 
-  if (groups.length === 0) {
+  if (categories.length === 0) {
     return (
-      <div className="rounded-radius-lg border border-border-default bg-surface-card p-12 text-center shadow-level-1">
+      <div className="rounded-2xl border border-white/80 bg-white p-12 text-center shadow-md">
         <p className="font-sarabun text-body-md text-text-muted">{t("empty")}</p>
         <button
           type="button"
           onClick={onAddRoot}
-          className="mt-4 rounded-radius-lg bg-primary px-5 py-2 font-kanit text-label font-semibold text-surface-card"
+          className="mt-4 rounded-full bg-primary-dark px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg"
         >
           {t("addRoot")}
         </button>
@@ -202,36 +183,24 @@ export default function CategoryTree({
   }
 
   return (
-    <div className="space-y-6">
-      {groups.map((group) => (
-        <section
-          key={group.agencyName}
-          className="overflow-hidden rounded-radius-lg border border-border-default bg-surface-card shadow-level-1"
-        >
-          <div className="border-b border-border-default/30 bg-surface-container px-6 py-3">
-            <h2 className="font-kanit text-heading-3 font-semibold text-text-primary">
-              {group.agencyName}
-            </h2>
-            <p className="font-sarabun text-caption text-text-muted">
-              {t("agencyGroupSummary", { count: group.categories.length })}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-12 gap-4 bg-surface-container-low px-6 py-4 font-kanit text-[13px] font-bold uppercase tracking-wider text-text-muted">
-            <div className="col-span-5 md:col-span-5">{t("colName")}</div>
-            <div className="col-span-3 hidden md:col-span-3 md:block">
-              {t("colAgency")}
-            </div>
-            <div className="col-span-3 text-center md:col-span-2">
-              {t("colDatasets")}
-            </div>
-            <div className="col-span-4 text-right md:col-span-2">
-              {t("colAction")}
-            </div>
-          </div>
-
-          <div className="divide-y divide-border-default/30">
-            {group.categories.map((category) => (
+    <div className="overflow-hidden rounded-2xl border border-white/80 bg-white shadow-md">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[700px] text-left">
+          <thead>
+            <tr className="border-b border-gray-100 bg-gray-50/80 font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
+              <th className="px-6 py-4">
+                <span className="flex items-center gap-1">
+                  {t("colName")} / {t("colSlug")}
+                  <SortIcon />
+                </span>
+              </th>
+              <th className="hidden px-6 py-4 md:table-cell">{t("colAgency")}</th>
+              <th className="px-6 py-4 text-center">{t("colDatasets")}</th>
+              <th className="px-6 py-4 text-right">{t("colAction")}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100/60">
+            {categories.map((category) => (
               <TreeRow
                 key={category.id}
                 node={category}
@@ -245,9 +214,9 @@ export default function CategoryTree({
                 t={t}
               />
             ))}
-          </div>
-        </section>
-      ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -256,13 +225,11 @@ function ActionButton({
   children,
   label,
   onClick,
-  small,
   danger,
 }: {
   children: ReactNode;
   label: string;
   onClick: () => void;
-  small?: boolean;
   danger?: boolean;
 }) {
   return (
@@ -270,9 +237,11 @@ function ActionButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`rounded-radius-sm p-1 transition-colors ${
-        small ? "text-text-muted" : "text-text-muted hover:text-primary"
-      } ${danger ? "hover:text-status-error" : "hover:text-primary"}`}
+      className={`rounded-full p-2 transition-colors ${
+        danger
+          ? "text-text-muted hover:bg-red-50 hover:text-status-error"
+          : "text-text-muted hover:bg-blue-50 hover:text-primary-dark"
+      }`}
     >
       {children}
     </button>
@@ -283,20 +252,28 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
   return (
     <svg
       className={`h-5 w-5 transition-transform duration-200 ${
-        expanded ? "rotate-0" : "-rotate-90"
+        expanded ? "rotate-90" : "rotate-0"
       }`}
       viewBox="0 0 24 24"
       fill="currentColor"
       aria-hidden
     >
-      <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+      <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" />
+    </svg>
+  );
+}
+
+function SortIcon() {
+  return (
+    <svg className="h-4 w-4 text-text-muted" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 5.83 15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 18.17z" />
     </svg>
   );
 }
 
 function PlusIcon() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
     </svg>
   );
@@ -304,7 +281,7 @@ function PlusIcon() {
 
 function EditIcon() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z" />
     </svg>
   );
@@ -312,7 +289,7 @@ function EditIcon() {
 
 function DeleteIcon() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
     </svg>
   );

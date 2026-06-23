@@ -64,11 +64,11 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col" style={{ background: "#0045bc" }}>
       <Navbar variant="admin" />
       <div className="flex min-h-0 flex-1">
         <AdminSidebar />
-        <main className="min-w-0 flex-1 overflow-y-auto bg-surface-page p-6 lg:p-10 [&_aside]:hidden">
+        <main className="min-w-0 flex-1 overflow-y-auto rounded-tl-[20px] p-6 lg:p-10 [&_aside]:hidden" style={{ background: "#eeeeee" }}>
           {children}
         </main>
       </div>

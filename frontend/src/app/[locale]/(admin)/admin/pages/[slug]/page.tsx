@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -12,6 +13,7 @@ import {
 export default function AdminPageEditorPage() {
   const t = useTranslations("admin.pages");
   const locale = useLocale();
+  const base = `/${locale}`;
   const router = useRouter();
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
@@ -21,6 +23,7 @@ export default function AdminPageEditorPage() {
 
   const [contentTh, setContentTh] = useState("");
   const [contentEn, setContentEn] = useState("");
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastError, setToastError] = useState<string | null>(null);
 
@@ -53,22 +56,27 @@ export default function AdminPageEditorPage() {
         slug,
         data: { contentTh, contentEn },
       });
-      router.push(`/${locale}/admin/pages?saved=1`);
+      const now = new Date();
+      setLastSaved(
+        `Today, ${now.toLocaleTimeString(locale === "th" ? "th-TH" : "en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}`
+      );
+      showToast(t("savedSuccess"));
     } catch {
       showError(t("saveError"));
     }
   };
 
-  const handleCancel = () => {
-    goBackToPages();
-  };
-
   if (isLoading) {
     return (
       <div className="mx-auto max-w-container-max pb-24">
-        <p className="font-sarabun text-body-md text-text-muted">
-          {t("loading")}
-        </p>
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 w-64 rounded-full bg-gray-100" />
+          <div className="h-32 rounded-2xl bg-gray-100" />
+          <div className="h-96 rounded-2xl bg-gray-100" />
+        </div>
       </div>
     );
   }
@@ -79,10 +87,10 @@ export default function AdminPageEditorPage() {
         <p className="font-sarabun text-body-md text-error">{t("notFound")}</p>
         <button
           type="button"
-          onClick={handleCancel}
+          onClick={goBackToPages}
           className="mt-4 font-sarabun text-label font-semibold text-primary hover:underline"
         >
-          {t("cancel")}
+          {t("backToPages")}
         </button>
       </div>
     );
@@ -91,24 +99,31 @@ export default function AdminPageEditorPage() {
   const pageTitle = locale === "th" ? page.titleTh : page.titleEn;
 
   return (
-    <div className="mx-auto max-w-container-max space-y-6 pb-24">
-      <button
-        type="button"
-        onClick={goBackToPages}
-        disabled={updateMutation.isPending}
-        className="inline-flex min-h-[44px] items-center gap-2 font-sarabun text-label font-semibold text-primary transition-colors hover:text-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <ChevronLeftIcon />
-        {t("backToPages")}
-      </button>
+    <div className="space-y-6 pb-24">
+      {/* Breadcrumb */}
+      <nav className="flex font-sarabun text-body-md text-text-muted">
+        <Link href={`${base}/admin`} className="hover:text-primary-dark">
+          Admin
+        </Link>
+        <span className="mx-2">&gt;</span>
+        <Link href={`${base}/admin/pages`} className="hover:text-primary-dark">
+          Static Pages
+        </Link>
+        <span className="mx-2">&gt;</span>
+        <span className="font-medium text-primary-dark">Edit /{slug}</span>
+      </nav>
 
-      <header className="rounded-radius-lg border border-border-default bg-surface-card px-6 py-5 shadow-sm">
-        <p className="font-mono text-body-sm text-text-muted">/{slug}</p>
+      {/* Header card */}
+      <header className="rounded-2xl border border-white/80 bg-white px-8 py-6 shadow-md">
+        <p className="font-mono text-body-sm uppercase tracking-wide text-text-muted">
+          SLUG: /{slug}
+        </p>
         <h1 className="mt-1 font-kanit text-[28px] font-bold text-text-primary">
           {t("editTitle", { title: pageTitle })}
         </h1>
       </header>
 
+      {/* Editor */}
       <RichTextEditor
         contentTh={contentTh}
         contentEn={contentEn}
@@ -117,67 +132,65 @@ export default function AdminPageEditorPage() {
         disabled={updateMutation.isPending}
       />
 
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <button
-          type="button"
-          onClick={handleCancel}
-          disabled={updateMutation.isPending}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-radius-md border border-border-default px-6 py-2 font-sarabun text-label font-semibold text-text-secondary transition-colors hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {t("backToPages")}
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={updateMutation.isPending}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-radius-md bg-primary px-6 py-2 font-sarabun text-label font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {updateMutation.isPending ? t("saving") : t("save")}
-        </button>
+      {/* Footer actions */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-text-muted">
+          {lastSaved && (
+            <>
+              <ClockIcon />
+              <span className="font-sarabun text-body-sm">
+                Last saved: {lastSaved}
+              </span>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={goBackToPages}
+            disabled={updateMutation.isPending}
+            className="rounded-full border border-gray-200 bg-white px-5 py-2.5 font-sarabun text-body-md font-medium text-text-secondary shadow-sm transition-all hover:bg-gray-50 disabled:opacity-60"
+          >
+            {t("backToPages")}
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={updateMutation.isPending}
+            className="inline-flex items-center gap-2 rounded-full bg-primary-dark px-6 py-2.5 font-sarabun text-body-md font-semibold text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg disabled:opacity-60"
+          >
+            <SaveIcon />
+            {updateMutation.isPending ? t("saving") : t("save")}
+          </button>
+        </div>
       </div>
 
-      {toastMessage ? <Toast message={toastMessage} variant="success" /> : null}
-      {toastError ? <Toast message={toastError} variant="error" /> : null}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-[110] rounded-2xl bg-primary-dark px-4 py-3 font-sarabun text-label text-white shadow-lg">
+          {toastMessage}
+        </div>
+      )}
+      {toastError && (
+        <div className="fixed bottom-6 right-6 z-[110] rounded-2xl bg-status-error px-4 py-3 font-sarabun text-label text-white shadow-lg">
+          {toastError}
+        </div>
+      )}
     </div>
   );
 }
 
-function ChevronLeftIcon() {
+function ClockIcon() {
   return (
-    <svg
-      className="h-5 w-5 shrink-0"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M15 19l-7-7 7-7"
-      />
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   );
 }
 
-function Toast({
-  message,
-  variant,
-}: {
-  message: string;
-  variant: "success" | "error";
-}) {
+function SaveIcon() {
   return (
-    <div
-      className={`fixed bottom-6 right-6 z-[110] rounded-radius-lg px-5 py-3 font-sarabun text-body-md shadow-level-2 ${
-        variant === "success"
-          ? "bg-status-published text-surface-card"
-          : "bg-status-error text-surface-card"
-      }`}
-      role="status"
-    >
-      {message}
-    </div>
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+    </svg>
   );
 }

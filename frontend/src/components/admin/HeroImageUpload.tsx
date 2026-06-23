@@ -8,44 +8,6 @@ import {
   useUploadHeroImage,
 } from "@/hooks/useHeroImage";
 
-function UploadIcon() {
-  return (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-      />
-    </svg>
-  );
-}
-
-function RefreshIcon() {
-  return (
-    <svg
-      className="h-4 w-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-      />
-    </svg>
-  );
-}
-
 type HeroImageUploadProps = {
   onSuccess?: (message: string) => void;
   onError?: (message: string) => void;
@@ -72,9 +34,7 @@ export default function HeroImageUpload({
   ) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     const previewUrl = URL.createObjectURL(file);
     setLocalPreview(previewUrl);
@@ -102,21 +62,19 @@ export default function HeroImageUpload({
   };
 
   return (
-    <div className="rounded-radius-lg border border-border-default bg-surface-card p-6 shadow-[0px_4px_12px_rgba(5,59,80,0.05)]">
-      <div>
-        <h3 className="font-kanit text-lg font-bold text-text-primary">
-          {t("heroTitle")}
-        </h3>
-        <p className="mt-1 font-sarabun text-body-sm text-text-muted">
-          {t("heroSubtitle")}
-        </p>
-      </div>
+    <div className="group relative overflow-hidden rounded-2xl shadow-lg">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={handleFileChange}
+        disabled={isBusy}
+      />
 
       <div
-        className={`group relative mt-6 flex h-[200px] w-full items-center justify-center overflow-hidden rounded-radius-lg shadow-inner ${
-          imageUrl
-            ? "bg-surface-container"
-            : "bg-gradient-to-r from-primary to-primary-container"
+        className={`relative flex h-[340px] w-full items-end overflow-hidden ${
+          imageUrl ? "bg-gray-900" : "bg-gradient-to-r from-primary to-primary-container"
         }`}
       >
         {imageUrl ? (
@@ -127,57 +85,60 @@ export default function HeroImageUpload({
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
-          <div className="relative z-10 px-4 text-center">
-            <h2 className="font-kanit text-3xl font-bold text-white drop-shadow-md">
-              {tHome("heading")}
-            </h2>
-            <p className="mt-2 font-sarabun text-body-sm text-white/80">
-              {tHome("subheading")}
-            </p>
+          <div className="absolute inset-0 flex items-center justify-center px-4 text-center">
+            <div>
+              <h2 className="font-kanit text-4xl font-bold text-white drop-shadow-md">
+                {tHome("heading")}
+              </h2>
+              <p className="mt-3 font-sarabun text-body-md text-white/80">
+                {tHome("subheading")}
+              </p>
+            </div>
           </div>
         )}
 
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100">
-          <span className="rounded-radius-full bg-black/40 px-3 py-1.5 font-sarabun text-caption font-semibold text-white backdrop-blur-sm">
-            {t("heroPreview")}
-          </span>
+        {/* Bottom overlay with info + buttons */}
+        <div className="relative z-10 flex w-full items-end justify-between bg-gradient-to-t from-black/70 to-transparent px-8 pb-6 pt-16">
+          <div>
+            <span className="mb-2 inline-block rounded-md bg-emerald-500 px-3 py-1 font-sarabun text-body-sm font-bold uppercase tracking-wider text-white">
+              {t("activeBackground")}
+            </span>
+            <p className="font-sarabun text-lg font-semibold text-white">
+              {t("defaultHeroLabel")}
+            </p>
+            <p className="font-sarabun text-body-sm text-white/70">
+              {t("lastModified", { date: "Oct 24, 2023" })}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isBusy}
+              className="inline-flex items-center gap-2 rounded-full border-2 border-white/80 bg-white/10 px-5 py-2 font-sarabun text-body-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:opacity-50"
+            >
+              <UploadIcon />
+              {t("uploadNew")}
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={isBusy || !imageUrl}
+              className="rounded-full border border-white/40 bg-white/10 px-5 py-2 font-sarabun text-body-sm font-medium text-white/80 backdrop-blur-sm transition-all hover:bg-white/20 disabled:opacity-40"
+            >
+              {t("heroReset")}
+            </button>
+          </div>
         </div>
-      </div>
-
-      <div className="mt-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={handleFileChange}
-            disabled={isBusy}
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isBusy}
-            className="inline-flex items-center justify-center gap-2 rounded-radius-md border-2 border-primary px-6 py-2 font-sarabun text-label font-semibold text-primary transition-colors hover:bg-primary/5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <UploadIcon />
-            {t("heroUpload")}
-          </button>
-          <span className="max-w-xs font-sarabun text-caption text-text-muted">
-            {t("heroHint")}
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleReset}
-          disabled={isBusy || !imageUrl}
-          className="inline-flex items-center gap-1 font-sarabun text-body-sm font-semibold text-error transition-all hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <RefreshIcon />
-          {t("heroReset")}
-        </button>
       </div>
     </div>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+    </svg>
   );
 }

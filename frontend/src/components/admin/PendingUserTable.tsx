@@ -97,14 +97,14 @@ export default function PendingUserTable({
 
   return (
     <>
-      <section className="overflow-hidden rounded-radius-lg border border-border-default/80 bg-surface-card shadow-level-1">
-        <div className="flex items-center justify-between border-b border-border-default bg-surface-container/30 px-6 py-4">
+      <section className="overflow-hidden rounded-2xl border border-white/80 bg-white shadow-md">
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
           <h2 className="font-kanit text-heading-3 font-semibold text-text-primary">
             {t("pendingTitle")}
           </h2>
           <Link
             href={`${base}/admin/users`}
-            className="flex items-center gap-1 font-sarabun text-label font-medium text-primary-dark transition-colors hover:underline"
+            className="flex items-center gap-1 rounded-full bg-primary-dark/5 px-4 py-2 font-sarabun text-label font-medium text-primary-dark transition-colors hover:bg-primary-dark/10"
           >
             {t("viewAll")}
             <ChevronIcon />
@@ -114,7 +114,7 @@ export default function PendingUserTable({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left">
             <thead>
-              <tr className="border-b border-border-default bg-surface-container/50 font-sarabun text-label font-medium text-text-muted">
+              <tr className="border-b border-gray-100 bg-gray-50/80 font-sarabun text-label font-medium text-text-muted">
                 <th className="px-6 py-4">{t("agencyColumn")}</th>
                 <th className="px-6 py-4">{t("emailColumn")}</th>
                 <th className="px-6 py-4">{t("dateColumn")}</th>
@@ -137,7 +137,7 @@ export default function PendingUserTable({
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-radius-sm font-kanit text-caption font-bold ${
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-kanit text-caption font-bold ${
                             avatarStyles[index % avatarStyles.length]
                           }`}
                         >
@@ -160,7 +160,7 @@ export default function PendingUserTable({
                           type="button"
                           onClick={() => handleApprove(user.id)}
                           disabled={approveMutation.isPending}
-                          className="rounded-radius-sm bg-primary-dark px-3 py-1.5 font-sarabun text-caption font-bold text-white transition-opacity hover:bg-primary-hover disabled:opacity-50"
+                          className="rounded-full bg-emerald-500 px-4 py-1.5 font-sarabun text-caption font-bold text-white shadow-sm transition-all hover:bg-emerald-600 hover:shadow-md disabled:opacity-50"
                         >
                           {t("approve")}
                         </button>
@@ -168,7 +168,7 @@ export default function PendingUserTable({
                           type="button"
                           onClick={() => openRejectModal(user)}
                           disabled={rejectMutation.isPending}
-                          className="rounded-radius-sm border border-status-error px-3 py-1.5 font-sarabun text-caption font-bold text-status-error transition-colors hover:bg-status-error-bg disabled:opacity-50"
+                          className="rounded-full border border-gray-300 bg-white px-4 py-1.5 font-sarabun text-caption font-bold text-gray-600 transition-all hover:border-status-error hover:text-status-error disabled:opacity-50"
                         >
                           {t("reject")}
                         </button>

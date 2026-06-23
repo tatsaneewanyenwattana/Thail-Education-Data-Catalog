@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { StaticPageStatus } from "@/data/mockData";
 
 type CreatePageModalProps = {
@@ -30,9 +30,20 @@ export default function CreatePageModal({
   const [status, setStatus] = useState<StaticPageStatus>("draft");
   const [error, setError] = useState<string | null>(null);
 
-  if (!open) {
-    return null;
-  }
+  const [statusOpen, setStatusOpen] = useState(false);
+  const statusRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (statusRef.current && !statusRef.current.contains(e.target as Node)) {
+        setStatusOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  if (!open) return null;
 
   const handleSubmit = () => {
     const normalizedSlug = slug.trim().toLowerCase();
@@ -53,6 +64,14 @@ export default function CreatePageModal({
     });
   };
 
+  const statusOptions: { value: StaticPageStatus; label: string }[] = [
+    { value: "draft", label: t("statusDraft") },
+    { value: "published", label: t("statusPublished") },
+  ];
+
+  const inputClass =
+    "w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20";
+
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
@@ -60,7 +79,7 @@ export default function CreatePageModal({
       aria-modal="true"
       aria-labelledby="create-page-title"
     >
-      <div className="w-full max-w-lg rounded-radius-lg border border-border-default bg-surface-card p-6 shadow-level-3">
+      <div className="w-full max-w-lg rounded-2xl border border-white/80 bg-white p-6 shadow-xl">
         <h2
           id="create-page-title"
           className="font-kanit text-heading-3-mobile font-bold text-text-primary"
@@ -73,7 +92,7 @@ export default function CreatePageModal({
 
         <div className="mt-6 space-y-4">
           <label className="block">
-            <span className="mb-1 block font-sarabun text-label font-medium text-text-primary">
+            <span className="mb-1.5 block font-sarabun text-label font-medium text-text-primary">
               {t("slugLabel")}
             </span>
             <input
@@ -81,56 +100,88 @@ export default function CreatePageModal({
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               placeholder={t("slugPlaceholder")}
-              className="w-full rounded-radius-sm border border-border-input px-3 py-2 font-mono text-body-sm text-text-primary focus:border-border-focus focus:outline-none focus:ring-1 focus:ring-primary-dark/30"
+              className={`${inputClass} font-mono`}
             />
-            <span className="mt-1 block font-sarabun text-caption text-text-muted">
+            <span className="mt-1.5 block font-sarabun text-caption text-text-muted">
               {t("slugHint", { path: `/${locale}/pages/${slug || "your-slug"}` })}
             </span>
           </label>
 
           <label className="block">
-            <span className="mb-1 block font-sarabun text-label font-medium text-text-primary">
+            <span className="mb-1.5 block font-sarabun text-label font-medium text-text-primary">
               {t("titleThLabel")}
             </span>
             <input
               type="text"
               value={titleTh}
               onChange={(e) => setTitleTh(e.target.value)}
-              className="w-full rounded-radius-sm border border-border-input px-3 py-2 font-sarabun text-body-md text-text-primary focus:border-border-focus focus:outline-none focus:ring-1 focus:ring-primary-dark/30"
+              className={inputClass}
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block font-sarabun text-label font-medium text-text-primary">
+            <span className="mb-1.5 block font-sarabun text-label font-medium text-text-primary">
               {t("titleEnLabel")}
             </span>
             <input
               type="text"
               value={titleEn}
               onChange={(e) => setTitleEn(e.target.value)}
-              className="w-full rounded-radius-sm border border-border-input px-3 py-2 font-sarabun text-body-md text-text-primary focus:border-border-focus focus:outline-none focus:ring-1 focus:ring-primary-dark/30"
+              className={inputClass}
             />
           </label>
 
-          <label className="block">
-            <span className="mb-1 block font-sarabun text-label font-medium text-text-primary">
+          {/* Status dropdown */}
+          <div className="block">
+            <span className="mb-1.5 block font-sarabun text-label font-medium text-text-primary">
               {t("statusLabel")}
             </span>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as StaticPageStatus)}
-              className="w-full rounded-radius-sm border border-border-input px-3 py-2 font-sarabun text-body-md text-text-primary focus:border-border-focus focus:outline-none focus:ring-1 focus:ring-primary-dark/30"
-            >
-              <option value="draft">{t("statusDraft")}</option>
-              <option value="published">{t("statusPublished")}</option>
-            </select>
-          </label>
+            <div ref={statusRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setStatusOpen(!statusOpen)}
+                className="flex w-full items-center justify-between rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+              >
+                <span>{statusOptions.find((o) => o.value === status)?.label}</span>
+                <svg
+                  className={`h-4 w-4 text-text-muted transition-transform ${statusOpen ? "rotate-180" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {statusOpen && (
+                <ul className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-white/80 bg-white py-1 shadow-lg">
+                  {statusOptions.map((opt) => (
+                    <li key={opt.value}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStatus(opt.value);
+                          setStatusOpen(false);
+                        }}
+                        className={`flex w-full px-4 py-2.5 text-left font-sarabun text-body-md transition-colors ${
+                          status === opt.value
+                            ? "bg-primary-dark/10 font-bold text-primary-dark"
+                            : "text-text-primary hover:bg-gray-50"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
 
-          {error ? (
-            <p className="font-sarabun text-body-sm text-error" role="alert">
+          {error && (
+            <p className="rounded-xl bg-red-50 px-3 py-2 font-sarabun text-body-sm text-error" role="alert">
               {error}
             </p>
-          ) : null}
+          )}
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
@@ -138,7 +189,7 @@ export default function CreatePageModal({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-radius-md border border-border-default px-4 py-2 font-sarabun text-label font-medium text-text-secondary hover:bg-surface-container disabled:opacity-60"
+            className="rounded-full border border-gray-200 bg-white px-5 py-2.5 font-sarabun text-label font-medium text-text-secondary shadow-sm transition-all hover:bg-gray-50 disabled:opacity-60"
           >
             {t("cancel")}
           </button>
@@ -146,7 +197,7 @@ export default function CreatePageModal({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="rounded-radius-md bg-primary-dark px-4 py-2 font-sarabun text-label font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
+            className="rounded-full bg-primary-dark px-5 py-2.5 font-sarabun text-label font-semibold text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg disabled:opacity-60"
           >
             {isSubmitting ? t("creating") : t("submit")}
           </button>

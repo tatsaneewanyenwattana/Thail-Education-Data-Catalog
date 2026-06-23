@@ -50,17 +50,16 @@ function StatusBadge({
   status: AdminUser["status"];
   label: string;
 }) {
-  const styles: Record<AdminUser["status"], string> = {
-    pending: "bg-status-warning-bg text-status-warning",
-    active: "bg-status-published-bg text-status-published",
-    rejected: "bg-status-error-bg text-status-error",
-    suspended: "bg-surface-container text-text-secondary",
+  const dotColor: Record<AdminUser["status"], string> = {
+    pending: "bg-amber-400",
+    active: "bg-emerald-500",
+    rejected: "bg-red-500",
+    suspended: "bg-gray-400",
   };
 
   return (
-    <span
-      className={`inline-flex rounded-radius-full px-2.5 py-1 font-sarabun text-caption font-semibold ${styles[status]}`}
-    >
+    <span className="inline-flex items-center gap-1.5 font-sarabun text-caption font-semibold text-text-primary">
+      <span className={`h-2 w-2 rounded-full ${dotColor[status]}`} />
       {label}
     </span>
   );
@@ -70,10 +69,10 @@ function RoleBadge({ role, label }: { role: AdminUser["role"]; label: string }) 
   const isAdmin = role === "admin";
   return (
     <span
-      className={`inline-flex rounded-radius-full px-2.5 py-1 font-sarabun text-caption font-semibold ${
+      className={`inline-flex rounded-full px-3 py-1 font-sarabun text-caption font-bold ${
         isAdmin
-          ? "bg-status-published-bg text-status-published"
-          : "bg-status-draft-bg text-status-draft"
+          ? "bg-emerald-50 text-emerald-700"
+          : "bg-blue-50 text-blue-700"
       }`}
     >
       {label}
@@ -131,15 +130,15 @@ export default function UserTable({
 
   return (
     <>
-      <div className="overflow-hidden rounded-radius-lg border border-border-default bg-surface-card shadow-level-1">
+      <div className="overflow-hidden rounded-2xl border border-white/80 bg-white shadow-md">
         {isLoading && !data ? (
           <TableSkeleton />
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left">
-                <thead className="bg-surface-container">
-                  <tr className="font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/80 font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
                     <th className="px-6 py-4">{t("colAgency")}</th>
                     <th className="px-6 py-4">{t("colEmail")}</th>
                     <th className="px-6 py-4">{t("colRole")}</th>
@@ -222,7 +221,7 @@ export default function UserTable({
             </div>
 
             {totalPages > 0 ? (
-              <div className="flex flex-col gap-4 border-t border-border-default/30 bg-surface-container/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4 border-t border-gray-100 bg-gray-50/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="font-sarabun text-label text-text-muted">
                   {t("paginationSummary", {
                     start: startItem,
@@ -362,14 +361,14 @@ function UserRowActions({
         <button
           type="button"
           onClick={onApprove}
-          className="rounded-radius-sm bg-primary-light px-3 py-1.5 font-sarabun text-caption font-bold text-status-published hover:opacity-90"
+          className="rounded-full bg-emerald-500 px-3.5 py-1.5 font-sarabun text-caption font-bold text-white shadow-sm transition-all hover:bg-emerald-600 hover:shadow-md"
         >
           {approveLabel}
         </button>
         <button
           type="button"
           onClick={onReject}
-          className="rounded-radius-sm bg-status-error-bg px-3 py-1.5 font-sarabun text-caption font-bold text-status-error hover:opacity-90"
+          className="rounded-full border border-gray-300 bg-white px-3.5 py-1.5 font-sarabun text-caption font-bold text-gray-600 transition-all hover:border-red-400 hover:text-red-600"
         >
           {rejectLabel}
         </button>
@@ -394,7 +393,7 @@ function UserRowActions({
           type="button"
           onClick={onSuspend}
           disabled={user.role === "admin"}
-          className="rounded-radius-sm bg-surface-container px-3 py-1.5 font-sarabun text-caption font-bold text-text-secondary transition-colors hover:bg-surface-page disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-full border border-gray-300 bg-white px-3.5 py-1.5 font-sarabun text-caption font-bold text-gray-600 transition-all hover:border-gray-400 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {suspendLabel}
         </button>
@@ -418,7 +417,7 @@ function UserRowActions({
         <button
           type="button"
           onClick={onUnsuspend}
-          className="rounded-radius-sm bg-status-draft-bg px-3 py-1.5 font-sarabun text-caption font-bold text-status-draft transition-colors hover:opacity-90"
+          className="rounded-full bg-blue-50 px-3.5 py-1.5 font-sarabun text-caption font-bold text-blue-700 transition-all hover:bg-blue-100"
         >
           {unsuspendLabel}
         </button>
@@ -468,7 +467,7 @@ function ChangeRoleButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="rounded-radius-sm border border-primary-action px-3 py-1.5 font-sarabun text-caption font-bold text-primary-action transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40"
+      className="rounded-full border border-blue-300 bg-white px-3.5 py-1.5 font-sarabun text-caption font-bold text-blue-600 transition-all hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
     >
       {label}
     </button>
@@ -491,7 +490,7 @@ function DeleteIconButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="inline-flex items-center justify-center rounded-radius-sm border border-status-error bg-status-error px-2 py-1.5 text-caption font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+      className="inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-2.5 py-1.5 text-caption font-bold text-red-600 transition-all hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
     >
       <span aria-hidden>🗑️</span>
     </button>
@@ -516,7 +515,7 @@ function UserTablePagination({
         type="button"
         onClick={() => onPageChange?.(currentPage - 1)}
         disabled={currentPage <= 1}
-        className="flex h-10 w-10 items-center justify-center rounded-radius-md border border-border-default bg-surface-card text-text-muted transition-colors hover:bg-surface-container disabled:opacity-30"
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-text-muted shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-30"
         aria-label={t("pagination.previous")}
       >
         <ChevronLeftIcon />
@@ -534,10 +533,10 @@ function UserTablePagination({
             key={page}
             type="button"
             onClick={() => onPageChange?.(page)}
-            className={`flex h-10 w-10 items-center justify-center rounded-radius-sm font-sarabun text-label font-bold transition-colors ${
+            className={`flex h-10 w-10 items-center justify-center rounded-full font-sarabun text-label font-bold transition-all ${
               page === currentPage
-                ? "bg-primary-dark text-white shadow-level-1"
-                : "border border-border-default bg-surface-card text-text-muted hover:bg-surface-container"
+                ? "bg-primary-dark text-white shadow-md"
+                : "border border-gray-200 bg-white text-text-muted shadow-sm hover:bg-gray-50 hover:shadow-md"
             }`}
             aria-current={page === currentPage ? "page" : undefined}
           >
@@ -549,7 +548,7 @@ function UserTablePagination({
         type="button"
         onClick={() => onPageChange?.(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        className="flex h-10 w-10 items-center justify-center rounded-radius-md border border-border-default bg-surface-card text-text-muted transition-colors hover:bg-surface-container disabled:opacity-30"
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-text-muted shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-30"
         aria-label={t("pagination.next")}
       >
         <ChevronRightIcon />

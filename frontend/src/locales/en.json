@@ -1446,6 +1446,7 @@
       "rejecting": "Rejecting...",
       "suspending": "Suspending...",
       "actionError": "Action failed. Please try again.",
+      "activeUsers": "Active Users",
       "empty": "No users found",
       "paginationSummary": "Showing {start}–{end} of {total} items",
       "status": {
@@ -1488,6 +1489,16 @@
       "empty": "No datasets found",
       "paginationSummary": "Showing {start}–{end} of {total} items",
       "actionError": "Action failed. Please try again.",
+      "breadcrumbHome": "Home",
+      "breadcrumbDatasets": "Dataset Management",
+      "totalDatasets": "Total Datasets",
+      "publishedDatasets": "Published",
+      "draftPending": "Draft / Pending",
+      "qualityAvg": "Quality Avg.",
+      "activeStatus": "Active status",
+      "awaitingReview": "Awaiting review",
+      "uploadDataset": "Upload Dataset",
+      "owningAgency": "Owning Agency",
       "status": {
         "published": "Published",
         "draft": "Draft",
@@ -1567,7 +1578,14 @@
       "saveError": "Save failed. Please try again.",
       "paginationSummary": "Showing {roots} root categories of {total} total",
       "prevPage": "Previous page",
-      "nextPage": "Next page"
+      "nextPage": "Next page",
+      "breadcrumbHome": "Portal",
+      "breadcrumbManagement": "Management",
+      "breadcrumbCategories": "Categories & Tags",
+      "tabAgency": "Agency Categories",
+      "tabAdmin": "Admin Categories",
+      "paginationCategorySummary": "Showing {start}-{end} of {total} categories",
+      "colSlug": "Slug"
     },
     "tags": {
       "colName": "Tag name",
@@ -1632,7 +1650,14 @@
       "empty": "No announcements yet",
       "paginationSummary": "Showing {start}-{end} of {total} announcements",
       "prevPage": "Previous",
-      "nextPage": "Next"
+      "nextPage": "Next",
+      "activeAnnouncements": "Active Announcements",
+      "scheduledReminders": "Scheduled Reminders",
+      "totalViews": "Total Views",
+      "systemOnline": "System Online",
+      "upcoming": "Upcoming",
+      "today": "Today",
+      "colCategory": "Category"
     },
     "pages": {
       "title": "Manage static pages",
@@ -1685,7 +1710,20 @@
         "creating": "Creating...",
         "success": "Page created successfully",
         "error": "Failed to create page. Please try again."
-      }
+      },
+      "breadcrumbAdmin": "Admin",
+      "breadcrumbContent": "Content Management",
+      "breadcrumbPages": "Static Pages",
+      "heroSectionTitle": "Homepage Hero Configuration",
+      "activeBackground": "ACTIVE BACKGROUND",
+      "defaultHeroLabel": "Default Portal Hero",
+      "lastModified": "Last modified: {date} by Admin",
+      "uploadNew": "Upload New Background",
+      "documentsTitle": "Official Documents Directory",
+      "lastEdit": "Last Edit",
+      "totalViews": "Total Views",
+      "addNewPage": "Add New Page",
+      "addNewPageDesc": "Create a new static document or content page."
     },
     "auditLogs": {
       "title": "Audit Log",
@@ -1714,7 +1752,10 @@
       "empty": "No audit log entries found",
       "paginationSummary": "Showing {start} - {end} of {total} entries",
       "prevPage": "Previous page",
-      "nextPage": "Next page"
+      "nextPage": "Next page",
+      "statSessions": "Active Sessions Today",
+      "statDeletions": "Deletion Events",
+      "statUploads": "New Dataset Uploads"
     },
     "emailLogs": {
       "title": "Email logs",

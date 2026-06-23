@@ -116,7 +116,7 @@ function SidebarNav({
   const t = useTranslations("admin.nav");
 
   return (
-    <nav className="flex flex-1 flex-col gap-1 px-2 py-spacing-4">
+    <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
       {items.map((item) => {
         const active = item.match(pathname);
         return (
@@ -124,11 +124,17 @@ function SidebarNav({
             key={item.href}
             href={item.href}
             onClick={onNavigate}
-            className={`flex min-h-[44px] items-center gap-3 rounded-r-radius-lg px-4 py-2.5 font-sarabun text-label transition-all ${
+            className={`flex min-h-[44px] items-center gap-3 rounded-xl px-4 py-2.5 font-sarabun text-label text-white transition-all ${
               active
-                ? "border-l-[3px] border-primary-dark bg-primary-light font-medium text-primary-dark"
-                : "text-text-muted hover:bg-surface-container hover:text-primary-dark"
+                ? "font-medium"
+                : "hover:bg-white/[0.10]"
             }`}
+            style={active ? {
+              background: "linear-gradient(135deg, rgba(129,212,250,0.35) 0%, rgba(255,255,255,0.18) 100%)",
+              boxShadow: "0 4px 16px 0 rgba(0,69,188,0.25), inset 0 1px 0 0 rgba(255,255,255,0.3)",
+              border: "1px solid rgba(255,255,255,0.25)",
+              backdropFilter: "blur(8px)",
+            } : undefined}
           >
             <NavIcon name={item.icon} />
             {t(item.labelKey)}
@@ -158,11 +164,11 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   return (
-    <div className="border-t border-border-default px-2 py-4">
+    <div className="border-t border-white/15 px-3 py-4">
       <Link
         href={`${base}/help-center`}
         onClick={onNavigate}
-        className="mb-1 flex min-h-[44px] items-center gap-3 rounded-radius-lg px-4 py-2.5 font-sarabun text-label text-text-muted transition-colors hover:bg-surface-container hover:text-primary-dark"
+        className="mb-1 flex min-h-[44px] items-center gap-3 rounded-lg px-4 py-2.5 font-sarabun text-label text-white/70 transition-colors hover:bg-white/[0.10] hover:text-white"
       >
         <HelpIcon />
         {tNav("helpCenter")}
@@ -170,7 +176,7 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
       <button
         type="button"
         onClick={handleLogout}
-        className="flex min-h-[44px] w-full items-center gap-3 rounded-radius-lg px-4 py-2.5 font-sarabun text-label text-status-error transition-colors hover:bg-status-error-bg"
+        className="flex min-h-[44px] w-full items-center justify-center gap-3 rounded-xl bg-red-600 px-4 py-2.5 font-sarabun text-label font-semibold text-yellow-300 transition-colors hover:bg-red-700"
       >
         <LogoutIcon />
         {tNav("logout")}
@@ -244,11 +250,11 @@ export default function AdminSidebar() {
   const closeDrawer = () => setSidebarOpen(false);
 
   const sidebarHeader = (
-    <div className="border-b border-border-default px-4 py-spacing-6">
-      <h2 className="font-kanit text-body-lg font-bold text-primary-dark">
+    <div className="px-4 py-6">
+      <h2 className="font-kanit text-body-lg font-bold text-white">
         Thai EduData
       </h2>
-      <p className="font-sarabun text-caption text-text-muted">{t("portal")}</p>
+      <p className="font-sarabun text-caption text-white/60">{t("portal")}</p>
     </div>
   );
 
@@ -257,13 +263,20 @@ export default function AdminSidebar() {
       <button
         type="button"
         onClick={toggleSidebar}
-        className="fixed bottom-6 left-4 z-40 flex h-11 w-11 items-center justify-center rounded-radius-md border border-border-default bg-surface-card text-text-secondary shadow-level-2 lg:hidden"
+        className="fixed bottom-6 left-4 z-40 flex h-11 w-11 items-center justify-center rounded-lg text-white shadow-lg lg:hidden"
+        style={{ background: "#0045bc" }}
         aria-label={t("menu")}
       >
         <MenuIcon />
       </button>
 
-      <aside className="hidden h-full w-[240px] shrink-0 flex-col border-r border-border-sidebar bg-surface-card lg:flex">
+      <aside
+        className="hidden h-full w-[240px] shrink-0 flex-col lg:flex"
+        style={{
+          background: "#0045bc",
+          boxShadow: "4px 0 32px 0 rgba(60,100,255,0.3)",
+        }}
+      >
         {sidebarHeader}
         <SidebarNav items={items} pathname={pathname} />
         <SidebarFooter />
@@ -277,15 +290,15 @@ export default function AdminSidebar() {
             onClick={closeDrawer}
             aria-label={t("closeMenu")}
           />
-          <aside className="absolute left-0 top-0 flex h-full w-[280px] flex-col border-r border-border-sidebar bg-surface-card shadow-level-3">
-            <div className="flex items-center justify-between border-b border-border-default px-4 py-4">
-              <span className="font-kanit text-label font-semibold text-primary-dark">
+          <aside className="absolute left-0 top-0 flex h-full w-[280px] flex-col shadow-2xl" style={{ background: "#0045bc" }}>
+            <div className="flex items-center justify-between border-b border-white/15 px-4 py-4">
+              <span className="font-kanit text-label font-semibold text-white">
                 {t("menu")}
               </span>
               <button
                 type="button"
                 onClick={closeDrawer}
-                className="flex h-10 w-10 items-center justify-center rounded-radius-sm text-text-muted hover:bg-surface-container"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-white/70 hover:bg-white/[0.10] hover:text-white"
                 aria-label={t("closeMenu")}
               >
                 <CloseIcon />

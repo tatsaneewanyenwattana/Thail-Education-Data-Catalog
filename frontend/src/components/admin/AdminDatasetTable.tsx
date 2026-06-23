@@ -47,35 +47,39 @@ function StatusBadge({
   status: AdminDataset["status"];
   label: string;
 }) {
-  const styles: Record<AdminDataset["status"], string> = {
-    published: "bg-status-published-bg text-status-published",
-    draft: "bg-status-draft-bg text-status-draft",
+  const dotColor: Record<string, string> = {
+    published: "bg-emerald-500",
+    draft: "bg-amber-400",
   };
 
   return (
-    <span
-      className={`inline-flex rounded-radius-full px-3 py-1 font-sarabun text-caption font-semibold ${
-        styles[status] ?? styles.draft
-      }`}
-    >
-      {label}
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`h-2 w-2 rounded-full ${dotColor[status] ?? dotColor.draft}`} />
+      <span className="font-sarabun text-caption font-semibold text-text-primary">{label}</span>
     </span>
   );
 }
 
 function QualityScoreBar({ score }: { score: number }) {
   const safeScore = Math.min(100, Math.max(0, score));
+  const barColor =
+    safeScore >= 80
+      ? "bg-emerald-500"
+      : safeScore >= 50
+        ? "bg-primary-dark"
+        : "bg-status-error";
+
   return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-[60px] overflow-hidden rounded-radius-full bg-surface-container">
+    <div className="flex items-center gap-2.5">
+      <span className="font-sarabun text-caption font-bold text-text-primary">
+        {safeScore}%
+      </span>
+      <div className="h-2 w-[80px] overflow-hidden rounded-full bg-gray-100">
         <div
-          className="h-full bg-primary-container"
+          className={`h-full rounded-full ${barColor}`}
           style={{ width: `${safeScore}%` }}
         />
       </div>
-      <span className="font-sarabun text-caption font-medium text-primary-dark">
-        {safeScore}%
-      </span>
     </div>
   );
 }
@@ -84,7 +88,7 @@ function TableSkeleton() {
   return (
     <div className="animate-pulse space-y-3 p-6">
       {Array.from({ length: 5 }).map((_, index) => (
-        <div key={index} className="h-12 rounded-radius-sm bg-surface-container" />
+        <div key={index} className="h-12 rounded-xl bg-gray-100" />
       ))}
     </div>
   );
@@ -137,15 +141,15 @@ export default function AdminDatasetTable({
 
   return (
     <>
-      <div className="overflow-hidden rounded-radius-lg border border-border-default bg-surface-card shadow-level-1">
+      <div className="overflow-hidden rounded-2xl border border-white/80 bg-white shadow-md">
         {isLoading && !data ? (
           <TableSkeleton />
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[960px] text-left">
-                <thead className="bg-surface-container">
-                  <tr className="font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/80 font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
                     <th className="px-6 py-4">{t("colTitle")}</th>
                     <th className="px-6 py-4">{t("colAgency")}</th>
                     <th className="px-6 py-4">{t("colCategory")}</th>
@@ -155,7 +159,7 @@ export default function AdminDatasetTable({
                     <th className="px-6 py-4 text-right">{t("colAction")}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border-default/30">
+                <tbody className="divide-y divide-gray-100/60">
                   {rows.length === 0 ? (
                     <tr>
                       <td
@@ -177,44 +181,44 @@ export default function AdminDatasetTable({
                       return (
                         <tr
                           key={dataset.id}
-                          className="transition-colors hover:bg-surface-page"
+                          className="transition-colors hover:bg-gray-50/50"
                         >
-                          <td className="px-6 py-3">
+                          <td className="px-6 py-4">
                             <Link
                               href={`${base}/datasets/${dataset.id}`}
-                              className="font-sarabun text-body-md font-medium text-primary-dark hover:underline"
+                              className="font-sarabun text-body-md font-semibold text-primary-dark hover:underline"
                             >
                               {title}
                             </Link>
                           </td>
-                          <td className="px-6 py-3 font-sarabun text-label text-text-muted">
+                          <td className="px-6 py-4 font-sarabun text-label text-text-muted">
                             {agency}
                           </td>
-                          <td className="px-6 py-3">
-                            <span className="rounded-radius-sm bg-surface-container px-2.5 py-1 font-sarabun text-caption text-text-secondary">
+                          <td className="px-6 py-4">
+                            <span className="rounded-full bg-gray-100 px-3 py-1 font-sarabun text-caption font-medium text-text-secondary">
                               {category}
                             </span>
                           </td>
-                          <td className="px-6 py-3 text-center">
+                          <td className="px-6 py-4 text-center">
                             <StatusBadge
                               status={dataset.status}
                               label={t(`status.${dataset.status}`)}
                             />
                           </td>
-                          <td className="px-6 py-3">
+                          <td className="px-6 py-4">
                             <QualityScoreBar score={dataset.qualityScore} />
                           </td>
-                          <td className="px-6 py-3 font-sarabun text-label text-text-muted">
+                          <td className="px-6 py-4 font-sarabun text-label text-text-muted">
                             {formatDate(dataset.updatedAt, locale)}
                           </td>
-                          <td className="px-6 py-3 text-right">
-                            <div className="flex items-center justify-end gap-3">
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
                               {dataset.status === "published" ? (
                                 <button
                                   type="button"
                                   onClick={() => handleHide(dataset.id)}
                                   disabled={hideMutation.isPending}
-                                  className="rounded-radius-sm bg-[#ffefc9] px-3 py-1.5 font-sarabun text-caption font-bold text-[#795900] hover:opacity-90 disabled:opacity-50"
+                                  className="rounded-full bg-amber-50 px-3.5 py-1.5 font-sarabun text-caption font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50"
                                 >
                                   {tAdmin("hide")}
                                 </button>
@@ -222,7 +226,7 @@ export default function AdminDatasetTable({
                               <button
                                 type="button"
                                 onClick={() => handleEdit(dataset.id)}
-                                className="text-text-muted transition-colors hover:text-primary-dark"
+                                className="rounded-full p-2 text-text-muted transition-colors hover:bg-blue-50 hover:text-primary-dark"
                                 aria-label={t("edit")}
                               >
                                 <EditIcon />
@@ -230,7 +234,7 @@ export default function AdminDatasetTable({
                               <button
                                 type="button"
                                 onClick={() => handleDeleteRequest(dataset)}
-                                className="text-text-muted transition-colors hover:text-status-error"
+                                className="rounded-full p-2 text-text-muted transition-colors hover:bg-red-50 hover:text-status-error"
                                 aria-label={t("delete")}
                               >
                                 <DeleteIcon />
@@ -246,7 +250,7 @@ export default function AdminDatasetTable({
             </div>
 
             {totalPages > 0 ? (
-              <div className="flex flex-col gap-4 border-t border-border-default/30 bg-surface-container/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4 border-t border-gray-100 bg-gray-50/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="font-sarabun text-label text-text-muted">
                   {t("paginationSummary", {
                     start: startItem,
@@ -300,7 +304,7 @@ function DatasetTablePagination({
         type="button"
         onClick={() => onPageChange?.(currentPage - 1)}
         disabled={currentPage <= 1}
-        className="flex h-10 w-10 items-center justify-center rounded-radius-md border border-border-default bg-surface-card text-text-muted transition-colors hover:bg-surface-container disabled:opacity-30"
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-text-muted shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-30"
         aria-label={t("pagination.previous")}
       >
         <ChevronLeftIcon />
@@ -318,10 +322,10 @@ function DatasetTablePagination({
             key={page}
             type="button"
             onClick={() => onPageChange?.(page)}
-            className={`flex h-10 w-10 items-center justify-center rounded-radius-sm font-sarabun text-label font-bold transition-colors ${
+            className={`flex h-10 w-10 items-center justify-center rounded-full font-sarabun text-label font-bold transition-all ${
               page === currentPage
-                ? "bg-primary-dark text-white shadow-level-1"
-                : "border border-border-default bg-surface-card text-text-muted hover:bg-surface-container"
+                ? "bg-primary-dark text-white shadow-md"
+                : "border border-gray-200 bg-white text-text-muted hover:bg-gray-50 hover:shadow-sm"
             }`}
             aria-current={page === currentPage ? "page" : undefined}
           >
@@ -333,7 +337,7 @@ function DatasetTablePagination({
         type="button"
         onClick={() => onPageChange?.(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        className="flex h-10 w-10 items-center justify-center rounded-radius-md border border-border-default bg-surface-card text-text-muted transition-colors hover:bg-surface-container disabled:opacity-30"
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-text-muted shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-30"
         aria-label={t("pagination.next")}
       >
         <ChevronRightIcon />

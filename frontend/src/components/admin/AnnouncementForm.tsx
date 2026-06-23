@@ -60,9 +60,7 @@ export default function AnnouncementForm({
   });
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
+    if (!open) return;
     reset({
       title: announcement?.title ?? "",
       content: announcement?.content ?? "",
@@ -70,9 +68,7 @@ export default function AnnouncementForm({
     });
   }, [open, announcement, reset]);
 
-  if (!open) {
-    return null;
-  }
+  if (!open) return null;
 
   const isPending = createMutation.isPending || updateMutation.isPending;
   const title = mode === "create" ? t("formTitleAdd") : t("formTitleEdit");
@@ -94,6 +90,9 @@ export default function AnnouncementForm({
     }
   };
 
+  const inputClass =
+    "w-full rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20";
+
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
@@ -103,39 +102,39 @@ export default function AnnouncementForm({
     >
       <button
         type="button"
-        className="absolute inset-0 bg-surface-navy/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
         aria-label={t("cancel")}
       />
-      <div className="relative w-full max-w-[560px] overflow-hidden rounded-radius-lg bg-surface-card shadow-level-3">
-        <div className="border-b border-border-default px-8 py-6">
+      <div className="relative w-full max-w-[560px] overflow-hidden rounded-2xl border border-white/80 bg-white shadow-xl">
+        <div className="px-8 py-6">
           <h2
             id="announcement-form-title"
-            className="font-kanit text-heading-3 font-semibold text-text-primary"
+            className="font-kanit text-2xl font-bold text-text-primary"
           >
             {title}
           </h2>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 px-8 py-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 px-8 pb-8">
           <div>
             <label
               htmlFor="announcement-title"
-              className="mb-2 block font-kanit text-label font-semibold text-text-secondary"
+              className="mb-1.5 block font-sarabun text-body-sm font-semibold text-text-secondary"
             >
               {t("fieldTitle")}
             </label>
             <input
               id="announcement-title"
               type="text"
-              className={`h-11 w-full rounded-radius-sm border bg-surface-card px-4 font-sarabun text-body-md outline-none transition-colors focus:ring-2 focus:ring-primary-dark/20 ${
-                errors.title ? "border-status-error" : "border-border-input"
+              className={`h-11 ${inputClass} ${
+                errors.title ? "border-red-400" : ""
               }`}
               placeholder={t("fieldTitlePlaceholder")}
               {...register("title")}
             />
             {errors.title && (
-              <p className="mt-1 font-sarabun text-caption text-status-error">
+              <p className="mt-1.5 font-sarabun text-caption text-error">
                 {errors.title.message}
               </p>
             )}
@@ -144,28 +143,28 @@ export default function AnnouncementForm({
           <div>
             <label
               htmlFor="announcement-content"
-              className="mb-2 block font-kanit text-label font-semibold text-text-secondary"
+              className="mb-1.5 block font-sarabun text-body-sm font-semibold text-text-secondary"
             >
               {t("fieldContent")}
             </label>
             <textarea
               id="announcement-content"
               rows={4}
-              className={`w-full rounded-radius-sm border bg-surface-card px-4 py-3 font-sarabun text-body-md outline-none transition-colors focus:ring-2 focus:ring-primary-dark/20 ${
-                errors.content ? "border-status-error" : "border-border-input"
+              className={`rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20 w-full ${
+                errors.content ? "border-red-400" : ""
               }`}
               placeholder={t("fieldContentPlaceholder")}
               {...register("content")}
             />
             {errors.content && (
-              <p className="mt-1 font-sarabun text-caption text-status-error">
+              <p className="mt-1.5 font-sarabun text-caption text-error">
                 {errors.content.message}
               </p>
             )}
           </div>
 
-          <div className="flex items-center justify-between border-t border-dashed border-border-default py-2">
-            <span className="font-kanit text-label font-semibold text-text-secondary">
+          <div className="flex items-center justify-between border-t border-gray-100 pt-4">
+            <span className="font-sarabun text-body-md font-semibold text-text-secondary">
               {t("fieldActive")}
             </span>
             <Controller
@@ -181,19 +180,19 @@ export default function AnnouncementForm({
             />
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-border-default pt-6">
+          <div className="flex justify-end gap-3 border-t border-gray-100 pt-5">
             <button
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="rounded-radius-sm px-6 py-2.5 font-kanit text-label font-medium text-text-secondary transition-colors hover:bg-surface-container disabled:opacity-50"
+              className="rounded-full border border-gray-200 bg-white px-5 py-2.5 font-sarabun text-body-md font-medium text-text-secondary shadow-sm transition-all hover:bg-gray-50 disabled:opacity-50"
             >
               {t("cancel")}
             </button>
             <button
               type="submit"
               disabled={!isValid || isPending}
-              className="rounded-radius-sm bg-primary px-8 py-2.5 font-kanit text-label font-bold text-surface-card shadow-level-1 transition-opacity hover:bg-primary-hover disabled:opacity-50"
+              className="rounded-full bg-primary-dark px-6 py-2.5 font-sarabun text-body-md font-bold text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg disabled:opacity-50"
             >
               {isPending ? t("saving") : t("save")}
             </button>

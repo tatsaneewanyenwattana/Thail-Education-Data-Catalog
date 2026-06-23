@@ -2,17 +2,54 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import AdminStatsCard from "@/components/admin/AdminStatsCard";
 import UserTable from "@/components/admin/UserTable";
 import type { AdminUsersFilters } from "@/data/mockData";
+import { useAdminDashboard } from "@/hooks/useAdminDashboard";
 
 type StatusFilter = "all" | "pending" | "active" | "rejected" | "suspended";
 type RoleFilter = "all" | "agency" | "admin";
 
+function UsersIcon() {
+  return (
+    <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3Zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5Zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5Z" />
+    </svg>
+  );
+}
+
+function HourglassIcon() {
+  return (
+    <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M6 2v6h.01L6 8.01 10 12l-4 4 0.01 0.01H6V22h12v-5.99h-0.01L18 16l-4-4 4-3.99-0.01-0.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-7-4-4V4h8v1.5l-4 4z" />
+    </svg>
+  );
+}
+
+function ActiveIcon() {
+  return (
+    <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+    </svg>
+  );
+}
+
+function SuspendedIcon() {
+  return (
+    <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9A7.902 7.902 0 014 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1A7.902 7.902 0 0120 12c0 4.42-3.58 8-8 8z" />
+    </svg>
+  );
+}
+
 export default function AdminUsersPage() {
   const t = useTranslations("admin.users");
+  const tDash = useTranslations("admin.dashboard");
   const locale = useLocale();
   const base = `/${locale}`;
+
+  const { data: dashData } = useAdminDashboard();
 
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -23,6 +60,8 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastError, setToastError] = useState<string | null>(null);
+
+  const numberLocale = locale === "th" ? "th-TH" : "en-US";
 
   const queryFilters: AdminUsersFilters = useMemo(
     () => ({
@@ -54,7 +93,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="mx-auto max-w-container-max space-y-spacing-8 pb-24">
+    <div className="mx-auto max-w-container-max space-y-6 pb-24">
       <header>
         <h1 className="font-kanit text-[28px] font-bold leading-tight text-text-primary">
           {t("title")}
@@ -68,8 +107,49 @@ export default function AdminUsersPage() {
         </nav>
       </header>
 
-      <section className="rounded-radius-lg border border-border-default bg-surface-card p-6 shadow-level-1">
-        <div className="flex flex-wrap items-end gap-spacing-6">
+      {dashData ? (
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <AdminStatsCard
+            label={tDash("totalUsers")}
+            value={dashData.totalUsers.toLocaleString(numberLocale)}
+            icon={<UsersIcon />}
+            iconClassName="bg-blue-50 text-blue-600"
+            badge={
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-sarabun text-caption font-bold text-emerald-600">
+                +{dashData.userTrendPercent}%
+              </span>
+            }
+          />
+          <AdminStatsCard
+            label={tDash("pendingUsers")}
+            value={dashData.pendingUsers.toLocaleString(numberLocale)}
+            icon={<HourglassIcon />}
+            variant="warning"
+            badge={<span className="h-2 w-2 animate-pulse rounded-full bg-status-error" />}
+          />
+          <AdminStatsCard
+            label={t("activeUsers")}
+            value={(dashData.totalUsers - dashData.pendingUsers).toLocaleString(numberLocale)}
+            icon={<ActiveIcon />}
+            iconClassName="bg-emerald-50 text-emerald-600"
+            badge={
+              <span className="flex items-center gap-1 font-sarabun text-caption font-medium text-emerald-600">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                {t("status.active")}
+              </span>
+            }
+          />
+          <AdminStatsCard
+            label={t("status.suspended")}
+            value="0"
+            icon={<SuspendedIcon />}
+            iconClassName="bg-gray-100 text-gray-500"
+          />
+        </section>
+      ) : null}
+
+      <section className="rounded-2xl border border-white/80 bg-white p-6 shadow-md">
+        <div className="flex flex-wrap items-end gap-4">
           <div className="min-w-[280px] flex-1">
             <label className="mb-2 block font-sarabun text-label font-medium text-text-muted">
               {t("search")}
@@ -88,49 +168,39 @@ export default function AdminUsersPage() {
                   }
                 }}
                 placeholder={t("searchPlaceholder")}
-                className="h-10 w-full rounded-radius-sm border border-border-input bg-surface-card pl-10 pr-4 font-sarabun text-body-md focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+                className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 pl-10 pr-4 font-sarabun text-body-md shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
               />
             </div>
           </div>
 
-          <div className="w-full sm:w-48">
-            <label className="mb-2 block font-sarabun text-label font-medium text-text-muted">
-              {t("filterStatus")}
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.target.value as StatusFilter)
-              }
-              className="h-10 w-full rounded-radius-sm border border-border-input bg-surface-card px-3 font-sarabun text-body-md focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
-            >
-              <option value="all">{t("filterAll")}</option>
-              <option value="pending">{t("status.pending")}</option>
-              <option value="active">{t("status.active")}</option>
-              <option value="rejected">{t("status.rejected")}</option>
-              <option value="suspended">{t("status.suspended")}</option>
-            </select>
-          </div>
+          <FilterDropdown
+            label={t("filterRole")}
+            value={roleFilter}
+            onChange={(v) => setRoleFilter(v as RoleFilter)}
+            options={[
+              { value: "all", label: t("filterAll") },
+              { value: "agency", label: t("role.agency") },
+              { value: "admin", label: t("role.admin") },
+            ]}
+          />
 
-          <div className="w-full sm:w-48">
-            <label className="mb-2 block font-sarabun text-label font-medium text-text-muted">
-              {t("filterRole")}
-            </label>
-            <select
-              value={roleFilter}
-              onChange={(event) => setRoleFilter(event.target.value as RoleFilter)}
-              className="h-10 w-full rounded-radius-sm border border-border-input bg-surface-card px-3 font-sarabun text-body-md focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
-            >
-              <option value="all">{t("filterAll")}</option>
-              <option value="agency">{t("role.agency")}</option>
-              <option value="admin">{t("role.admin")}</option>
-            </select>
-          </div>
+          <FilterDropdown
+            label={t("filterStatus")}
+            value={statusFilter}
+            onChange={(v) => setStatusFilter(v as StatusFilter)}
+            options={[
+              { value: "all", label: t("filterAll") },
+              { value: "pending", label: t("status.pending") },
+              { value: "active", label: t("status.active") },
+              { value: "rejected", label: t("status.rejected") },
+              { value: "suspended", label: t("status.suspended") },
+            ]}
+          />
 
           <button
             type="button"
             onClick={handleApplyFilters}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-radius-sm bg-primary-dark px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-colors hover:bg-primary-hover"
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-primary-dark px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg"
           >
             <FilterIcon />
             {t("applyFilter")}
@@ -146,12 +216,12 @@ export default function AdminUsersPage() {
       />
 
       {toastMessage ? (
-        <div className="fixed bottom-6 right-6 z-[110] rounded-radius-md bg-primary-dark px-4 py-3 font-sarabun text-label text-white shadow-level-3">
+        <div className="fixed bottom-6 right-6 z-[110] rounded-2xl bg-primary-dark px-4 py-3 font-sarabun text-label text-white shadow-lg">
           {toastMessage}
         </div>
       ) : null}
       {toastError ? (
-        <div className="fixed bottom-6 right-6 z-[110] rounded-radius-md bg-status-error px-4 py-3 font-sarabun text-label text-white shadow-level-3">
+        <div className="fixed bottom-6 right-6 z-[110] rounded-2xl bg-status-error px-4 py-3 font-sarabun text-label text-white shadow-lg">
           {toastError}
         </div>
       ) : null}
@@ -177,5 +247,66 @@ function FilterIcon() {
     <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M10 18h4v-2h-4v2ZM3 6v2h18V6H3Zm3 7h12v-2H6v2Z" />
     </svg>
+  );
+}
+
+function FilterDropdown({
+  value,
+  options,
+  onChange,
+  label,
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+  label: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div className="relative w-full sm:w-48" ref={ref}>
+      <span className="mb-2 block font-sarabun text-label font-medium text-text-muted">
+        {label}
+      </span>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-11 w-full items-center justify-between rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 hover:shadow-md"
+      >
+        {selected?.label ?? "—"}
+        <svg className="h-4 w-4 shrink-0 text-gray-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M7 10l5 5 5-5z" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-30 mt-1.5 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white py-1 shadow-lg">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              className={`flex w-full px-4 py-2.5 font-sarabun text-label transition-colors ${
+                opt.value === value
+                  ? "bg-primary-dark/10 font-bold text-primary-dark"
+                  : "text-text-primary hover:bg-gray-50"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

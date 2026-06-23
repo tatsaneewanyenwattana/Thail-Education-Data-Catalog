@@ -33,12 +33,12 @@ type EmailLogsTableProps = {
 };
 
 const STATUS_STYLES: Record<EmailLogStatus, string> = {
-  delivered: "bg-status-published-bg text-status-published",
-  failed: "bg-status-error-bg text-status-error",
-  bounced: "bg-status-warning-bg text-status-warning",
-  sent: "bg-status-draft-bg text-status-draft",
-  pending: "bg-surface-container text-text-muted",
-  complained: "bg-red-950 text-white",
+  delivered: "bg-emerald-50 text-emerald-700",
+  sent: "bg-blue-50 text-blue-700",
+  pending: "bg-gray-100 text-gray-600",
+  bounced: "bg-amber-50 text-amber-700",
+  failed: "bg-red-50 text-red-600",
+  complained: "bg-red-50 text-red-600",
 };
 
 function formatDateTime(value: string | null, locale: string): string {
@@ -54,7 +54,7 @@ function StatusBadge({ status }: { status: EmailLogStatus }) {
 
   return (
     <span
-      className={`inline-flex rounded-radius-full px-3 py-1 font-sarabun text-caption font-semibold ${STATUS_STYLES[status]}`}
+      className={`inline-flex rounded-full px-3.5 py-1 font-sarabun text-[12px] font-bold uppercase tracking-wide ${STATUS_STYLES[status]}`}
     >
       {t(status)}
     </span>
@@ -76,30 +76,39 @@ export default function EmailLogsTable({
     return name;
   };
 
+  if (isLoading) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-white/80 bg-white shadow-md">
+        <div className="animate-pulse space-y-3 p-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-14 rounded-xl bg-gray-100" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="overflow-hidden rounded-radius-xl border border-border-default bg-surface-card shadow-level-1">
+    <div className="overflow-hidden rounded-2xl border border-white/80 bg-white shadow-md">
       <div className="overflow-x-auto">
-        <table className="min-w-[960px] w-full border-collapse text-left">
-          <thead className="bg-surface-container font-sarabun text-label text-text-secondary">
-            <tr>
-              <th className="px-4 py-3 font-semibold">{t("colTemplate")}</th>
-              <th className="px-4 py-3 font-semibold">{t("colEmail")}</th>
-              <th className="px-4 py-3 font-semibold">{t("colSubject")}</th>
-              <th className="px-4 py-3 font-semibold">{t("colStatus")}</th>
-              <th className="px-4 py-3 font-semibold">{t("colSentAt")}</th>
-              <th className="px-4 py-3 font-semibold">{t("colCreatedAt")}</th>
+        <table className="w-full min-w-[960px] text-left">
+          <thead>
+            <tr className="border-b border-gray-100 bg-gray-50/80 font-kanit text-[13px] font-bold uppercase tracking-wider text-text-secondary">
+              <th className="px-6 py-4">{t("colTemplate")}</th>
+              <th className="px-6 py-4">{t("colEmail")}</th>
+              <th className="px-6 py-4">{t("colSubject")}</th>
+              <th className="px-6 py-4">{t("colStatus")}</th>
+              <th className="px-6 py-4">{t("colSentAt")}</th>
+              <th className="px-6 py-4">{t("colCreatedAt")}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border-default/50 font-sarabun text-body-sm text-text-primary">
-            {isLoading ? (
+          <tbody className="divide-y divide-gray-100/60">
+            {logs.length === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-text-muted" colSpan={6}>
-                  {t("loading")}
-                </td>
-              </tr>
-            ) : logs.length === 0 ? (
-              <tr>
-                <td className="px-4 py-8 text-center text-text-muted" colSpan={6}>
+                <td
+                  colSpan={6}
+                  className="px-6 py-12 text-center font-sarabun text-body-md text-text-muted"
+                >
                   {t("empty")}
                 </td>
               </tr>
@@ -107,20 +116,27 @@ export default function EmailLogsTable({
               logs.map((log) => (
                 <tr
                   key={log.id}
-                  className="transition-colors hover:bg-surface-page"
+                  className="transition-colors hover:bg-gray-50/50"
                 >
-                  <td className="px-4 py-3">{templateLabel(log.template_name)}</td>
-                  <td className="px-4 py-3">{log.recipient_email}</td>
-                  <td className="max-w-[280px] truncate px-4 py-3" title={log.subject}>
+                  <td className="px-6 py-4 font-sarabun text-body-md text-text-primary">
+                    {templateLabel(log.template_name)}
+                  </td>
+                  <td className="px-6 py-4 font-sarabun text-body-md text-primary-dark">
+                    {log.recipient_email}
+                  </td>
+                  <td
+                    className="max-w-[280px] truncate px-6 py-4 font-sarabun text-body-sm text-text-muted"
+                    title={log.subject}
+                  >
                     {log.subject}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-6 py-4">
                     <StatusBadge status={log.status} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-6 py-4 font-sarabun text-body-sm text-text-secondary">
                     {formatDateTime(log.sent_at, locale)}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-6 py-4 font-sarabun text-body-sm text-text-secondary">
                     {formatDateTime(log.created_at, locale)}
                   </td>
                 </tr>

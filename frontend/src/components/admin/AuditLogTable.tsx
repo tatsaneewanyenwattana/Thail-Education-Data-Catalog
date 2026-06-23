@@ -14,7 +14,7 @@ function getPageNumbers(
   total: number
 ): (number | "ellipsis")[] {
   if (total <= 7) {
-    return Array.from({ length: total }, (_, index) => index + 1);
+    return Array.from({ length: total }, (_, i) => i + 1);
   }
   if (current <= 3) {
     return [1, 2, 3, "ellipsis", total];
@@ -25,6 +25,15 @@ function getPageNumbers(
   return [1, "ellipsis", current, "ellipsis", total];
 }
 
+const ACTION_COLORS: Record<AuditLogAction, string> = {
+  LOGIN: "bg-blue-50 text-blue-700",
+  UPLOAD: "bg-emerald-50 text-emerald-700",
+  DOWNLOAD: "bg-emerald-50 text-emerald-700",
+  APPROVE: "bg-emerald-50 text-emerald-700",
+  DELETE: "bg-red-50 text-red-600",
+  REJECT: "bg-red-50 text-red-600",
+};
+
 function ActionBadge({
   action,
   label,
@@ -32,50 +41,12 @@ function ActionBadge({
   action: AuditLogAction;
   label: string;
 }) {
-  const styles: Record<AuditLogAction, string> = {
-    UPLOAD: "bg-status-published-bg text-status-published",
-    DOWNLOAD: "bg-status-published-bg text-status-published",
-    APPROVE: "bg-status-published-bg text-status-published",
-    LOGIN: "bg-status-draft-bg text-status-draft",
-    DELETE: "bg-status-error-bg text-status-error",
-    REJECT: "bg-status-error-bg text-status-error",
-  };
-
   return (
     <span
-      className={`inline-flex rounded-radius-full px-3 py-1 font-sarabun text-[11px] font-bold ${styles[action]}`}
+      className={`inline-flex rounded-full px-3.5 py-1 font-sarabun text-[12px] font-bold uppercase tracking-wide ${ACTION_COLORS[action]}`}
     >
       {label}
     </span>
-  );
-}
-
-function TableSkeleton() {
-  return (
-    <div className="animate-pulse space-y-3 p-6">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div
-          key={index}
-          className="h-12 rounded-radius-sm bg-surface-container"
-        />
-      ))}
-    </div>
-  );
-}
-
-function ChevronLeftIcon() {
-  return (
-    <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-    </svg>
-  );
-}
-
-function ChevronRightIcon() {
-  return (
-    <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-    </svg>
   );
 }
 
@@ -107,130 +78,139 @@ export default function AuditLogTable({
     return t(`actions.${key}`);
   };
 
-  return (
-    <section className="overflow-hidden rounded-radius-lg border border-border-default bg-surface-card shadow-level-1">
-      <div className="overflow-x-auto">
-        {isLoading ? (
-          <TableSkeleton />
-        ) : (
-          <table className="w-full border-collapse text-left">
-            <thead className="bg-surface-container">
-              <tr>
-                <th className="px-6 py-4 font-kanit text-[13px] font-semibold text-text-secondary">
-                  {t("colTimestamp")}
-                </th>
-                <th className="px-6 py-4 font-kanit text-[13px] font-semibold text-text-secondary">
-                  {t("colUser")}
-                </th>
-                <th className="px-6 py-4 font-kanit text-[13px] font-semibold text-text-secondary">
-                  {t("colAction")}
-                </th>
-                <th className="px-6 py-4 font-kanit text-[13px] font-semibold text-text-secondary">
-                  {t("colDetail")}
-                </th>
-                <th className="px-6 py-4 font-kanit text-[13px] font-semibold text-text-secondary">
-                  {t("colIP")}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-default">
-              {rows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-12 text-center font-sarabun text-body-md text-text-muted"
-                  >
-                    {t("empty")}
-                  </td>
-                </tr>
-              ) : (
-                rows.map((log) => (
-                  <tr
-                    key={log.id}
-                    className="h-14 cursor-pointer transition-colors hover:bg-surface-container-low"
-                  >
-                    <td className="px-6 py-2 font-mono text-code text-text-secondary">
-                      {log.timestamp}
-                    </td>
-                    <td className="px-6 py-2 font-sarabun text-body-md text-text-primary">
-                      {log.email}
-                    </td>
-                    <td className="px-6 py-2">
-                      <ActionBadge
-                        action={log.action}
-                        label={actionLabel(log.action)}
-                      />
-                    </td>
-                    <td
-                      className="max-w-[300px] truncate px-6 py-2 font-sarabun text-[13px] text-text-muted"
-                      title={log.detail}
-                    >
-                      {log.detail}
-                    </td>
-                    <td className="px-6 py-2 font-mono text-code text-text-muted">
-                      {log.ip}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <div className="flex flex-col items-center justify-between gap-4 border-t border-border-default bg-surface-container-low px-6 py-4 sm:flex-row">
-        <p className="font-sarabun text-label text-text-secondary">
-          {t("paginationSummary", {
-            start: startItem,
-            end: endItem,
-            total,
-          })}
-        </p>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage <= 1}
-            className="rounded-radius-sm border border-border-default p-2 transition-colors hover:bg-surface-card disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label={t("prevPage")}
-          >
-            <ChevronLeftIcon />
-          </button>
-          {pageNumbers.map((page, index) =>
-            page === "ellipsis" ? (
-              <span
-                key={`ellipsis-${index}`}
-                className="px-1 font-sarabun text-body-sm text-text-muted"
-              >
-                ...
-              </span>
-            ) : (
-              <button
-                key={page}
-                type="button"
-                onClick={() => onPageChange(page)}
-                className={`flex h-8 w-8 items-center justify-center rounded-radius-sm font-sarabun text-body-sm font-medium transition-colors ${
-                  page === currentPage
-                    ? "bg-primary text-white"
-                    : "hover:bg-surface-card"
-                }`}
-                aria-current={page === currentPage ? "page" : undefined}
-              >
-                {page}
-              </button>
-            )
-          )}
-          <button
-            type="button"
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="rounded-radius-sm border border-border-default p-2 transition-colors hover:bg-surface-card disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label={t("nextPage")}
-          >
-            <ChevronRightIcon />
-          </button>
+  if (isLoading) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-white/80 bg-white shadow-md">
+        <div className="animate-pulse space-y-3 p-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-14 rounded-xl bg-gray-100" />
+          ))}
         </div>
       </div>
-    </section>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/80 bg-white shadow-md">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[900px] text-left">
+          <thead>
+            <tr className="border-b border-gray-100 bg-gray-50/80 font-kanit text-[13px] font-bold uppercase tracking-wider text-text-secondary">
+              <th className="px-6 py-4">{t("colTimestamp")}</th>
+              <th className="px-6 py-4">{t("colUser")}</th>
+              <th className="px-6 py-4">{t("colAction")}</th>
+              <th className="px-6 py-4">{t("colDetail")}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100/60">
+            {rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-6 py-12 text-center font-sarabun text-body-md text-text-muted"
+                >
+                  {t("empty")}
+                </td>
+              </tr>
+            ) : (
+              rows.map((log) => (
+                <tr
+                  key={log.id}
+                  className="transition-colors hover:bg-gray-50/50"
+                >
+                  <td className="px-6 py-4 font-mono text-body-sm text-text-secondary">
+                    {log.timestamp}
+                  </td>
+                  <td className="px-6 py-4 font-sarabun text-body-md text-text-primary">
+                    {log.email}
+                  </td>
+                  <td className="px-6 py-4">
+                    <ActionBadge
+                      action={log.action}
+                      label={actionLabel(log.action)}
+                    />
+                  </td>
+                  <td
+                    className="max-w-[350px] truncate px-6 py-4 font-sarabun text-body-sm text-text-muted"
+                    title={log.detail}
+                  >
+                    {log.detail}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex flex-col items-center justify-between gap-4 border-t border-gray-100 bg-gray-50/50 px-6 py-4 sm:flex-row">
+        <span className="font-sarabun text-body-sm text-text-muted">
+          {t("paginationSummary", { start: startItem, end: endItem, total })}
+        </span>
+        {totalPages > 1 && (
+          <nav className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-text-muted shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-30"
+              aria-label={t("prevPage")}
+            >
+              <ChevronLeftIcon />
+            </button>
+            {pageNumbers.map((p, i) =>
+              p === "ellipsis" ? (
+                <span
+                  key={`e-${i}`}
+                  className="px-2 font-sarabun text-body-sm text-text-muted"
+                >
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => onPageChange(p)}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full font-sarabun text-body-sm font-bold transition-all ${
+                    currentPage === p
+                      ? "bg-primary-dark text-white shadow-md"
+                      : "border border-gray-200 bg-white text-text-muted hover:bg-gray-50 hover:shadow-sm"
+                  }`}
+                  aria-current={p === currentPage ? "page" : undefined}
+                >
+                  {p}
+                </button>
+              )
+            )}
+            <button
+              type="button"
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-text-muted shadow-sm transition-all hover:bg-gray-50 hover:shadow-md disabled:opacity-30"
+              aria-label={t("nextPage")}
+            >
+              <ChevronRightIcon />
+            </button>
+          </nav>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChevronLeftIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
   );
 }

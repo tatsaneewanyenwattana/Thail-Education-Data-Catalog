@@ -1,7 +1,9 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import EmailLogsTable, {
   EMAIL_LOG_STATUS_OPTIONS,
   EMAIL_LOG_TEMPLATE_OPTIONS,
@@ -28,6 +30,8 @@ export default function AdminEmailLogsPage() {
   const t = useTranslations("admin.emailLogs");
   const tStatus = useTranslations("admin.emailLogs.status");
   const tTemplates = useTranslations("admin.emailLogs.templates");
+  const locale = useLocale();
+  const base = `/${locale}`;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -64,9 +68,17 @@ export default function AdminEmailLogsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-container-max space-y-8 pb-24">
+    <div className="space-y-8 pb-24">
+      {/* Header */}
       <header>
-        <h1 className="font-kanit text-[28px] font-bold leading-tight text-text-primary">
+        <nav className="mb-2 flex font-sarabun text-body-sm text-text-muted">
+          <Link href={`${base}/admin`} className="hover:text-primary-dark">
+            Admin
+          </Link>
+          <span className="mx-2">&gt;</span>
+          <span className="font-medium text-primary-dark">{t("title")}</span>
+        </nav>
+        <h1 className="font-kanit text-[32px] font-bold leading-tight text-text-primary">
           {t("title")}
         </h1>
         <p className="mt-1 font-sarabun text-body-md text-text-muted">
@@ -74,89 +86,167 @@ export default function AdminEmailLogsPage() {
         </p>
       </header>
 
-      <section className="rounded-radius-xl border border-border-default bg-surface-card p-5 shadow-level-1">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <label className="font-sarabun text-label text-text-secondary">
-            {t("filterStatus")}
-            <select
-              value={status}
-              onChange={(event) => updateFilter("status", event.target.value)}
-              className="mt-2 h-10 w-full rounded-radius-sm border border-border-input bg-surface-card px-3 font-sarabun text-body-md text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
-            >
-              <option value="">{t("filterStatusAll")}</option>
-              {EMAIL_LOG_STATUS_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {tStatus(option)}
-                </option>
-              ))}
-            </select>
-          </label>
+      {/* Filters */}
+      <section className="rounded-2xl border border-white/80 bg-white p-6 shadow-md">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+          {/* Status dropdown */}
+          <FilterDropdown
+            label={t("filterStatus")}
+            value={status}
+            onChange={(v) => updateFilter("status", v)}
+            options={[
+              { value: "", label: t("filterStatusAll") },
+              ...EMAIL_LOG_STATUS_OPTIONS.map((opt) => ({
+                value: opt,
+                label: tStatus(opt),
+              })),
+            ]}
+          />
 
-          <label className="font-sarabun text-label text-text-secondary">
-            {t("filterEmail")}
+          {/* Email */}
+          <div className="space-y-1.5">
+            <span className="block font-sarabun text-body-sm font-semibold text-text-secondary">
+              {t("filterEmail")}
+            </span>
             <input
               type="search"
               value={recipientEmail}
-              onChange={(event) =>
-                updateFilter("recipient_email", event.target.value)
-              }
+              onChange={(e) => updateFilter("recipient_email", e.target.value)}
               placeholder={t("filterEmailPlaceholder")}
-              className="mt-2 h-10 w-full rounded-radius-sm border border-border-input bg-surface-card px-3 font-sarabun text-body-md text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+              className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
             />
-          </label>
+          </div>
 
-          <label className="font-sarabun text-label text-text-secondary">
-            {t("filterTemplate")}
-            <select
-              value={templateName}
-              onChange={(event) =>
-                updateFilter("template_name", event.target.value)
-              }
-              className="mt-2 h-10 w-full rounded-radius-sm border border-border-input bg-surface-card px-3 font-sarabun text-body-md text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
-            >
-              <option value="">{t("filterTemplateAll")}</option>
-              {EMAIL_LOG_TEMPLATE_OPTIONS.map((template) => (
-                <option key={template} value={template}>
-                  {tTemplates(template)}
-                </option>
-              ))}
-            </select>
-          </label>
+          {/* Template dropdown */}
+          <FilterDropdown
+            label={t("filterTemplate")}
+            value={templateName}
+            onChange={(v) => updateFilter("template_name", v)}
+            options={[
+              { value: "", label: t("filterTemplateAll") },
+              ...EMAIL_LOG_TEMPLATE_OPTIONS.map((tpl) => ({
+                value: tpl,
+                label: tTemplates(tpl),
+              })),
+            ]}
+          />
 
-          <label className="font-sarabun text-label text-text-secondary">
-            {t("filterDateFrom")}
+          {/* Date From */}
+          <div className="space-y-1.5">
+            <span className="block font-sarabun text-body-sm font-semibold text-text-secondary">
+              {t("filterDateFrom")}
+            </span>
             <input
               type="date"
               value={dateFrom}
-              onChange={(event) => updateFilter("date_from", event.target.value)}
-              className="mt-2 h-10 w-full rounded-radius-sm border border-border-input bg-surface-card px-3 font-sarabun text-body-md text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+              onChange={(e) => updateFilter("date_from", e.target.value)}
+              className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
             />
-          </label>
+          </div>
 
-          <label className="font-sarabun text-label text-text-secondary">
-            {t("filterDateTo")}
+          {/* Date To */}
+          <div className="space-y-1.5">
+            <span className="block font-sarabun text-body-sm font-semibold text-text-secondary">
+              {t("filterDateTo")}
+            </span>
             <input
               type="date"
               value={dateTo}
-              onChange={(event) => updateFilter("date_to", event.target.value)}
-              className="mt-2 h-10 w-full rounded-radius-sm border border-border-input bg-surface-card px-3 font-sarabun text-body-md text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+              onChange={(e) => updateFilter("date_to", e.target.value)}
+              className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
             />
-          </label>
+          </div>
         </div>
       </section>
 
       {isError && (
-        <p className="rounded-radius-md border border-status-error bg-status-error-bg px-4 py-3 font-sarabun text-body-md text-status-error">
+        <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-body-md text-error">
           {t("loadError")}
         </p>
       )}
 
+      {/* Table */}
       <EmailLogsTable logs={data?.data ?? []} isLoading={isLoading} />
 
+      {/* Pagination */}
       <Pagination
         currentPage={data?.page ?? page}
         totalPages={data?.totalPages ?? 1}
       />
+    </div>
+  );
+}
+
+function FilterDropdown({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? options[0]?.label;
+
+  return (
+    <div className="space-y-1.5">
+      <span className="block font-sarabun text-body-sm font-semibold text-text-secondary">
+        {label}
+      </span>
+      <div ref={ref} className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="flex h-11 w-full items-center justify-between rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+        >
+          <span className="truncate">{selectedLabel}</span>
+          <svg
+            className={`h-4 w-4 shrink-0 text-text-muted transition-transform ${open ? "rotate-180" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {open && (
+          <ul className="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-white/80 bg-white py-1 shadow-lg">
+            {options.map((opt) => (
+              <li key={opt.value}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full px-4 py-2.5 text-left font-sarabun text-body-md transition-colors ${
+                    value === opt.value
+                      ? "bg-primary-dark/10 font-bold text-primary-dark"
+                      : "text-text-primary hover:bg-gray-50"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

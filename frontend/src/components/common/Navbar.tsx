@@ -133,36 +133,28 @@ export default function Navbar({ variant }: NavbarProps) {
 
     return (
       <header
-        className="sticky top-0 z-50 flex h-16 items-center border-b border-white/60 px-4 md:px-10"
+        className="sticky top-0 z-50 flex h-20 items-center px-6 md:px-12"
         style={{
-          background: "rgba(255, 255, 255, 0.55)",
-          backdropFilter: "blur(12px)",
+          background: "linear-gradient(90deg, #0045bc 0%, #2979ff 40%, #80deea 100%)",
         }}
       >
         <div className="flex w-full items-center gap-4">
           <Link
             href={base}
-            className="shrink-0 font-kanit text-label font-bold text-primary-dark"
+            className="shrink-0 font-kanit text-body-lg font-bold text-white"
           >
             Thai EduData Insight
           </Link>
-          <div className="ml-auto flex items-center gap-4">
-            <NotificationBell />
-            <LanguageSwitcher />
-            <div className="flex items-center gap-3 border-l border-border-default pl-4">
-              <span className="hidden font-sarabun text-label font-bold text-text-primary sm:inline">
+          <div className="ml-auto flex items-center gap-5">
+            <NotificationBell variant="admin" />
+            <LanguageSwitcher variant="admin" />
+            <div className="flex items-center gap-3 border-l border-white/25 pl-5">
+              <span className="hidden font-sarabun text-body-md font-bold text-white sm:inline">
                 {displayName}
               </span>
-              <span className="rounded-radius-full bg-[#e1f5ee] px-3 py-1 font-sarabun text-caption font-bold text-[#006b5f]">
+              <span className="rounded-full bg-white/20 px-3 py-1.5 font-sarabun text-label font-bold text-white">
                 Admin
               </span>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="min-h-[40px] rounded-radius-sm px-3 font-sarabun text-label font-medium text-text-secondary transition-colors hover:bg-surface-container hover:text-status-error"
-              >
-                {tAdminNav("logout")}
-              </button>
             </div>
           </div>
         </div>

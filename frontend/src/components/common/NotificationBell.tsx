@@ -84,7 +84,7 @@ function NotificationItem({
   );
 }
 
-export default function NotificationBell() {
+export default function NotificationBell({ variant = "default" }: { variant?: "default" | "admin" }) {
   const t = useTranslations("notifications");
   const locale = useLocale();
   const base = `/${locale}`;
@@ -114,7 +114,11 @@ export default function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-radius-sm text-text-secondary transition-colors hover:bg-surface-container hover:text-primary-dark"
+        className={`relative inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg transition-colors ${
+          variant === "admin"
+            ? "text-white/80 hover:bg-white/[0.10] hover:text-white"
+            : "text-text-secondary hover:bg-surface-container hover:text-primary-dark"
+        }`}
         aria-label={t("bellLabel")}
         aria-expanded={open}
       >
