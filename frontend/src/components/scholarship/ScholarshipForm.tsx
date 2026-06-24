@@ -41,7 +41,7 @@ type ScholarshipFormProps = {
 };
 
 const inputClass =
-  "w-full rounded-radius-md border border-border-input bg-surface-page px-4 py-3 font-sarabun text-label text-text-primary outline-none transition-all focus:border-border-focus focus:ring-2 focus:ring-primary-dark/20";
+  "w-full rounded-xl border border-border-input bg-surface-page px-4 py-3 font-sarabun text-label text-text-primary outline-none transition-all focus:border-primary-dark focus:ring-2 focus:ring-primary-dark/20";
 
 const labelClass =
   "mb-2 block font-sarabun text-label font-medium text-text-primary";
@@ -85,6 +85,34 @@ function createScholarshipFormSchema(
       message: tValidation("closeDateAfterOpen"),
       path: ["close_date"],
     });
+}
+
+function SectionHeader({
+  number,
+  title,
+}: {
+  number: number;
+  title: string;
+}) {
+  return (
+    <div className="mb-5 flex items-center gap-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-dark font-sarabun text-label font-bold text-white">
+        {number}
+      </span>
+      <h2 className="font-kanit text-body-lg font-semibold text-text-primary">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <p className="mt-1 font-sarabun text-caption text-status-error">
+      {message}
+    </p>
+  );
 }
 
 export default function ScholarshipForm({
@@ -178,232 +206,264 @@ export default function ScholarshipForm({
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <header className="border-b border-border-default/20 pb-6">
+    <div className="mx-auto max-w-3xl space-y-6 pb-24">
+      {/* Header */}
+      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <h1 className="font-kanit text-[28px] font-bold text-text-primary">
           {mode === "create" ? tForm("createTitle") : tForm("editTitle")}
         </h1>
+        <Link
+          href={`${base}/manage/scholarships`}
+          className="inline-flex items-center gap-2 font-sarabun text-label font-medium text-primary-dark transition-opacity hover:opacity-80"
+        >
+          <BackIcon />
+          กลับไปที่หน้าจัดการ
+        </Link>
       </header>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div>
-          <label htmlFor="title" className={labelClass}>
-            {tForm("title")} *
-          </label>
-          <input id="title" className={inputClass} {...register("title")} />
-          {errors.title && (
-            <p className="mt-1 font-sarabun text-caption text-status-error">
-              {errors.title.message}
-            </p>
-          )}
-        </div>
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-6"
+      >
+        {/* Section 1 — ข้อมูลทั่วไปของทุน */}
+        <section className="rounded-2xl border border-border-default/60 bg-surface-card p-6 shadow-level-1">
+          <SectionHeader number={1} title="ข้อมูลทั่วไปของทุน" />
 
-        <div>
-          <label htmlFor="description" className={labelClass}>
-            {tForm("description")} *
-          </label>
-          <textarea
-            id="description"
-            rows={4}
-            className={inputClass}
-            {...register("description")}
-          />
-          {errors.description && (
-            <p className="mt-1 font-sarabun text-caption text-status-error">
-              {errors.description.message}
-            </p>
-          )}
-        </div>
+          <div className="space-y-5">
+            <div>
+              <label htmlFor="title" className={labelClass}>
+                {tForm("title")} *
+              </label>
+              <input id="title" className={inputClass} {...register("title")} />
+              <FieldError message={errors.title?.message} />
+            </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
+            <div>
+              <label htmlFor="description" className={labelClass}>
+                {tForm("description")} *
+              </label>
+              <textarea
+                id="description"
+                rows={3}
+                className={inputClass}
+                {...register("description")}
+              />
+              <FieldError message={errors.description?.message} />
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label htmlFor="scholarship_type" className={labelClass}>
+                  {tForm("type")} *
+                </label>
+                <select
+                  id="scholarship_type"
+                  className={inputClass}
+                  {...register("scholarship_type")}
+                >
+                  {SCHOLARSHIP_TYPE_VALUES.map((value) => (
+                    <option key={value} value={value}>
+                      {tTypes(value)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="target_level" className={labelClass}>
+                  {tForm("level")} *
+                </label>
+                <select
+                  id="target_level"
+                  className={inputClass}
+                  {...register("target_level")}
+                >
+                  {TARGET_LEVEL_VALUES.map((value) => (
+                    <option key={value} value={value}>
+                      {tLevels(value)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 2 — คุณสมบัติผู้สมัคร */}
+        <section className="rounded-2xl border border-border-default/60 bg-surface-card p-6 shadow-level-1">
+          <SectionHeader number={2} title="คุณสมบัติผู้สมัคร" />
+
           <div>
-            <label htmlFor="scholarship_type" className={labelClass}>
-              {tForm("type")} *
+            <label htmlFor="eligibility" className={labelClass}>
+              {tForm("eligibility")} *
             </label>
-            <select
-              id="scholarship_type"
-              className={inputClass}
-              {...register("scholarship_type")}
-            >
-              {SCHOLARSHIP_TYPE_VALUES.map((value) => (
-                <option key={value} value={value}>
-                  {tTypes(value)}
-                </option>
-              ))}
+            <textarea
+              id="eligibility"
+              rows={6}
+              className={`${inputClass} min-h-[160px] resize-y`}
+              {...register("eligibility")}
+            />
+            <FieldError message={errors.eligibility?.message} />
+          </div>
+        </section>
+
+        {/* Section 3 — ระยะเวลาและงบประมาณ */}
+        <section className="rounded-2xl border border-border-default/60 bg-surface-card p-6 shadow-level-1">
+          <SectionHeader number={3} title="ระยะเวลาและงบประมาณ" />
+
+          <div className="space-y-5">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label htmlFor="open_date" className={labelClass}>
+                  {tForm("openDate")} *
+                </label>
+                <input
+                  id="open_date"
+                  type="date"
+                  className={inputClass}
+                  {...register("open_date")}
+                />
+                <FieldError message={errors.open_date?.message} />
+              </div>
+
+              <div>
+                <label htmlFor="close_date" className={labelClass}>
+                  {tForm("closeDate")} *
+                </label>
+                <input
+                  id="close_date"
+                  type="date"
+                  className={inputClass}
+                  {...register("close_date")}
+                />
+                <FieldError message={errors.close_date?.message} />
+              </div>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label htmlFor="amount" className={labelClass}>
+                  {tForm("amount")}
+                </label>
+                <input
+                  id="amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className={inputClass}
+                  {...register("amount")}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="amount_note" className={labelClass}>
+                  {tForm("amountNote")}
+                </label>
+                <input
+                  id="amount_note"
+                  className={inputClass}
+                  {...register("amount_note")}
+                />
+                <FieldError message={errors.amount_note?.message} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 4 — ข้อมูลการติดต่อ */}
+        <section className="rounded-2xl border border-border-default/60 bg-surface-card p-6 shadow-level-1">
+          <SectionHeader number={4} title="ข้อมูลการติดต่อ" />
+
+          <div className="space-y-5">
+            <div>
+              <label htmlFor="application_url" className={labelClass}>
+                {tForm("applicationUrl")}
+              </label>
+              <input
+                id="application_url"
+                type="url"
+                className={inputClass}
+                {...register("application_url")}
+              />
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label htmlFor="contact_phone" className={labelClass}>
+                  {tForm("contactPhone")}
+                </label>
+                <input
+                  id="contact_phone"
+                  className={inputClass}
+                  {...register("contact_phone")}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="contact_email" className={labelClass}>
+                  {tForm("contactEmail")}
+                </label>
+                <input
+                  id="contact_email"
+                  type="email"
+                  className={inputClass}
+                  {...register("contact_email")}
+                />
+                <FieldError message={errors.contact_email?.message} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 5 — สถานะเริ่มต้น */}
+        <section className="rounded-2xl border border-border-default/60 bg-surface-card p-6 shadow-level-1">
+          <SectionHeader number={5} title="สถานะเริ่มต้น" />
+
+          <div>
+            <label htmlFor="status" className={labelClass}>
+              {tForm("status")} *
+            </label>
+            <select id="status" className={inputClass} {...register("status")}>
+              {!isPublished && <option value="draft">{tForm("draft")}</option>}
+              <option value="published">{tForm("published")}</option>
             </select>
           </div>
+        </section>
 
-          <div>
-            <label htmlFor="target_level" className={labelClass}>
-              {tForm("level")} *
-            </label>
-            <select
-              id="target_level"
-              className={inputClass}
-              {...register("target_level")}
-            >
-              {TARGET_LEVEL_VALUES.map((value) => (
-                <option key={value} value={value}>
-                  {tLevels(value)}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="eligibility" className={labelClass}>
-            {tForm("eligibility")} *
-          </label>
-          <textarea
-            id="eligibility"
-            rows={10}
-            className={`${inputClass} min-h-[240px] resize-y`}
-            {...register("eligibility")}
-          />
-          {errors.eligibility && (
-            <p className="mt-1 font-sarabun text-caption text-status-error">
-              {errors.eligibility.message}
-            </p>
-          )}
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2">
-          <div>
-            <label htmlFor="open_date" className={labelClass}>
-              {tForm("openDate")} *
-            </label>
-            <input
-              id="open_date"
-              type="date"
-              className={inputClass}
-              {...register("open_date")}
-            />
-            {errors.open_date && (
-              <p className="mt-1 font-sarabun text-caption text-status-error">
-                {errors.open_date.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="close_date" className={labelClass}>
-              {tForm("closeDate")} *
-            </label>
-            <input
-              id="close_date"
-              type="date"
-              className={inputClass}
-              {...register("close_date")}
-            />
-            {errors.close_date && (
-              <p className="mt-1 font-sarabun text-caption text-status-error">
-                {errors.close_date.message}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2">
-          <div>
-            <label htmlFor="amount" className={labelClass}>
-              {tForm("amount")}
-            </label>
-            <input
-              id="amount"
-              type="number"
-              min="0"
-              step="0.01"
-              className={inputClass}
-              {...register("amount")}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="amount_note" className={labelClass}>
-              {tForm("amountNote")}
-            </label>
-            <input
-              id="amount_note"
-              className={inputClass}
-              {...register("amount_note")}
-            />
-            {errors.amount_note && (
-              <p className="mt-1 font-sarabun text-caption text-status-error">
-                {errors.amount_note.message}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="application_url" className={labelClass}>
-            {tForm("applicationUrl")}
-          </label>
-          <input
-            id="application_url"
-            type="url"
-            className={inputClass}
-            {...register("application_url")}
-          />
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2">
-          <div>
-            <label htmlFor="contact_phone" className={labelClass}>
-              {tForm("contactPhone")}
-            </label>
-            <input
-              id="contact_phone"
-              className={inputClass}
-              {...register("contact_phone")}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="contact_email" className={labelClass}>
-              {tForm("contactEmail")}
-            </label>
-            <input
-              id="contact_email"
-              type="email"
-              className={inputClass}
-              {...register("contact_email")}
-            />
-            {errors.contact_email && (
-              <p className="mt-1 font-sarabun text-caption text-status-error">
-                {errors.contact_email.message}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="status" className={labelClass}>
-            {tForm("status")} *
-          </label>
-          <select id="status" className={inputClass} {...register("status")}>
-            {!isPublished && <option value="draft">{tForm("draft")}</option>}
-            <option value="published">{tForm("published")}</option>
-          </select>
-        </div>
-
-        <div className="flex flex-col-reverse gap-3 border-t border-border-default/20 pt-6 sm:flex-row sm:justify-end">
+        {/* Footer */}
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <Link
             href={`${base}/manage/scholarships`}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-radius-md border border-border-input px-6 font-sarabun text-label font-medium text-text-primary transition-colors hover:bg-surface-container"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-border-input px-8 font-sarabun text-label font-medium text-text-primary transition-colors hover:bg-surface-container"
           >
             {tForm("cancel")}
           </Link>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-radius-md bg-primary px-6 font-sarabun text-label font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-primary-dark px-8 font-sarabun text-label font-semibold text-white shadow-level-1 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
+            <SaveIcon />
             {tForm("save")}
           </button>
         </div>
       </form>
     </div>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+    </svg>
+  );
+}
+
+function SaveIcon() {
+  return (
+    <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z" />
+    </svg>
   );
 }
