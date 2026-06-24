@@ -68,7 +68,7 @@ export default function AgencyLayout({
       <Navbar variant="agency" />
       <div className="flex min-h-0 flex-1">
         <AgencySidebar />
-        <main className="min-w-0 flex-1 overflow-y-auto bg-surface-page p-6 lg:p-10 [&_aside]:hidden">
+        <main className="min-w-0 flex-1 overflow-y-auto rounded-tl-2xl bg-surface-page p-6 lg:p-10 [&_aside]:hidden">
           {children}
         </main>
       </div>

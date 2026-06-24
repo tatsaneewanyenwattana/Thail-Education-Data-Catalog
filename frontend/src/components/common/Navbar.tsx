@@ -163,31 +163,49 @@ export default function Navbar({ variant }: NavbarProps) {
   }
 
   if (variant === "agency") {
+    const displayName = user?.agency_name ?? user?.email ?? "";
+
     return (
       <header
-        className="sticky top-0 z-50 flex h-16 items-center border-b border-white/60 px-4 md:px-10"
+        className="sticky top-0 z-50 flex h-16 items-center rounded-b-2xl px-4 shadow-level-1 md:px-10"
         style={{
-          background: "rgba(255, 255, 255, 0.55)",
-          backdropFilter: "blur(12px)",
+          background: "linear-gradient(90deg, #1693a5 0%, #26c6da 50%, #80deea 100%)",
         }}
       >
         <div className="flex w-full items-center gap-4">
           <Link
             href={base}
-            className="shrink-0 font-kanit text-label font-bold text-primary-dark"
+            className="shrink-0 font-kanit text-label font-bold text-white md:text-body-lg"
           >
             Thai EduData Insight
           </Link>
+
+          <div className="relative mx-4 hidden max-w-sm flex-1 md:flex">
+            <input
+              type="search"
+              readOnly
+              onFocus={() => {
+                window.location.href = `${base}/search`;
+              }}
+              placeholder={t("searchPlaceholder")}
+              className="h-9 w-full cursor-pointer rounded-full border-0 bg-white/20 px-4 pr-10 font-sarabun text-body-md text-white placeholder:text-white/70 focus:bg-white/30 focus:outline-none"
+              aria-label={t("search")}
+            />
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/70">
+              <SearchIcon className="h-4 w-4" />
+            </span>
+          </div>
+
           <div className="ml-auto flex items-center gap-4">
-            <NotificationBell />
-            <LanguageSwitcher />
+            <NotificationBell variant="admin" />
+            <LanguageSwitcher variant="admin" />
             <Link
               href={`${base}/profile`}
-              className="inline-flex min-h-[40px] items-center gap-2 rounded-radius-sm px-3 font-sarabun text-label font-medium text-text-secondary transition-colors hover:bg-surface-container hover:text-primary-dark"
+              className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 font-sarabun text-label font-medium text-white transition-colors hover:bg-white/25"
               aria-label={t("profile")}
             >
               <UserIcon />
-              <span className="hidden sm:inline">{t("profile")}</span>
+              <span className="hidden sm:inline">{displayName || t("profile")}</span>
             </Link>
           </div>
         </div>

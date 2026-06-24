@@ -79,6 +79,24 @@ function NavIcon({ name }: { name: string }) {
   }
 }
 
+function BrandLogo() {
+  return (
+    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-dark">
+      <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <path d="M12 3 1 9l4 2.18v6L12 21l7-3.82v-6L23 9 12 3zm0 2.18 6.5 3.5L12 12.18 5.5 8.68 12 5.18zM7 11.09v4.36L12 18.5l5-3.05v-4.36L12 14.82 7 11.09z" />
+      </svg>
+    </div>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+    </svg>
+  );
+}
+
 function MenuIcon() {
   return (
     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
@@ -95,6 +113,41 @@ function CloseIcon() {
   );
 }
 
+function SidebarBrand({ onNavigate }: { onNavigate?: () => void }) {
+  const locale = useLocale();
+  const base = `/${locale}`;
+  const t = useTranslations("agency.sidebar");
+
+  return (
+    <div className="px-5 pb-4 pt-6">
+      <Link
+        href={`${base}/dashboard`}
+        onClick={onNavigate}
+        className="flex items-center gap-3"
+      >
+        <BrandLogo />
+        <div>
+          <p className="font-kanit text-body-md font-bold leading-tight text-primary-dark">
+            Thai EduData
+          </p>
+          <p className="font-sarabun text-caption text-text-muted">
+            Insight Portal
+          </p>
+        </div>
+      </Link>
+
+      <Link
+        href={`${base}/datasets/create`}
+        onClick={onNavigate}
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-primary-dark py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-all hover:opacity-90 active:scale-[0.98]"
+      >
+        <PlusIcon />
+        {t("publishDataset")}
+      </Link>
+    </div>
+  );
+}
+
 function SidebarNav({
   items,
   pathname,
@@ -107,20 +160,20 @@ function SidebarNav({
   const t = useTranslations("agency.sidebar");
 
   return (
-    <nav className="flex flex-1 flex-col gap-1 px-2 py-spacing-6">
+    <nav className="flex flex-1 flex-col gap-1 px-3 py-2">
       {items.map((item) => {
         const active = item.match(pathname);
         return (
           <div key={item.href}>
             {item.dividerBefore ? (
-              <div className="mb-2 mt-4 border-t border-border-default/50 pt-4" />
+              <div className="my-3 border-t border-border-default/50" />
             ) : null}
             <Link
               href={item.href}
               onClick={onNavigate}
-              className={`flex items-center gap-3 rounded-r-radius-lg px-4 py-2.5 font-sarabun text-label transition-all ${
+              className={`flex items-center gap-3 rounded-xl px-4 py-2.5 font-sarabun text-label transition-all ${
                 active
-                  ? "border-l-[3px] border-primary-dark bg-primary-light font-medium text-primary-dark"
+                  ? "bg-primary-light font-medium text-primary-dark"
                   : "text-text-muted hover:bg-surface-container hover:text-primary-dark"
               }`}
             >
@@ -153,11 +206,11 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   return (
-    <div className="mt-auto border-t border-[#e5e7eb] px-2 py-4">
+    <div className="mt-auto border-t border-border-default/30 px-3 py-4">
       <Link
         href={`${base}/help-center`}
         onClick={onNavigate}
-        className="mb-1 flex items-center gap-3 rounded-radius-lg px-4 py-2.5 font-sarabun text-label text-[#6c7a76] transition-colors hover:bg-[#f7f9fb] hover:text-[#006b5f]"
+        className="mb-1 flex items-center gap-3 rounded-xl px-4 py-2.5 font-sarabun text-label text-text-muted transition-colors hover:bg-surface-container hover:text-primary-dark"
       >
         <HelpIcon />
         Help Center
@@ -165,7 +218,7 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
       <button
         type="button"
         onClick={handleLogout}
-        className="flex w-full items-center gap-3 rounded-radius-lg px-4 py-2.5 font-sarabun text-label text-[#ba1a1a] transition-colors hover:bg-[#ffdad6]"
+        className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 font-sarabun text-label text-[#ba1a1a] transition-colors hover:bg-[#ffdad6]"
       >
         <LogoutIcon />
         {tNav("logout")}
@@ -259,13 +312,14 @@ export default function AgencySidebar() {
       <button
         type="button"
         onClick={toggleSidebar}
-        className="fixed bottom-6 left-4 z-40 flex h-11 w-11 items-center justify-center rounded-radius-md border border-border-default bg-surface-card text-text-secondary shadow-level-2 lg:hidden"
+        className="fixed bottom-6 left-4 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-border-default bg-surface-card text-text-secondary shadow-level-2 lg:hidden"
         aria-label={t("menu")}
       >
         <MenuIcon />
       </button>
 
-      <aside className="hidden w-[240px] shrink-0 flex-col border-r border-border-sidebar bg-surface-card lg:flex">
+      <aside className="hidden w-[260px] shrink-0 flex-col border-l-4 border-l-primary-dark border-r border-r-border-sidebar bg-surface-card lg:flex">
+        <SidebarBrand />
         <SidebarNav items={items} pathname={pathname} />
         <SidebarFooter />
       </aside>
@@ -278,19 +332,37 @@ export default function AgencySidebar() {
             onClick={closeDrawer}
             aria-label={t("closeMenu")}
           />
-          <aside className="absolute left-0 top-0 flex h-full w-[240px] flex-col border-r border-border-sidebar bg-surface-card shadow-level-3">
-            <div className="flex items-center justify-between border-b border-border-default px-4 py-4">
-              <span className="font-kanit text-label font-semibold text-primary-dark">
-                {t("menu")}
-              </span>
+          <aside className="absolute left-0 top-0 flex h-full w-[260px] flex-col border-l-4 border-l-primary-dark border-r border-r-border-sidebar bg-surface-card shadow-level-3">
+            <div className="flex items-center justify-between px-5 pt-5">
+              <div className="flex items-center gap-3">
+                <BrandLogo />
+                <div>
+                  <p className="font-kanit text-body-md font-bold leading-tight text-primary-dark">
+                    Thai EduData
+                  </p>
+                  <p className="font-sarabun text-caption text-text-muted">
+                    Insight Portal
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={closeDrawer}
-                className="flex h-10 w-10 items-center justify-center rounded-radius-sm text-text-muted hover:bg-surface-container"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-text-muted hover:bg-surface-container"
                 aria-label={t("closeMenu")}
               >
                 <CloseIcon />
               </button>
+            </div>
+            <div className="px-5 pb-2 pt-4">
+              <Link
+                href={`${base}/datasets/create`}
+                onClick={closeDrawer}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-primary-dark py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-all hover:opacity-90 active:scale-[0.98]"
+              >
+                <PlusIcon />
+                {t("publishDataset")}
+              </Link>
             </div>
             <SidebarNav
               items={items}
