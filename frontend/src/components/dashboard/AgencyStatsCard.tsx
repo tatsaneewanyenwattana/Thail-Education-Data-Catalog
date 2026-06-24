@@ -8,6 +8,8 @@ type AgencyStatsCardProps = {
   footer?: ReactNode;
   icon: ReactNode;
   iconClassName?: string;
+  trendBadge?: ReactNode;
+  progressBar?: { percent: number; color?: string };
 };
 
 export default function AgencyStatsCard({
@@ -16,23 +18,44 @@ export default function AgencyStatsCard({
   footer,
   icon,
   iconClassName = "bg-primary-light text-primary-dark",
+  trendBadge,
+  progressBar,
 }: AgencyStatsCardProps) {
   return (
-    <div className="rounded-radius-lg border border-border-default/80 bg-surface-card p-5 shadow-level-1 transition-shadow hover:shadow-level-2">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="font-sarabun text-body-md text-text-muted">{label}</p>
-          <p className="mt-2 font-kanit text-[32px] font-bold leading-tight text-text-primary">
-            {value}
-          </p>
-        </div>
+    <div className="relative rounded-2xl border border-border-default/60 bg-surface-card p-5 shadow-level-1 transition-shadow hover:shadow-level-2">
+      {trendBadge ? (
+        <div className="absolute right-4 top-4">{trendBadge}</div>
+      ) : null}
+
+      <div className="flex items-start gap-4">
         <div
-          className={`flex h-12 w-12 items-center justify-center rounded-radius-full ${iconClassName}`}
+          className={`flex h-11 w-11 items-center justify-center rounded-full ${iconClassName}`}
         >
           {icon}
         </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-sarabun text-caption text-text-muted">{label}</p>
+          <p className="mt-1 font-kanit text-[28px] font-bold leading-tight text-text-primary">
+            {value}
+          </p>
+        </div>
       </div>
-      {footer ? <div className="mt-4">{footer}</div> : null}
+
+      {progressBar ? (
+        <div className="mt-4">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-container">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${Math.min(100, Math.max(0, progressBar.percent))}%`,
+                backgroundColor: progressBar.color ?? "var(--color-primary-dark)",
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {footer ? <div className="mt-3">{footer}</div> : null}
     </div>
   );
 }
