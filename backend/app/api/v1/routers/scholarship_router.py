@@ -816,6 +816,7 @@ def delete_scholarship_bookmark(
 def admin_hide_scholarship(
     id: uuid.UUID,
     background_tasks: BackgroundTasks,
+    request: Request,
     payload: dict = Depends(require_roles("admin")),
     db: Session = Depends(get_db),
 ):
@@ -826,6 +827,15 @@ def admin_hide_scholarship(
     scholarship = _get_scholarship_or_404(db, id)
     scholarship.is_deleted = True
     scholarship.updated_at = datetime.now(timezone.utc)
+    dataset_repo.create_audit_log(
+        db,
+        user_id=uuid.UUID(payload["sub"]),
+        action="scholarship.hide",
+        target_type="scholarship",
+        target_id=scholarship.id,
+        detail={"title": scholarship.title},
+        ip_address=get_client_ip(request),
+    )
     db.commit()
     db.refresh(scholarship)
 

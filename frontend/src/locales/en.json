@@ -498,7 +498,8 @@
       "passwordRequired": "Password is required",
       "passwordMin": "Password must be at least 8 characters",
       "showPassword": "Show password",
-      "hidePassword": "Hide password"
+      "hidePassword": "Hide password",
+      "turnstileRequired": "Please complete the bot check"
     },
     "register": {
       "title": "Agency registration",

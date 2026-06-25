@@ -498,7 +498,8 @@
       "passwordRequired": "กรุณากรอกรหัสผ่าน",
       "passwordMin": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
       "showPassword": "แสดงรหัสผ่าน",
-      "hidePassword": "ซ่อนรหัสผ่าน"
+      "hidePassword": "ซ่อนรหัสผ่าน",
+      "turnstileRequired": "กรุณายืนยันว่าไม่ใช่บอท"
     },
     "register": {
       "title": "สมัครสมาชิกหน่วยงาน",

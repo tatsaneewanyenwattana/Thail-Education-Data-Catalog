@@ -229,6 +229,7 @@ class RegisterMetadata(BaseModel):
 class LoginRequest(BaseModel):
     email: str = Field(min_length=5, max_length=255)
     password: str = Field(min_length=1, max_length=128)
+    turnstile_token: str | None = Field(default=None, max_length=2048)
 
     @field_validator("email")
     @classmethod

@@ -1,4 +1,5 @@
-# Environment — staging/prod must never be committed
+# Environment — must never be committed
+backend/.env
 .env.staging
 .env.prod
 

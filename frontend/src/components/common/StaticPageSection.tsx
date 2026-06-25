@@ -1,6 +1,7 @@
 "use client";
 
-import type { PageContentSection } from "@/data/mockData";
+import DOMPurify from "dompurify";
+import type { PageContentSection } from "@/types/content";
 
 type StaticPageSectionProps = {
   section: PageContentSection;
@@ -118,7 +119,7 @@ export default function StaticPageSection({
       </h2>
       <div
         className="static-page-content"
-        dangerouslySetInnerHTML={{ __html: html }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
       />
     </section>
   );

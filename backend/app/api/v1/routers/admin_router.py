@@ -538,10 +538,12 @@ def admin_delete_announcement(
 
 
 @router.get("/settings/hero-image", status_code=status.HTTP_200_OK)
-def get_hero_image():
+def get_hero_image(
+    payload: dict = Depends(require_roles("admin")),
+):
     """
     ดึง URL รูป Hero หน้าหลัก
-    - Auth ❌ (Visitor ดูได้)
+    - Auth ✅ Admin
     """
     result = hero_image_service.get_hero_image(_get_minio())
     return success_response(result.model_dump(mode="json"))

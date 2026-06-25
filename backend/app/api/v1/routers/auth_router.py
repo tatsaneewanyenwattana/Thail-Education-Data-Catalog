@@ -125,6 +125,7 @@ def login(
     - Errors: AUTH_INVALID_CREDENTIALS 401, AUTH_ACCOUNT_SUSPENDED 403,
               AUTH_EMAIL_NOT_VERIFIED 403, AUTH_ACCOUNT_LOCKED 423
     """
+    verify_turnstile(request_body.turnstile_token, get_client_ip(request))
     redis_client = get_redis_client()
     token_response = auth_service.login(
         db=db,
