@@ -1,5 +1,113 @@
 import type { ApiDataset } from "@/types/dataset";
 
+export type StatsYearPoint = {
+  year: string;
+  count: number;
+};
+
+export type StatsCategorySlice = {
+  nameTh: string;
+  nameEn: string;
+  value: number;
+};
+
+export type StatsTopDataset = {
+  id: string;
+  titleTh: string;
+  titleEn: string;
+  categoryTh: string;
+  categoryEn: string;
+  downloads: number;
+};
+
+export type StatsDataMock = {
+  overview: {
+    totalDatasets: number;
+    totalAgencies: number;
+    totalDownloads: number;
+    totalCategories: number;
+  };
+  studentsByYear: StatsYearPoint[];
+  teachersByYear: StatsYearPoint[];
+  schoolsByYear: StatsYearPoint[];
+  datasetByCategory: StatsCategorySlice[];
+  topDatasets: StatsTopDataset[];
+};
+
+export type AgencyMonthlyDownload = {
+  month: string;
+  monthEn: string;
+  count: number;
+};
+
+export type AgencyDashboardStats = {
+  totalDatasets: number;
+  publishedDatasets: number;
+  draftDatasets: number;
+  submittedDatasets: number;
+  totalDownloads: number;
+  monthlyDownloads: AgencyMonthlyDownload[];
+  datasetsCreatedThisMonth: number;
+  datasetsCreatedLastMonth: number;
+  datasetsMonthChangePercent: number | null;
+  downloadsThisMonth: number;
+  topDownloadFormat: string | null;
+  topDownloadFormatPercent: number | null;
+};
+
+export type DashboardWidgetType = "bar" | "line" | "pie" | "stat";
+
+export type DashboardGridWidget = {
+  id: string;
+  type: DashboardWidgetType;
+  colSpan: 1 | 2 | 3;
+};
+
+export type WidgetChartPoint = {
+  name: string;
+  nameEn: string;
+  value: number;
+};
+
+export type WidgetStatData = {
+  value: number;
+  labelTh: string;
+  labelEn: string;
+  trend: string;
+  trendUp: boolean;
+};
+
+export type AgencyBookmarkMock = {
+  id: string;
+  datasetId: string;
+  title: string;
+  titleEn: string;
+  category: string;
+  categoryEn: string;
+  agency: string;
+  agencyEn: string;
+  status: "published" | "draft";
+  viewCount: number;
+  updatedAt: string;
+};
+
+export type AgencySubscriptionMock = {
+  id: string;
+  type: "category" | "agency";
+  name: string;
+  nameEn: string;
+  subscribedAt: string;
+};
+
+export type SavedSearchFilters = Record<string, string>;
+
+export type AgencySavedSearchMock = {
+  id: string;
+  name: string;
+  filters: SavedSearchFilters;
+  createdAt: string;
+};
+
 export type StatsOverviewData = {
   total_datasets: number;
   total_downloads: number;
