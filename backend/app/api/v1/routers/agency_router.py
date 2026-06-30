@@ -63,6 +63,14 @@ def list_agency_datasets(
         default=None,
         description="กรอง status: draft | published (ไม่ส่ง = ทั้งหมด)",
     ),
+    search: str | None = Query(
+        default=None,
+        description="ค้นหาชื่อ dataset หรือหมวดหมู่",
+    ),
+    year: int | None = Query(
+        default=None,
+        description="กรองปี พ.ศ. (เช่น 2568)",
+    ),
     pagination: PaginationParams = Depends(get_pagination_params),
     payload: dict = Depends(require_roles("agency", "admin")),
     db: Session = Depends(get_db),
@@ -71,7 +79,7 @@ def list_agency_datasets(
     รายการ Dataset ของ Agency/Admin ที่ login (ทุก status ของตัวเอง)
 
     - **Auth**: ✅ Agency/Admin
-    - **Query**: page, page_size, sort, order, status (optional)
+    - **Query**: page, page_size, sort, order, status, search, year (optional)
     """
     allowed = {None, "draft", "published"}
     if status is not None and status not in allowed:
@@ -84,6 +92,8 @@ def list_agency_datasets(
         user_id=uuid.UUID(payload["sub"]),
         pagination=pagination,
         status_filter=status,
+        search=search,
+        year=year,
     )
     return list_response(
         data=[i.model_dump(mode="json", by_alias=True) for i in items],
@@ -93,23 +103,31 @@ def list_agency_datasets(
     )
 
 
-@router.get("/activity-logs", status_code=status.HTTP_200_OK)
-def list_agency_activity_logs(
-    pagination: PaginationParams = Depends(get_pagination_params),
+@router.get("/datasets/years", status_code=status.HTTP_200_OK)
+def list_agency_dataset_years(
     payload: dict = Depends(require_roles("agency", "admin")),
     db: Session = Depends(get_db),
 ):
-    """
-    Activity Log ของผู้ใช้ที่ login (เฉพาะการอัปโหลด/แก้ไข/ลบ Dataset และทุน)
+    """ปี พ.ศ. ที่มี dataset (จาก updated_at) สำหรับ dropdown filter"""
+    years = agency_service.list_agency_dataset_years(
+        db=db,
+        user_id=uuid.UUID(payload["sub"]),
+    )
+    return {"success": True, "data": years}
 
-    - **Auth**: ✅ Agency/Admin
-    - **Response**: รายการ action ของ current_user เท่านั้น
-    - **Retention แสดงผล**: 30 วันล่าสุด (ข้อมูล audit ในฐานข้อมูลยังเก็บครบ)
-    """
+
+@router.get("/activity-logs", status_code=status.HTTP_200_OK)
+def list_agency_activity_logs(
+    pagination: PaginationParams = Depends(get_pagination_params),
+    item_type: str | None = Query(None),
+    payload: dict = Depends(require_roles("agency", "admin")),
+    db: Session = Depends(get_db),
+):
     items, total = agency_service.list_agency_activity_logs(
         db=db,
         user_id=uuid.UUID(payload["sub"]),
         pagination=pagination,
+        item_type=item_type,
     )
     return list_response(
         data=[i.model_dump(mode="json", by_alias=True) for i in items],

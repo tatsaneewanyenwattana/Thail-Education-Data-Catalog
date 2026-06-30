@@ -148,8 +148,8 @@ export default function CategoryForm({
         onClick={onClose}
         aria-label={t("cancel")}
       />
-      <div className="relative w-full max-w-lg overflow-hidden rounded-radius-lg bg-surface-card shadow-level-3">
-        <div className="flex items-center justify-between border-b border-border-default bg-surface-container-low/50 px-6 py-5">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 px-6 py-5">
           <h2
             id="admin-category-form-title"
             className="font-kanit text-heading-3 font-bold text-text-primary"
@@ -177,7 +177,7 @@ export default function CategoryForm({
             <input
               id="admin-nameTh"
               type="text"
-              className={`h-10 w-full rounded-radius-sm border bg-surface-card px-4 font-sarabun text-body-md outline-none transition-colors focus:ring-2 focus:ring-primary-dark/20 ${
+              className={`h-11 w-full rounded-xl border bg-gray-50 px-4 font-sarabun text-body-md outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-primary-dark/20 ${
                 errors.nameTh ? "border-status-error" : "border-border-input"
               }`}
               placeholder={t("fieldNameThPlaceholder")}
@@ -200,7 +200,7 @@ export default function CategoryForm({
             <input
               id="admin-nameEn"
               type="text"
-              className={`h-10 w-full rounded-radius-sm border bg-surface-card px-4 font-sarabun text-body-md outline-none transition-colors focus:ring-2 focus:ring-primary-dark/20 ${
+              className={`h-11 w-full rounded-xl border bg-gray-50 px-4 font-sarabun text-body-md outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-primary-dark/20 ${
                 errors.nameEn ? "border-status-error" : "border-border-input"
               }`}
               placeholder={t("fieldNameEnPlaceholder")}
@@ -224,7 +224,7 @@ export default function CategoryForm({
               <input
                 id="admin-slug"
                 type="text"
-                className={`h-10 w-full rounded-radius-sm border bg-surface-card px-4 font-mono text-code outline-none transition-colors focus:ring-2 focus:ring-primary-dark/20 ${
+                className={`h-11 w-full rounded-xl border bg-gray-50 px-4 font-mono text-code outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-primary-dark/20 ${
                   errors.slug ? "border-status-error" : "border-border-input"
                 }`}
                 placeholder={t("fieldSlugPlaceholder")}
@@ -243,7 +243,7 @@ export default function CategoryForm({
           )}
 
           {mode === "create" && (
-            <div className="flex items-center gap-3 rounded-radius-lg border border-primary/20 bg-surface-container-lowest p-4">
+            <div className="flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
               <InfoIcon />
               <p className="font-sarabun text-body-sm text-text-secondary">
                 {parent ? t("formInfoChild") : t("formInfoRoot")}
@@ -251,19 +251,19 @@ export default function CategoryForm({
             </div>
           )}
 
-          <div className="flex justify-end gap-3 border-t border-border-default pt-5">
+          <div className="flex justify-end gap-3 border-t border-gray-100 pt-5">
             <button
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="rounded-radius-sm border border-border-default px-5 py-2 font-kanit text-label font-medium text-text-secondary transition-colors hover:bg-surface-container-high disabled:opacity-50"
+              className="rounded-full border border-gray-200 px-5 py-2 font-kanit text-label font-medium text-text-secondary transition-colors hover:bg-gray-50 disabled:opacity-50"
             >
               {t("cancel")}
             </button>
             <button
               type="submit"
               disabled={!isValid || isPending}
-              className="rounded-radius-sm bg-primary px-8 py-2 font-kanit text-label font-bold text-surface-card shadow-level-1 transition-opacity hover:bg-primary-hover disabled:opacity-50"
+              className="rounded-full bg-primary-dark px-8 py-2 font-kanit text-label font-bold text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg disabled:opacity-50"
             >
               {isPending ? t("saving") : t("save")}
             </button>

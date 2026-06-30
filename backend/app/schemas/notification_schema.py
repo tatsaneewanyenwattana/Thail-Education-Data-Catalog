@@ -14,6 +14,7 @@ class NotificationResponse(BaseModel):
     content: str
     link: str | None = None
     reference_id: uuid.UUID | None = None
+    image_url: str | None = None
     is_read: bool
     created_at: datetime
 

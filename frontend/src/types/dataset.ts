@@ -19,6 +19,7 @@ export type HomeDatasetMock = {
   createdAt?: string;
   publishedAt?: string | null;
   license: DatasetLicense;
+  imageUrl?: string | null;
 };
 
 export type SearchResultMock = {
@@ -103,6 +104,8 @@ export type AgencyDatasetFormInitial = {
   yearStart?: number;
   yearEnd?: number;
   province?: string;
+  fileInfo?: { file_name: string; file_size: number; file_format: string };
+  image_url?: string | null;
 };
 
 export type FileAnalysisResult = {
@@ -177,9 +180,11 @@ export type ApiDataset = {
   created_at: string;
   updated_at?: string;
   agency_name?: string | null;
+  agency_name_en?: string | null;
   category_name_th?: string | null;
   category_name_en?: string | null;
   file_format?: string | null;
+  image_url?: string | null;
   user_id?: string;
   rating_avg?: number;
   rating_count?: number;

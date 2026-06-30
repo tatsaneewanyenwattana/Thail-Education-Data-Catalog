@@ -102,6 +102,7 @@ class ScholarshipResponse(BaseModel):
     close_date: date
     status: ScholarshipStatus
     source: ScholarshipSource
+    image_url: str | None = None
     external_id: str | None = None
     is_deleted: bool
     published_at: datetime | None = None

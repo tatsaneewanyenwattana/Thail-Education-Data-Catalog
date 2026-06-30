@@ -126,10 +126,12 @@ def register(
     verification_doc_content: bytes,
     verification_doc_filename: str | None = None,
 ) -> UserResponse:
-    verification_doc_service.validate_verification_doc(
-        verification_doc_content,
-        verification_doc_filename,
-    )
+    has_doc = bool(verification_doc_content)
+    if has_doc:
+        verification_doc_service.validate_verification_doc(
+            verification_doc_content,
+            verification_doc_filename,
+        )
     validate_password(request.password)
 
     if len(request.password.encode("utf-8")) > 72:
@@ -164,12 +166,13 @@ def register(
         user.verify_token = str(uuid.uuid4())
         user.verify_expires_at = now + timedelta(hours=24)
 
-        object_name = verification_doc_service.upload_verification_doc(
-            minio_client,
-            user.id,
-            verification_doc_content,
-        )
-        user.verification_doc_path = object_name
+        if has_doc:
+            object_name = verification_doc_service.upload_verification_doc(
+                minio_client,
+                user.id,
+                verification_doc_content,
+            )
+            user.verification_doc_path = object_name
 
         auth_repo.create_pdpa_consent(
             db,

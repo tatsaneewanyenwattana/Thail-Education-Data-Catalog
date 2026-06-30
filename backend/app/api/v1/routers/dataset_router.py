@@ -449,3 +449,81 @@ def rate_dataset(
 
     stats = rating_repo.get_rating_stats(db, dataset_id)
     return success_response(data=stats)
+
+
+@router.post("/datasets/{dataset_id}/image", status_code=status.HTTP_200_OK)
+async def upload_dataset_image(
+    dataset_id: uuid.UUID,
+    file: UploadFile = File(...),
+    payload: dict = Depends(require_roles("agency", "admin")),
+    db: Session = Depends(get_db),
+):
+    from app.models.dataset_model import Dataset
+
+    dataset = db.query(Dataset).filter(
+        Dataset.id == dataset_id,
+        Dataset.is_deleted.is_(False),
+    ).first()
+    if dataset is None:
+        raise_app_error("DATASET_NOT_FOUND")
+    if payload.get("role") != "admin" and str(dataset.user_id) != payload["sub"]:
+        raise_app_error("DATASET_PERMISSION_DENIED")
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise_app_error("FILE_TOO_LARGE", "ไฟล์ใหญ่เกิน 10MB")
+
+    content_type = (file.content_type or "").split(";")[0].strip().lower()
+    allowed = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
+    if content_type not in allowed:
+        raise_app_error("FILE_INVALID_FORMAT", "ไฟล์ไม่ใช่ JPEG, PNG หรือ WebP")
+
+    from app.core.config import settings
+    minio_client = _get_minio()
+
+    ext = {"image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png", "image/webp": "webp"}
+    object_name = f"datasets/{dataset_id}/image.{ext.get(content_type, 'jpg')}"
+
+    minio_client.put_object(
+        settings.MINIO_BUCKET_NAME,
+        object_name,
+        io.BytesIO(content),
+        length=len(content),
+        content_type=content_type,
+    )
+
+    image_url = f"/datasets/{dataset_id}/image-file"
+    dataset.image_url = image_url
+    db.commit()
+
+    return success_response(data={"image_url": image_url})
+
+
+@router.get("/datasets/{dataset_id}/image-file")
+def get_dataset_image(
+    dataset_id: uuid.UUID,
+    db: Session = Depends(get_db),
+):
+    from app.models.dataset_model import Dataset
+    from minio.error import S3Error
+    from app.core.config import settings
+
+    dataset = db.query(Dataset).filter(
+        Dataset.id == dataset_id,
+        Dataset.is_deleted.is_(False),
+    ).first()
+    if dataset is None:
+        raise_app_error("DATASET_NOT_FOUND")
+
+    minio_client = _get_minio()
+
+    for ext in ["jpg", "png", "webp"]:
+        object_name = f"datasets/{dataset_id}/image.{ext}"
+        try:
+            response = minio_client.get_object(settings.MINIO_BUCKET_NAME, object_name)
+            media = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp"}
+            return StreamingResponse(response, media_type=media.get(ext, "image/jpeg"))
+        except S3Error:
+            continue
+
+    raise_app_error("FILE_NOT_FOUND", "ไม่พบรูปภาพ")

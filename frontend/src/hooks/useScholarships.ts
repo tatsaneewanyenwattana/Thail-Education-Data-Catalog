@@ -37,6 +37,7 @@ export type Scholarship = {
   application_url: string | null;
   contact_phone: string | null;
   contact_email: string | null;
+  image_url: string | null;
   open_date: string;
   close_date: string;
   status: ScholarshipStatus;

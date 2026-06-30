@@ -19,6 +19,7 @@ def create_notification(
     user_id: uuid.UUID | None = None,
     link: str | None = None,
     reference_id: uuid.UUID | None = None,
+    image_url: str | None = None,
 ) -> Notification:
     row = Notification(
         user_id=user_id,
@@ -27,6 +28,7 @@ def create_notification(
         content=content,
         link=link,
         reference_id=reference_id,
+        image_url=image_url,
         is_read=False,
     )
     db.add(row)

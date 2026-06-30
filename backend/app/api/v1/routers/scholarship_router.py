@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, Request, UploadFile, status
 from pythainlp.tokenize import word_tokenize
 from sqlalchemy import asc, desc
 from sqlalchemy.exc import IntegrityError
@@ -358,6 +358,7 @@ def _list_scholarships_sql(
     published_only: bool = False,
     updated_within_days: int | None = None,
     current_month_only: bool = False,
+    search: str | None = None,
 ) -> tuple[list[Scholarship], int]:
     query = db.query(Scholarship).filter(Scholarship.is_deleted.is_(False))
 
@@ -372,6 +373,9 @@ def _list_scholarships_sql(
         query = query.filter(Scholarship.scholarship_type == scholarship_type)
     if target_level:
         query = query.filter(Scholarship.target_level == target_level)
+    if search:
+        like = f"%{search}%"
+        query = query.filter(Scholarship.title.ilike(like))
     query = _apply_application_status_filter(query, application_status)
     if updated_within_days is not None:
         cutoff = _recent_updated_cutoff(
@@ -466,6 +470,9 @@ def list_scholarships(
 @router.get("/scholarship/mine", status_code=status.HTTP_200_OK)
 def list_my_scholarships(
     status_filter: str | None = Query(default=None, alias="status"),
+    search: str | None = Query(default=None),
+    scholarship_type: str | None = Query(default=None),
+    target_level: str | None = Query(default=None),
     pagination: PaginationParams = Depends(get_pagination_params),
     payload: dict = Depends(require_roles("agency", "admin")),
     db: Session = Depends(get_db),
@@ -479,6 +486,9 @@ def list_my_scholarships(
         pagination,
         status_filter=status_filter,
         created_by=uuid.UUID(payload["sub"]),
+        scholarship_type=scholarship_type,
+        target_level=target_level,
+        search=search,
     )
     return list_response(
         data=_to_responses(db, items),
@@ -486,6 +496,86 @@ def list_my_scholarships(
         page_size=pagination.page_size,
         total_items=total,
     )
+
+
+@router.post("/scholarship/{scholarship_id}/image", status_code=status.HTTP_200_OK)
+async def upload_scholarship_image(
+    scholarship_id: uuid.UUID,
+    file: UploadFile = File(...),
+    payload: dict = Depends(require_roles("agency", "admin")),
+    db: Session = Depends(get_db),
+):
+    scholarship = _get_scholarship_or_404(db, scholarship_id)
+    if payload.get("role") != "admin" and str(scholarship.created_by) != payload["sub"]:
+        raise_app_error("AUTH_PERMISSION_DENIED")
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise_app_error("FILE_TOO_LARGE", "ไฟล์ใหญ่เกิน 10MB")
+
+    content_type = (file.content_type or "").split(";")[0].strip().lower()
+    allowed = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
+    if content_type not in allowed:
+        raise_app_error("FILE_INVALID_FORMAT", "ไฟล์ไม่ใช่ JPEG, PNG หรือ WebP")
+
+    import io
+    from minio import Minio
+    from app.core.config import settings
+
+    minio_client = Minio(
+        settings.MINIO_ENDPOINT,
+        access_key=settings.MINIO_ACCESS_KEY,
+        secret_key=settings.MINIO_SECRET_KEY,
+        secure=False,
+    )
+
+    ext = {"image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png", "image/webp": "webp"}
+    object_name = f"scholarships/{scholarship_id}/image.{ext.get(content_type, 'jpg')}"
+
+    minio_client.put_object(
+        settings.MINIO_BUCKET_NAME,
+        object_name,
+        io.BytesIO(content),
+        length=len(content),
+        content_type=content_type,
+    )
+
+    image_url = f"/scholarship/{scholarship_id}/image-file"
+    scholarship.image_url = image_url
+    db.commit()
+
+    return success_response(data={"image_url": image_url})
+
+
+@router.get("/scholarship/{scholarship_id}/image-file")
+def get_scholarship_image(
+    scholarship_id: uuid.UUID,
+    db: Session = Depends(get_db),
+):
+    from fastapi.responses import StreamingResponse
+    from minio import Minio
+    from minio.error import S3Error
+    from app.core.config import settings
+
+    scholarship = _get_scholarship_or_404(db, scholarship_id, published_only=False)
+
+    minio_client = Minio(
+        settings.MINIO_ENDPOINT,
+        access_key=settings.MINIO_ACCESS_KEY,
+        secret_key=settings.MINIO_SECRET_KEY,
+        secure=False,
+    )
+
+    for ext in ["jpg", "png", "webp"]:
+        object_name = f"scholarships/{scholarship_id}/image.{ext}"
+        try:
+            response = minio_client.get_object(settings.MINIO_BUCKET_NAME, object_name)
+            media = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp"}
+            return StreamingResponse(response, media_type=media.get(ext, "image/jpeg"))
+        except S3Error:
+            continue
+
+    raise_app_error("FILE_NOT_FOUND", "ไม่พบรูปภาพ")
 
 
 @router.get("/scholarship-bookmarks", status_code=status.HTTP_200_OK)
@@ -536,6 +626,18 @@ def admin_list_scholarships(
         page=pagination.page,
         page_size=pagination.page_size,
         total_items=total,
+    )
+
+
+@router.get("/admin/scholarship/{id}", status_code=status.HTTP_200_OK)
+def admin_get_scholarship(
+    id: uuid.UUID,
+    payload: dict = Depends(require_roles("admin")),
+    db: Session = Depends(get_db),
+):
+    scholarship = _get_scholarship_or_404(db, id, published_only=False)
+    return success_response(
+        data=_to_response(scholarship, _agency_name_for(db, scholarship))
     )
 
 

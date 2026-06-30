@@ -9,6 +9,7 @@ import {
   useMyScholarships,
 } from "@/hooks/useManageScholarships";
 import { toast } from "@/stores/toastStore";
+import { useEffect } from "react";
 
 function formatDate(value: string, locale: string): string {
   return new Date(value).toLocaleDateString(
@@ -141,21 +142,36 @@ export default function ManageScholarshipsPage() {
   const tLevels = useTranslations("scholarship.levels");
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterLevel, setFilterLevel] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Scholarship | null>(null);
 
-  const { data, isLoading, isError } = useMyScholarships(page);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data, isLoading, isError } = useMyScholarships(
+    page,
+    filterStatus || undefined,
+    debouncedSearch || undefined,
+    filterType || undefined,
+    filterLevel || undefined,
+  );
   const deleteMutation = useDeleteScholarship();
 
   const items = data?.items ?? [];
   const pagination = data?.pagination;
   const totalPages = Math.max(1, pagination?.total_pages ?? 1);
   const totalItems = pagination?.total_items ?? items.length;
-  const pageSize = 10;
+  const pageSize = 20;
   const from = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, totalItems);
-
-  const publishedCount = items.filter((s) => s.status === "published").length;
-  const draftCount = items.filter((s) => s.status === "draft").length;
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -201,40 +217,21 @@ export default function ManageScholarshipsPage() {
         </Link>
       </header>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {/* Summary card */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <StatCard
           icon={<ScholarshipIcon />}
           iconBg="bg-primary-light"
           iconColor="text-primary-dark"
           label="ทุนทั้งหมด"
           value={`${totalItems} ทุน`}
-          trend="+12%"
-          trendPositive
         />
         <StatCard
           icon={<PublishIcon />}
           iconBg="bg-[#e8f5e9]"
           iconColor="text-[#43a047]"
           label="เผยแพร่แล้ว"
-          value={`${publishedCount} ทุน`}
-        />
-        <StatCard
-          icon={<DraftIcon />}
-          iconBg="bg-[#fff3e0]"
-          iconColor="text-[#f57c00]"
-          label="อัปร่าง"
-          value={`${draftCount} ทุน`}
-          trend="-2"
-        />
-        <StatCard
-          icon={<PeopleIcon />}
-          iconBg="bg-[#f3e5f5]"
-          iconColor="text-[#8e24aa]"
-          label="ผู้สมัครทั้งหมด"
-          value="1,204 คน"
-          trend="+260"
-          trendPositive
+          value={`${items.filter((s) => s.status === "published").length} ทุน`}
         />
       </div>
 
@@ -244,25 +241,53 @@ export default function ManageScholarshipsPage() {
           <h2 className="font-kanit text-heading-3-mobile font-bold text-text-primary">
             รายการทุนการศึกษา
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
               <input
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ค้นหาชื่อทุน..."
-                className="h-10 w-full rounded-xl border border-border-input bg-surface-card pl-10 pr-4 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20 md:w-[240px]"
+                className="h-10 w-full rounded-xl border border-border-input bg-surface-card pl-10 pr-4 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20 md:w-[220px]"
               />
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
                 <SearchIcon />
               </span>
             </div>
-            <button
-              type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border-input bg-surface-card text-text-muted transition-colors hover:bg-surface-container hover:text-primary-dark"
+            <select
+              value={filterType}
+              onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
+              className="h-10 rounded-xl border border-border-input bg-surface-card px-3 font-sarabun text-label text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
             >
-              <FilterIcon />
-            </button>
+              <option value="">ประเภททุน</option>
+              <option value="government">{tTypes("government")}</option>
+              <option value="university">{tTypes("university")}</option>
+              <option value="private">{tTypes("private")}</option>
+              <option value="foundation">{tTypes("foundation")}</option>
+              <option value="exchange">{tTypes("exchange")}</option>
+              <option value="other">{tTypes("other")}</option>
+            </select>
+            <select
+              value={filterLevel}
+              onChange={(e) => { setFilterLevel(e.target.value); setPage(1); }}
+              className="h-10 rounded-xl border border-border-input bg-surface-card px-3 font-sarabun text-label text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+            >
+              <option value="">ระดับ</option>
+              <option value="high_school">{tLevels("high_school")}</option>
+              <option value="bachelor">{tLevels("bachelor")}</option>
+              <option value="master">{tLevels("master")}</option>
+              <option value="doctoral">{tLevels("doctoral")}</option>
+              <option value="any">{tLevels("any")}</option>
+            </select>
+            <select
+              value={filterStatus}
+              onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+              className="h-10 rounded-xl border border-border-input bg-surface-card px-3 font-sarabun text-label text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+            >
+              <option value="">สถานะ</option>
+              <option value="published">{t("common.statusPublished")}</option>
+              <option value="draft">{t("common.statusDraft")}</option>
+            </select>
           </div>
         </div>
 
@@ -445,39 +470,26 @@ function StatCard({
   iconColor,
   label,
   value,
-  trend,
-  trendPositive,
 }: {
   icon: React.ReactNode;
   iconBg: string;
   iconColor: string;
   label: string;
   value: string;
-  trend?: string;
-  trendPositive?: boolean;
 }) {
   return (
-    <div className="relative rounded-2xl border border-border-default/60 bg-surface-card px-5 py-5 shadow-level-1">
-      {trend && (
-        <span
-          className={`absolute right-4 top-4 rounded-full px-2 py-0.5 font-sarabun text-[11px] font-bold ${
-            trendPositive
-              ? "bg-[#e8f5e9] text-[#43a047]"
-              : "bg-[#ffdad6] text-status-error"
-          }`}
-        >
-          {trend}
-        </span>
-      )}
+    <div className="flex items-center gap-4 rounded-2xl border border-border-default/60 bg-surface-card px-6 py-5 shadow-level-1">
       <div
-        className={`mb-3 flex h-10 w-10 items-center justify-center rounded-full ${iconBg} ${iconColor}`}
+        className={`flex h-12 w-12 items-center justify-center rounded-full ${iconBg} ${iconColor}`}
       >
         {icon}
       </div>
-      <p className="font-sarabun text-caption text-text-muted">{label}</p>
-      <p className="font-kanit text-heading-3-mobile font-bold text-text-primary">
-        {value}
-      </p>
+      <div>
+        <p className="font-sarabun text-caption text-text-muted">{label}</p>
+        <p className="font-kanit text-heading-3-mobile font-bold text-text-primary">
+          {value}
+        </p>
+      </div>
     </div>
   );
 }

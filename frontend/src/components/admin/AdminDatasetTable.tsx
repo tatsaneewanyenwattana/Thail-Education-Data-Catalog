@@ -7,7 +7,6 @@ import { useState } from "react";
 import DeleteDatasetModal from "@/components/admin/DeleteDatasetModal";
 import type { AdminDataset, AdminDatasetsFilters } from "@/types/admin";
 import { useAdminDatasets } from "@/hooks/useAdminDatasets";
-import { useHideDataset } from "@/hooks/useHideDataset";
 
 type AdminDatasetTableProps = {
   filters: AdminDatasetsFilters;
@@ -106,8 +105,6 @@ export default function AdminDatasetTable({
   const router = useRouter();
   const base = `/${locale}`;
   const { data, isLoading } = useAdminDatasets(filters);
-  const hideMutation = useHideDataset();
-
   const [deleteTarget, setDeleteTarget] = useState<AdminDataset | null>(null);
   const [deleteTitle, setDeleteTitle] = useState("");
 
@@ -121,22 +118,13 @@ export default function AdminDatasetTable({
   const endItem = Math.min(currentPage * pageSize, total);
 
   const handleEdit = (id: string) => {
-    router.push(`${base}/datasets/${id}/edit`);
+    router.push(`${base}/admin/datasets/${id}/edit`);
   };
 
   const handleDeleteRequest = (dataset: AdminDataset) => {
     const title = locale === "th" ? dataset.title : dataset.titleEn;
     setDeleteTarget(dataset);
     setDeleteTitle(title);
-  };
-
-  const handleHide = async (datasetId: string) => {
-    try {
-      await hideMutation.mutateAsync(datasetId);
-      onSuccess(tAdmin("datasetHidden"));
-    } catch {
-      onError(t("actionError"));
-    }
   };
 
   return (
@@ -186,7 +174,7 @@ export default function AdminDatasetTable({
                           <td className="px-6 py-4">
                             <Link
                               href={`${base}/datasets/${dataset.id}`}
-                              className="font-sarabun text-body-md font-semibold text-primary-dark hover:underline"
+                              className="font-sarabun text-body-md text-text-primary hover:underline"
                             >
                               {title}
                             </Link>
@@ -213,16 +201,6 @@ export default function AdminDatasetTable({
                           </td>
                           <td className="px-6 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              {dataset.status === "published" ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleHide(dataset.id)}
-                                  disabled={hideMutation.isPending}
-                                  className="rounded-full bg-amber-50 px-3.5 py-1.5 font-sarabun text-caption font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50"
-                                >
-                                  {tAdmin("hide")}
-                                </button>
-                              ) : null}
                               <button
                                 type="button"
                                 onClick={() => handleEdit(dataset.id)}

@@ -21,6 +21,7 @@ import { useCategorySuggestedTags } from "@/hooks/useCategorySuggestedTags";
 import { usePIIScan } from "@/hooks/usePIIScan";
 import { useUpdateDataset } from "@/hooks/useUpdateDataset";
 import { useUploadDataset } from "@/hooks/useUploadDataset";
+import apiClient from "@/services/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { PIIFinding, PIIScanResult } from "@/types/pii";
 import { fetchDatasetFormInitial } from "@/utils/datasetFormApi";
@@ -67,6 +68,35 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     null
   );
   const provinceWrapperRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialData?.image_url) {
+      setExistingImageUrl(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ""}${initialData.image_url}`);
+    }
+  }, [initialData]);
+
+  const handleImageSelect = (file: File | null) => {
+    if (!file) return;
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) return;
+    if (file.size > 10 * 1024 * 1024) return;
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+    setExistingImageUrl(null);
+  };
+
+  const uploadImageForDataset = async (id: string) => {
+    if (!selectedImage) return;
+    const formData = new FormData();
+    formData.append("file", selectedImage);
+    await apiClient.post(`/datasets/${id}/image`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  };
 
   const uploadMutation = useUploadDataset();
   const updateMutation = useUpdateDataset();
@@ -272,11 +302,14 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     const formData = buildFormData(values, status);
 
     try {
+      let id = datasetId;
       if (mode === "create") {
-        await uploadMutation.mutateAsync(formData);
+        const result = await uploadMutation.mutateAsync(formData);
+        id = result.id;
       } else if (datasetId) {
         await updateMutation.mutateAsync({ id: datasetId, formData });
       }
+      if (id) await uploadImageForDataset(id);
       if (userRole === "admin") {
         router.push(`${base}/admin/datasets`);
       } else {
@@ -328,20 +361,90 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
             {t("fileSection")}
           </h2>
         </div>
-        <FileUploadZone onAnalyzed={handleAnalyzed} disabled={isSubmitting} />
-        {mode === "edit" && !selectedFile && (
-          <button
-            type="button"
-            onClick={handleEditFileReanalyze}
-            className="mt-2 font-sarabun text-label text-primary-dark hover:underline"
-          >
-            {t("replaceFile")}
-          </button>
+        {selectedFile ? (
+          <div className="flex items-center gap-3 rounded-xl border border-primary-dark/30 bg-primary-light/30 px-4 py-3">
+            <svg className="h-5 w-5 shrink-0 text-primary-dark" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+            </svg>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-sarabun text-label font-medium text-text-primary">
+                {selectedFile.name}
+              </p>
+              <p className="font-sarabun text-caption text-text-muted">
+                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedFile(null);
+                setAnalysis(null);
+              }}
+              className="shrink-0 rounded-full p-1 text-text-muted hover:bg-red-50 hover:text-status-error"
+              aria-label="ลบไฟล์"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+              </svg>
+            </button>
+          </div>
+        ) : mode === "edit" && initialData?.fileInfo ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <svg className="h-5 w-5 shrink-0 text-text-muted" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+              </svg>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-sarabun text-label font-medium text-text-primary">
+                  {initialData.fileInfo.file_name}
+                </p>
+                <p className="font-sarabun text-caption text-text-muted">
+                  {(initialData.fileInfo.file_size / 1024 / 1024).toFixed(2)} MB · {initialData.fileInfo.file_format.toUpperCase()}
+                </p>
+              </div>
+              <span className="rounded-full bg-gray-200 px-2.5 py-0.5 font-sarabun text-caption text-text-muted">
+                ไฟล์ปัจจุบัน
+              </span>
+            </div>
+            <FileUploadZone onAnalyzed={handleAnalyzed} disabled={isSubmitting} />
+            <p className="font-sarabun text-caption text-text-muted">อัปโหลดไฟล์ใหม่เพื่อแทนที่ไฟล์เดิม</p>
+          </div>
+        ) : (
+          <FileUploadZone onAnalyzed={handleAnalyzed} disabled={isSubmitting} />
         )}
         {fileError && (
           <p className="mt-2 font-sarabun text-caption text-status-error">
             {fileError}
           </p>
+        )}
+        {analysis && analysis.quality_score !== null && analysis.quality_score !== undefined && (
+          <div className="mt-4 rounded-xl border border-border-default/60 bg-surface-card p-4">
+            <div className="flex items-center justify-between">
+              <span className="font-sarabun text-label font-medium text-text-primary">
+                คะแนนคุณภาพข้อมูล
+              </span>
+              <span className={`font-kanit text-heading-3-mobile font-bold ${
+                analysis.quality_score >= 80 ? "text-status-success" :
+                analysis.quality_score >= 50 ? "text-[#f57c00]" : "text-status-error"
+              }`}>
+                {analysis.quality_score}/100
+              </span>
+            </div>
+            <div className="mt-2 h-2.5 w-full rounded-full bg-surface-container">
+              <div
+                className={`h-2.5 rounded-full transition-all ${
+                  analysis.quality_score >= 80 ? "bg-status-success" :
+                  analysis.quality_score >= 50 ? "bg-[#f57c00]" : "bg-status-error"
+                }`}
+                style={{ width: `${Math.min(100, Math.max(0, analysis.quality_score))}%` }}
+              />
+            </div>
+            {!hasPii && (
+              <p className="mt-2 font-sarabun text-caption text-status-success">
+                ✓ ไม่พบข้อมูลส่วนบุคคลในไฟล์นี้
+              </p>
+            )}
+          </div>
         )}
         {analysis && hasPii && (
           <div className="-mx-8 mt-6">
@@ -523,6 +626,77 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Image upload (optional) */}
+        <section className="rounded-2xl border border-border-default/60 bg-surface-card p-6 shadow-level-1">
+          <h3 className="mb-4 flex items-center gap-2 font-kanit text-heading-3-mobile font-bold text-text-primary">
+            <svg className="h-5 w-5 text-primary-dark" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+            </svg>
+            รูปภาพปก
+            <span className="font-sarabun text-caption font-normal text-text-muted">(ไม่บังคับ)</span>
+          </h3>
+
+          {imagePreview || existingImageUrl ? (
+            <div className="space-y-3">
+              <div className="relative overflow-hidden rounded-2xl border border-border-default/40">
+                <img
+                  src={imagePreview ?? existingImageUrl!}
+                  alt="preview"
+                  className="h-48 w-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedImage(null);
+                    setImagePreview(null);
+                    setExistingImageUrl(null);
+                  }}
+                  className="absolute right-3 top-3 rounded-full bg-black/50 p-1.5 text-white transition-colors hover:bg-black/70"
+                  aria-label="ลบรูป"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                  </svg>
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="font-sarabun text-label text-primary-dark hover:underline"
+              >
+                เปลี่ยนรูป
+              </button>
+            </div>
+          ) : (
+            <div
+              onClick={() => imageInputRef.current?.click()}
+              className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border-input bg-surface-page px-6 py-10 text-center transition-colors hover:border-primary-dark/40 hover:bg-surface-container"
+            >
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-light text-primary-dark">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                </svg>
+              </div>
+              <p className="font-sarabun text-label font-medium text-text-primary">
+                คลิกเพื่อเลือกรูปภาพปก
+              </p>
+              <p className="mt-1 font-sarabun text-caption text-text-muted">
+                JPG, PNG, WebP · สูงสุด 10MB
+              </p>
+            </div>
+          )}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              handleImageSelect(e.target.files?.[0] ?? null);
+              e.target.value = "";
+            }}
+          />
         </section>
 
         {/* Action buttons */}

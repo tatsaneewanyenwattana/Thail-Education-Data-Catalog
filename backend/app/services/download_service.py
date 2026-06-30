@@ -140,9 +140,22 @@ def _rows_from_dataframe(df: pd.DataFrame) -> list[dict[str, Any]]:
 
 def _get_latest_file_path(db: Session, dataset_id: uuid.UUID) -> str:
     versions = dataset_repo.get_dataset_versions(db, dataset_id)
-    if not versions:
+    if versions:
+        return versions[0].file_path
+    from app.models.dataset_file_model import DatasetFile
+
+    file = (
+        db.query(DatasetFile.file_path)
+        .filter(
+            DatasetFile.dataset_id == dataset_id,
+            DatasetFile.is_deleted.is_(False),
+        )
+        .order_by(DatasetFile.created_at.desc())
+        .first()
+    )
+    if not file:
         raise_app_error("FILE_NOT_FOUND")
-    return versions[0].file_path
+    return file[0]
 
 
 def _validate_purpose(purpose: str | None) -> str:

@@ -61,7 +61,7 @@ async function downloadDataset(
     );
 
     const blob = res.data;
-    if (blob.type.includes("json")) {
+    if (blob.type.includes("json") && variables.format !== "json") {
       await parseBlobError(blob);
     }
     return blob;

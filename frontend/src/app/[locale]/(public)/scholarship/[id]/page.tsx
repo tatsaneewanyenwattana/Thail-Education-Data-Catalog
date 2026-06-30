@@ -221,7 +221,7 @@ export default function ScholarshipDetailPage({
                 </h2>
               </div>
               {scholarship.description && (
-                <p className="mb-6 font-sarabun text-body-lg leading-relaxed text-text-primary whitespace-pre-wrap">
+                <p className="mb-6 font-sarabun text-body-lg leading-relaxed text-text-primary whitespace-pre-wrap break-all">
                   {scholarship.description}
                 </p>
               )}
@@ -241,7 +241,7 @@ export default function ScholarshipDetailPage({
                     <svg className="mt-1 h-5 w-5 shrink-0" style={{ color: "#00897b" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="font-sarabun text-body-lg text-text-primary">{line.replace(/^[-•]\s*/, "")}</span>
+                    <span className="font-sarabun text-body-lg text-text-primary break-all">{line.replace(/^[-•]\s*/, "")}</span>
                   </div>
                 ))}
               </div>
@@ -327,6 +327,17 @@ export default function ScholarshipDetailPage({
                 )}
               </div>
             </div>
+
+            {/* รูปภาพทุน */}
+            {scholarship.image_url && (
+              <div className="aspect-square overflow-hidden rounded-2xl border border-border-default/60 bg-white shadow-level-1">
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ""}${scholarship.image_url}`}
+                  alt={scholarship.title}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            )}
           </div>
         </div>
       </section>

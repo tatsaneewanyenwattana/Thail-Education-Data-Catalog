@@ -9,6 +9,7 @@ from app.core.response import success_response
 from app.core.security import require_roles
 from app.pii.detector import detect_pii
 from app.pii.schemas import PIIScanResult
+from app.utils.quality_score import calculate_quality_score
 
 router = APIRouter()
 
@@ -30,7 +31,7 @@ async def analyze_dataset_file(
 
     if content_type not in ACCEPTED_CONTENT_TYPES:
         return success_response(
-            data=PIIScanResult(findings=[], has_pii=False).model_dump()
+            data={**PIIScanResult(findings=[], has_pii=False).model_dump(), "quality_score": None}
         )
 
     if content_type == "text/csv":
@@ -41,4 +42,5 @@ async def analyze_dataset_file(
         df = pd.read_excel(io.BytesIO(content))
 
     result = detect_pii(df)
-    return success_response(data=result.model_dump())
+    score = calculate_quality_score(df)
+    return success_response(data={**result.model_dump(), "quality_score": score})

@@ -13,6 +13,7 @@ export type ApiCategory = {
   parent_id: string | null;
   created_by: string;
   created_at: string;
+  updated_at?: string;
   dataset_count?: number;
   agency_name?: string | null;
   creator_role?: string | null;
@@ -21,6 +22,7 @@ export type ApiCategory = {
 export type AgencyCategoriesTreeCache = {
   tree: CategoryTreeNode[];
   flat: ApiCategory[];
+  lastUpdatedAt: string | null;
 };
 
 type CategoriesListResponse = {
@@ -46,9 +48,16 @@ export async function fetchAgencyCategoriesTree(): Promise<AgencyCategoriesTreeC
   const datasetCountByCategoryId =
     buildDatasetCountMapFromCategories(categories);
 
+  const dates = categories
+    .map((c) => c.updated_at)
+    .filter(Boolean)
+    .sort()
+    .reverse();
+
   return {
     flat: categories,
     tree: buildCategoryTree(categories, datasetCountByCategoryId),
+    lastUpdatedAt: dates[0] ?? null,
   };
 }
 

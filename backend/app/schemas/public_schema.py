@@ -18,3 +18,4 @@ class DatasetStatsResponse(BaseModel):
 class PublicAgencyResponse(BaseModel):
     agency_user_id: uuid.UUID
     agency_name: str
+    agency_name_en: str | None = None

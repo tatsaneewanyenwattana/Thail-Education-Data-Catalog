@@ -9,6 +9,7 @@ type DatasetCardProps = HomeDatasetMock & {
   variant?: "popular" | "latest";
   createdAt?: string;
   index?: number;
+  imageUrl?: string | null;
 };
 
 function DomainIcon() {
@@ -159,6 +160,7 @@ export default function DatasetCard({
   license,
   variant = "popular",
   index = 0,
+  imageUrl,
 }: DatasetCardProps) {
   const t = useTranslations("dataset");
   const tCommon = useTranslations("notifications");
@@ -222,9 +224,17 @@ export default function DatasetCard({
       className="group flex w-full shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border-default bg-surface-card shadow-level-1 transition-all hover:shadow-level-2"
     >
       <div
-        className="w-full rounded-t-radius-xl"
+        className="relative w-full overflow-hidden rounded-t-radius-xl"
         style={{ height: "350px", backgroundColor: index % 2 === 0 ? "#33691e" : "#e1f5ee" }}
-      />
+      >
+        {imageUrl && (
+          <img
+            src={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ""}${imageUrl}`}
+            alt={title}
+            className="h-full w-full object-cover"
+          />
+        )}
+      </div>
 
       <div className="flex flex-1 flex-col p-5">
         <div className="mb-2 flex min-w-0 items-center gap-2">

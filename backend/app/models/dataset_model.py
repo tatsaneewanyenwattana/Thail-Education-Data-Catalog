@@ -62,6 +62,7 @@ class Dataset(SoftDeleteMixin, BaseModel):
         Integer, nullable=False, server_default="0"
     )
     reject_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(
         nullable=True
     )

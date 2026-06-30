@@ -131,6 +131,7 @@ def create_broadcast_notification(
     content: str,
     link: str | None = None,
     reference_id: uuid.UUID | None = None,
+    image_url: str | None = None,
 ) -> NotificationResponse:
     row = notification_repo.create_notification(
         db,
@@ -140,6 +141,7 @@ def create_broadcast_notification(
         content=content,
         link=link,
         reference_id=reference_id,
+        image_url=image_url,
     )
     return _to_response(row, is_read=False)
 
@@ -150,6 +152,7 @@ def create_announcement_notification(
     title: str,
     content: str,
     announcement_id: uuid.UUID,
+    image_url: str | None = None,
 ) -> NotificationResponse:
     return create_broadcast_notification(
         db,
@@ -158,6 +161,7 @@ def create_announcement_notification(
         content=content,
         link=None,
         reference_id=announcement_id,
+        image_url=image_url,
     )
 
 

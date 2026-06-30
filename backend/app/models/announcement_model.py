@@ -21,6 +21,7 @@ class Announcement(SoftDeleteMixin, BaseModel):
         default=True,
         server_default="true",
     )
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", name="fk_announcements_users"),

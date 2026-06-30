@@ -48,6 +48,7 @@ from app.schemas.auth_schema import (
     ResendVerificationRequest,
     ResetPasswordRequest,
     SubscriptionRequest,
+    UpdateProfileRequest,
     VerifyEmailRequest,
     VerifyEmailResponse,
 )
@@ -82,21 +83,21 @@ def _parse_register_metadata(data: str) -> RegisterMetadata:
 async def register(
     request: Request,
     background_tasks: BackgroundTasks,
-    verification_doc: UploadFile = File(...),
+    verification_doc: UploadFile | None = File(default=None),
     data: str = Form(...),
     turnstile_token: str | None = Form(default=None),
     db: Session = Depends(get_db),
 ):
     """
     สมัครสมาชิก Agency (multipart/form-data) ตาม claude-v3 M1
-    - Fields: verification_doc (PDF ≤5MB), data (JSON RegisterMetadata), turnstile_token
+    - Fields: verification_doc (PDF ≤10MB, optional), data (JSON RegisterMetadata), turnstile_token
     - Auth ❌
     - Errors: USER_EMAIL_EXISTS 409, VERIFICATION_DOC_* , VALIDATION_ERROR 422
     """
     ip = get_client_ip(request)
     verify_turnstile(turnstile_token, ip)
     metadata = _parse_register_metadata(data)
-    content = await verification_doc.read()
+    content = await verification_doc.read() if verification_doc else b""
     user = auth_service.register(
         db=db,
         request=metadata,
@@ -104,7 +105,7 @@ async def register(
         background_tasks=background_tasks,
         minio_client=_get_minio(),
         verification_doc_content=content,
-        verification_doc_filename=verification_doc.filename,
+        verification_doc_filename=verification_doc.filename if verification_doc else None,
     )
     return success_response(
         data=user.model_dump(mode="json"),
@@ -317,13 +318,84 @@ def get_me(
     payload: dict = Depends(get_current_user_payload_with_status),
     db: Session = Depends(get_db),
 ):
-    """
-    ดูข้อมูลตัวเอง
-    - Auth ✅
-    - คืน 200 OK
-    """
     user = auth_service.get_me(db=db, user_id=uuid.UUID(payload["sub"]))
     return success_response(data=user.model_dump(mode="json"))
+
+
+@router.patch("/auth/me", status_code=status.HTTP_200_OK)
+def update_me(
+    request_body: UpdateProfileRequest,
+    payload: dict = Depends(require_roles("agency", "admin")),
+    db: Session = Depends(get_db),
+):
+    from app.models.user_model import User
+
+    user = db.query(User).filter(User.id == uuid.UUID(payload["sub"])).first()
+    if not user:
+        raise_app_error("USER_NOT_FOUND")
+    if request_body.agency_name is not None:
+        user.agency_name = request_body.agency_name
+    if request_body.agency_type is not None:
+        user.agency_type = request_body.agency_type
+    if request_body.contact_name is not None:
+        user.contact_name = request_body.contact_name
+    if request_body.contact_phone is not None:
+        user.contact_phone = request_body.contact_phone
+    db.commit()
+    db.refresh(user)
+    updated = auth_service.get_me(db=db, user_id=user.id)
+    return success_response(data=updated.model_dump(mode="json"))
+
+
+@router.post("/auth/me/image", status_code=status.HTTP_200_OK)
+def upload_profile_image(
+    file: UploadFile = File(...),
+    payload: dict = Depends(require_roles("agency", "admin")),
+    db: Session = Depends(get_db),
+):
+    from app.models.user_model import User
+
+    allowed = {"image/jpeg", "image/png", "image/webp"}
+    if file.content_type not in allowed:
+        raise_app_error("INVALID_FILE_TYPE")
+    data = file.file.read()
+    if len(data) > 10 * 1024 * 1024:
+        raise_app_error("FILE_TOO_LARGE")
+    ext = file.content_type.split("/")[-1].replace("jpeg", "jpg")
+    user_id = uuid.UUID(payload["sub"])
+    object_name = f"profiles/{user_id}/image.{ext}"
+    minio_client = _get_minio()
+    import io
+    minio_client.put_object(
+        settings.MINIO_BUCKET_NAME,
+        object_name,
+        io.BytesIO(data),
+        len(data),
+        content_type=file.content_type,
+    )
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise_app_error("USER_NOT_FOUND")
+    user.image_url = f"/auth/users/{user_id}/image-file"
+    db.commit()
+    return success_response(data={"image_url": user.image_url})
+
+
+@router.get("/auth/users/{user_id}/image-file", status_code=status.HTTP_200_OK)
+def get_profile_image(
+    user_id: uuid.UUID,
+):
+    from fastapi.responses import StreamingResponse
+    minio_client = _get_minio()
+    for ext in ("jpg", "png", "webp"):
+        object_name = f"profiles/{user_id}/image.{ext}"
+        try:
+            response = minio_client.get_object(settings.MINIO_BUCKET_NAME, object_name)
+            media_type = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp"}[ext]
+            return StreamingResponse(response, media_type=media_type)
+        except Exception:
+            continue
+    raise_app_error("NOT_FOUND")
 
 
 @router.post("/bookmarks", status_code=status.HTTP_201_CREATED)

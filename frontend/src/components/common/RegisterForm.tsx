@@ -11,12 +11,15 @@ import { z } from "zod";
 import TurnstileField, {
   isTurnstileConfigured,
 } from "@/components/common/TurnstileField";
+import { AgencyIcon, EyeIcon } from "@/components/common/auth/AuthIcons";
+import PasswordStrengthIndicator from "@/components/common/auth/PasswordStrength";
+import SliderCaptcha from "@/components/common/auth/SliderCaptcha";
 import apiClient from "@/services/api";
 import { toast } from "@/stores/toastStore";
 
 const TERMS_VERSION = "1.0";
 const PDPA_VERSION = "1.0";
-const MAX_VERIFICATION_DOC_BYTES = 5 * 1024 * 1024;
+const MAX_VERIFICATION_DOC_BYTES = 10 * 1024 * 1024;
 
 const AGENCY_TYPES = [
   "central",
@@ -47,137 +50,6 @@ type RegisterFormValues = {
   pdpa_consent: boolean;
 };
 
-type PasswordChecks = {
-  length: boolean;
-  lower: boolean;
-  upper: boolean;
-  number: boolean;
-  special: boolean;
-};
-
-function getPasswordChecks(password: string): PasswordChecks {
-  return {
-    length: password.length >= 8,
-    lower: /[a-z]/.test(password),
-    upper: /[A-Z]/.test(password),
-    number: /[0-9]/.test(password),
-    special: /[!@#$%^&*]/.test(password),
-  };
-}
-
-function getPasswordLevel(checks: PasswordChecks): number {
-  return Object.values(checks).filter(Boolean).length;
-}
-
-function AgencyIcon() {
-  return (
-    <svg
-      className="h-8 w-8 text-primary-dark"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"
-      />
-    </svg>
-  );
-}
-
-function EyeIcon({ off }: { off?: boolean }) {
-  if (off) {
-    return (
-      <svg
-        className="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        aria-hidden
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029M6.223 6.223A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.543 7a9.965 9.965 0 01-4.293 5.411M15 12a3 3 0 11-6 0 3 3 0 016 0zM3 3l18 18"
-        />
-      </svg>
-    );
-  }
-  return (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-      />
-    </svg>
-  );
-}
-
-function PasswordStrengthIndicator({
-  password,
-  t,
-}: {
-  password: string;
-  t: ReturnType<typeof useTranslations<"auth.register">>;
-}) {
-  if (!password) return null;
-
-  const checks = getPasswordChecks(password);
-  const level = getPasswordLevel(checks);
-
-  const checklist = [
-    { key: "passwordCheckLength", met: checks.length },
-    { key: "passwordCheckLower", met: checks.lower },
-    { key: "passwordCheckUpper", met: checks.upper },
-    { key: "passwordCheckNumber", met: checks.number },
-    { key: "passwordCheckSpecial", met: checks.special },
-  ] as const;
-
-  return (
-    <div className="mt-2 space-y-2">
-      <div className="flex gap-1">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div
-            key={index}
-            className={`h-1 flex-1 rounded-radius-full transition-colors duration-300 ${
-              index < level ? "bg-primary" : "bg-surface-container"
-            }`}
-          />
-        ))}
-      </div>
-      <ul className="space-y-1">
-        {checklist.map((item) => (
-          <li
-            key={item.key}
-            className={`font-sarabun text-caption ${
-              item.met ? "text-primary" : "text-text-muted"
-            }`}
-          >
-            {item.met ? "✓" : "✗"} {t(item.key)}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 export default function RegisterForm() {
   const t = useTranslations("auth.register");
@@ -186,6 +58,7 @@ export default function RegisterForm() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileResetKey, setTurnstileResetKey] = useState(0);
   const turnstileEnabled = isTurnstileConfigured();
@@ -232,18 +105,16 @@ export default function RegisterForm() {
             .regex(/[!@#$%^&*]/, t("passwordSpecial")),
           confirm_password: z.string().min(1, t("confirmPasswordRequired")),
           verification_doc: z
-            .custom<File | null>((value) => value instanceof File, {
-              message: t("verificationDocRequired"),
-            })
+            .custom<File | null>(() => true)
             .refine(
               (file) =>
-                file !== null &&
-                (file.type === "application/pdf" ||
-                  file.name.toLowerCase().endsWith(".pdf")),
+                !file ||
+                file.type === "application/pdf" ||
+                file.name.toLowerCase().endsWith(".pdf"),
               { message: t("verificationDocInvalid") }
             )
             .refine(
-              (file) => file !== null && file.size <= MAX_VERIFICATION_DOC_BYTES,
+              (file) => !file || file.size <= MAX_VERIFICATION_DOC_BYTES,
               { message: t("verificationDocTooLarge") }
             ),
           terms_consent: z.boolean().refine((value) => value === true, {
@@ -338,22 +209,21 @@ export default function RegisterForm() {
   };
 
   const inputClass = (hasError: boolean) =>
-    `h-10 w-full rounded-radius-sm border bg-surface-container px-3 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20 ${
-      hasError ? "border-status-error" : "border-border-input"
+    `h-11 w-full rounded-xl border bg-gray-50 px-4 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20 transition-all ${
+      hasError ? "border-status-error" : "border-gray-200"
     }`;
 
   const selectClass = (hasError: boolean) =>
-    `h-10 w-full rounded-radius-sm border bg-surface-container px-3 font-sarabun text-body-md text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20 ${
-      hasError ? "border-status-error" : "border-border-input"
+    `h-11 w-full rounded-xl border bg-gray-50 px-4 font-sarabun text-body-md text-text-primary focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20 transition-all ${
+      hasError ? "border-status-error" : "border-gray-200"
     }`;
 
   return (
     <>
-      <div className="w-full max-sm:-mx-4 max-sm:w-[calc(100%+2rem)] max-sm:max-w-none max-sm:rounded-none max-sm:border-x-0 max-sm:p-spacing-6 rounded-xl border border-border-default bg-surface-card shadow-level-1 sm:max-w-[440px] sm:p-10">
+      <div className="w-full max-sm:-mx-4 max-sm:w-[calc(100%+2rem)] max-sm:max-w-none max-sm:rounded-none max-sm:border-x-0 max-sm:p-spacing-6 rounded-2xl border border-white/80 bg-white shadow-md sm:max-w-[560px] sm:p-10">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-radius-md bg-primary-light">
-            <AgencyIcon />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Thai EduData Insight" className="mx-auto mb-3 h-[60px] w-[60px] object-contain" />
           <h1 className="font-kanit text-heading-2 text-primary-dark">
             {t("title")}
           </h1>
@@ -364,7 +234,7 @@ export default function RegisterForm() {
 
         {registered ? (
           <div className="space-y-6 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-radius-full bg-status-success-bg font-kanit text-heading-2 text-status-success">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-status-success-bg font-kanit text-heading-2 text-status-success">
               ✓
             </div>
             <div>
@@ -378,13 +248,13 @@ export default function RegisterForm() {
             <div className="space-y-3">
               <Link
                 href={`/${locale}/login`}
-                className="flex h-10 w-full items-center justify-center rounded-radius-sm bg-primary font-sarabun text-label font-medium text-white transition-colors hover:bg-primary-hover"
+                className="flex h-11 w-full items-center justify-center rounded-full bg-primary-dark font-sarabun text-label font-medium text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg"
               >
                 {t("goToLogin")}
               </Link>
               <Link
                 href={`/${locale}/register-status`}
-                className="flex h-10 w-full items-center justify-center rounded-radius-sm border border-border-default bg-surface-card font-sarabun text-label font-medium text-primary-dark transition-colors hover:bg-surface-container"
+                className="flex h-11 w-full items-center justify-center rounded-full border border-gray-200 bg-white font-sarabun text-label font-medium text-primary-dark transition-all hover:bg-gray-50 hover:shadow-md"
               >
                 {t("checkStatus")}
               </Link>
@@ -593,7 +463,16 @@ export default function RegisterForm() {
                 <EyeIcon off={showPassword} />
               </button>
             </div>
-            <PasswordStrengthIndicator password={passwordValue} t={t} />
+            <PasswordStrengthIndicator
+              password={passwordValue}
+              labels={{
+                length: t("passwordCheckLength"),
+                lower: t("passwordCheckLower"),
+                upper: t("passwordCheckUpper"),
+                number: t("passwordCheckNumber"),
+                special: t("passwordCheckSpecial"),
+              }}
+            />
             {errors.password && (
               <p className="mt-1 font-sarabun text-caption text-status-error">
                 {errors.password.message}
@@ -630,19 +509,50 @@ export default function RegisterForm() {
             >
               {t("verificationDoc")}
             </label>
-            <input
-              id="verification_doc"
-              type="file"
-              accept="application/pdf,.pdf"
-              className={inputClass(!!errors.verification_doc)}
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null;
-                setValue("verification_doc", file, {
-                  shouldValidate: true,
-                  shouldDirty: true,
-                });
-              }}
-            />
+            {watch("verification_doc") ? (
+              <div className="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50/70 px-4 py-3">
+                <svg className="h-5 w-5 shrink-0 text-blue-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-3 4h4v2h-4v-2zm0 4h4v2h-4v-2z" />
+                </svg>
+                <span className="min-w-0 flex-1 truncate font-sarabun text-label text-text-primary">
+                  {watch("verification_doc")!.name}
+                </span>
+                <span className="shrink-0 font-sarabun text-caption text-text-muted">
+                  {(watch("verification_doc")!.size / (1024 * 1024)).toFixed(1)} MB
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue("verification_doc", null, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                    const input = document.getElementById("verification_doc") as HTMLInputElement;
+                    if (input) input.value = "";
+                  }}
+                  className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-red-100 hover:text-red-600"
+                  aria-label="Remove file"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <input
+                id="verification_doc"
+                type="file"
+                accept="application/pdf,.pdf"
+                className={inputClass(!!errors.verification_doc)}
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setValue("verification_doc", file, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
+                }}
+              />
+            )}
             <p className="mt-1 font-sarabun text-caption text-text-muted">
               {t("verificationDocHint")}
             </p>
@@ -657,7 +567,7 @@ export default function RegisterForm() {
             <input
               id="terms_consent"
               type="checkbox"
-              className="mt-1 h-4 w-4 rounded-radius-sm border-border-input text-primary focus:ring-primary-dark/20"
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-dark focus:ring-primary-dark/20"
               {...register("terms_consent")}
             />
             <label
@@ -677,7 +587,7 @@ export default function RegisterForm() {
             <input
               id="pdpa_consent"
               type="checkbox"
-              className="mt-1 h-4 w-4 rounded-radius-sm border-border-input text-primary focus:ring-primary-dark/20"
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-dark focus:ring-primary-dark/20"
               {...register("pdpa_consent")}
             />
             <label
@@ -706,22 +616,29 @@ export default function RegisterForm() {
             </p>
           )}
 
-          <TurnstileField
-            resetKey={turnstileResetKey}
-            onSuccess={setTurnstileToken}
-            onExpire={() => setTurnstileToken("")}
-            onError={() => setTurnstileToken("")}
-          />
+          {watch("terms_consent") && watch("pdpa_consent") && (
+            <div className="space-y-4">
+              <SliderCaptcha onVerify={(ok) => setCaptchaVerified(ok)} />
+              <TurnstileField
+                resetKey={turnstileResetKey}
+                onSuccess={setTurnstileToken}
+                onExpire={() => setTurnstileToken("")}
+                onError={() => setTurnstileToken("")}
+              />
+            </div>
+          )}
 
           <div className="pt-1">
             <button
               type="submit"
               disabled={
                 !isValid ||
+                !captchaVerified ||
                 mutation.isPending ||
                 (turnstileEnabled && !turnstileToken)
               }
-              className="flex h-10 w-full items-center justify-center rounded-radius-sm bg-primary font-sarabun text-label font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-12 w-full items-center justify-center rounded-2xl font-sarabun text-body-md font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg, #0045bc 0%, #2979ff 100%)" }}
             >
               {mutation.isPending ? `${t("submit")}...` : t("submit")}
             </button>

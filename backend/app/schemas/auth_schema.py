@@ -299,6 +299,13 @@ class DeleteAccountRequest(BaseModel):
         return v
 
 
+class UpdateProfileRequest(BaseModel):
+    agency_name: str | None = Field(None, max_length=255)
+    agency_type: str | None = None
+    contact_name: str | None = Field(None, max_length=255)
+    contact_phone: str | None = Field(None, max_length=50)
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -317,6 +324,7 @@ class UserResponse(BaseModel):
     contact_name: str | None = None
     contact_position: str | None = None
     contact_phone: str | None = None
+    image_url: str | None = None
     email_verified_at: datetime | None = None
     created_at: datetime
     updated_at: datetime | None = None

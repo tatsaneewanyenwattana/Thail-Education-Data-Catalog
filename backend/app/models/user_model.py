@@ -68,6 +68,7 @@ class User(SoftDeleteMixin, BaseModel):
     contact_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     contact_position: Mapped[str | None] = mapped_column(String(255), nullable=True)
     contact_phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     verification_doc_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     suspend_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Email Verification (Migration 2)

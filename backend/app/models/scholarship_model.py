@@ -96,6 +96,7 @@ class Scholarship(Base):
         nullable=False,
         server_default="agency",
     )
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_deleted: Mapped[bool] = mapped_column(
         Boolean,

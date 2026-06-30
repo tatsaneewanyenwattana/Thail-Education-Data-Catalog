@@ -112,6 +112,7 @@ export type Announcement = {
   title: string;
   content: string;
   isActive: boolean;
+  imageUrl?: string | null;
   createdAt: string;
 };
 
@@ -119,6 +120,7 @@ export type AnnouncementInput = {
   title: string;
   content: string;
   isActive: boolean;
+  imageUrl?: string | null;
 };
 
 export type AdminAnnouncementsResult = {

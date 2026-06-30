@@ -138,14 +138,6 @@ export default function AdminCategoriesPage() {
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => showToast(t("exportSoon"))}
-            className="hidden items-center gap-2 rounded-full border border-gray-200 bg-white px-5 py-2.5 font-sarabun text-label font-medium text-text-secondary shadow-sm transition-all hover:bg-gray-50 hover:shadow-md lg:flex"
-          >
-            <DownloadIcon />
-            {t("exportData")}
-          </button>
-          <button
-            type="button"
             onClick={openCreateRoot}
             className="inline-flex items-center gap-2 rounded-full bg-primary-dark px-5 py-2.5 font-sarabun text-label font-medium text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg"
           >
@@ -302,14 +294,6 @@ function PlusCircleIcon() {
   return (
     <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
-    </svg>
-  );
-}
-
-function DownloadIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
     </svg>
   );
 }

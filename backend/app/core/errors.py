@@ -41,7 +41,7 @@ ERROR_DEFINITIONS: dict[str, tuple[int, str]] = {
     "FILE_UPLOAD_FAILED": (500, "อัปโหลดไฟล์ไม่สำเร็จ"),
     "FILE_NOT_FOUND": (404, "ไม่พบไฟล์"),
     "VERIFICATION_DOC_REQUIRED": (400, "ต้องอัปโหลดเอกสารยืนยันตน"),
-    "VERIFICATION_DOC_TOO_LARGE": (413, "เอกสารยืนยันตนใหญ่เกิน 5MB"),
+    "VERIFICATION_DOC_TOO_LARGE": (413, "เอกสารยืนยันตนใหญ่เกิน 10MB"),
     "INVALID_MIME_TYPE": (415, "ประเภทไฟล์ไม่ถูกต้อง ต้องเป็น PDF"),
     # Search
     "SEARCH_KEYWORD_TOO_SHORT": (400, "คำค้นหาสั้นเกินไป"),

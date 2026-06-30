@@ -34,6 +34,7 @@ type ApiSearchItem = {
   download_count: number;
   published_at: string | null;
   agency_name: string | null;
+  agency_name_en: string | null;
   file_format: string | null;
 };
 
@@ -120,7 +121,7 @@ function SearchResultCard({
   const locale = useLocale();
   const title = item.title;
   const description = item.description ?? "";
-  const agency = item.agency_name ?? "-";
+  const agency = (locale === "en" && item.agency_name_en) ? item.agency_name_en : (item.agency_name ?? "-");
   const format = item.file_format;
 
   return (
@@ -171,7 +172,7 @@ function SearchResultCard({
           </span>
         </div>
 
-        <p className="line-clamp-2 font-sarabun text-label text-text-muted">
+        <p className="line-clamp-2 break-all font-sarabun text-label text-text-muted">
           {description}
         </p>
 

@@ -98,7 +98,6 @@ export default function Sidebar({ variant }: SidebarProps) {
         p === `${base}/datasets` ||
         (p.startsWith(`${base}/datasets/`) &&
           !p.includes("/create") &&
-          !p.includes("/bulk-upload") &&
           !p.includes("/edit") &&
           !p.includes("/versions")),
     },
@@ -107,12 +106,6 @@ export default function Sidebar({ variant }: SidebarProps) {
       labelKey: "upload",
       icon: "upload",
       match: (p) => p.startsWith(`${base}/datasets/create`),
-    },
-    {
-      href: `${base}/datasets/bulk-upload`,
-      labelKey: "bulkUpload",
-      icon: "bulk",
-      match: (p) => p.startsWith(`${base}/datasets/bulk-upload`),
     },
     {
       href: `${base}/manage/categories`,

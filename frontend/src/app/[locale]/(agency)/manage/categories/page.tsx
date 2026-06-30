@@ -32,6 +32,7 @@ export default function AgencyCategoriesPage() {
 
   const { data, isLoading, isError } = useAgencyCategoryTree();
   const tree = data?.tree ?? [];
+  const lastUpdatedAt = data?.lastUpdatedAt ?? null;
 
   const totalCategories = countNodes(tree);
   const totalDatasets = sumDatasets(tree);
@@ -101,6 +102,33 @@ export default function AgencyCategoriesPage() {
         </button>
       </header>
 
+      {/* Summary cards */}
+      {!isLoading && tree.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <SummaryCard
+            icon={<GridIcon />}
+            iconBg="bg-primary-light"
+            iconColor="text-primary-dark"
+            label="หมวดหมู่ทั้งหมด"
+            value={`${totalCategories} หมวดหมู่`}
+          />
+          <SummaryCard
+            icon={<DataIcon />}
+            iconBg="bg-[#e8f5e9]"
+            iconColor="text-[#43a047]"
+            label="ชุดข้อมูลรวม"
+            value={`${totalDatasets} ชุดข้อมูล`}
+          />
+          <SummaryCard
+            icon={<ClockIcon />}
+            iconBg="bg-[#fff3e0]"
+            iconColor="text-[#f57c00]"
+            label="อัปเดตล่าสุด"
+            value={formatRelativeTime(lastUpdatedAt)}
+          />
+        </div>
+      )}
+
       {/* Level tabs */}
       <div className="flex items-center gap-2">
         <button
@@ -152,33 +180,6 @@ export default function AgencyCategoriesPage() {
         filterLevel={activeLevel}
       />
 
-      {/* Summary cards */}
-      {!isLoading && tree.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <SummaryCard
-            icon={<GridIcon />}
-            iconBg="bg-primary-light"
-            iconColor="text-primary-dark"
-            label="หมวดหมู่ทั้งหมด"
-            value={`${totalCategories} หมวดหมู่`}
-          />
-          <SummaryCard
-            icon={<DataIcon />}
-            iconBg="bg-[#e8f5e9]"
-            iconColor="text-[#43a047]"
-            label="ชุดข้อมูลรวม"
-            value={`${totalDatasets} ชุดข้อมูล`}
-          />
-          <SummaryCard
-            icon={<ClockIcon />}
-            iconBg="bg-[#fff3e0]"
-            iconColor="text-[#f57c00]"
-            label="อัปเดตล่าสุด"
-            value="2 ชม. ที่ผ่านมา"
-          />
-        </div>
-      )}
-
       <CategoryForm
         open={formOpen}
         mode={formMode}
@@ -204,6 +205,18 @@ export default function AgencyCategoriesPage() {
       />
     </div>
   );
+}
+
+function formatRelativeTime(isoDate: string | null): string {
+  if (!isoDate) return "-";
+  const diff = Date.now() - new Date(isoDate).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "เมื่อสักครู่";
+  if (mins < 60) return `${mins} นาทีที่แล้ว`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} ชม. ที่ผ่านมา`;
+  const days = Math.floor(hours / 24);
+  return `${days} วันที่แล้ว`;
 }
 
 function countNodes(nodes: CategoryTreeNode[]): number {

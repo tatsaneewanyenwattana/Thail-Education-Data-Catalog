@@ -95,7 +95,7 @@ export default function Navbar({ variant }: NavbarProps) {
   ];
 
   const linkClass = (active: boolean) =>
-    `flex h-full items-center px-2 font-sarabun text-label transition-colors ${
+    `flex h-full items-center px-2 font-sarabun text-body-md transition-colors ${
       active
         ? "border-b-2 border-primary-dark font-medium text-primary-dark"
         : "text-text-secondary hover:text-primary-dark"
@@ -192,12 +192,11 @@ export default function Navbar({ variant }: NavbarProps) {
   return (
     <>
       <header
-        className={`sticky top-0 z-50 border-b border-white/60 transition-shadow ${
+        className={`sticky top-0 z-50 border-b border-gray-200 transition-shadow ${
           scrolled ? "shadow-level-2" : ""
         }`}
         style={{
-          background: "rgba(255, 255, 255, 0.55)",
-          backdropFilter: "blur(12px)",
+          background: "#ffffff",
         }}
       >
         {/* Tier 1 */}
@@ -207,7 +206,7 @@ export default function Navbar({ variant }: NavbarProps) {
             className="flex shrink-0 items-center gap-3 font-kanit text-xl font-bold text-primary-dark md:text-2xl"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="" className="h-[72px] w-[72px] object-contain" />
+            <img src="/logo.png" alt="" className="h-[100px] w-[100px] object-contain" />
             Thai EduData Insight
           </Link>
 

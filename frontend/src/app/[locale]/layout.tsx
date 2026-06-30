@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { AppProviders } from "@/providers/AppProviders";
 import { RoleThemeProvider } from "@/providers/RoleThemeProvider";
+import SiteOverlay from "@/components/common/SiteOverlay";
 
 export default async function LocaleLayout({
   children,
@@ -22,7 +23,10 @@ export default async function LocaleLayout({
       />
       <NextIntlClientProvider locale={locale} messages={messages}>
         <RoleThemeProvider />
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <SiteOverlay />
+          {children}
+        </AppProviders>
       </NextIntlClientProvider>
     </>
   );

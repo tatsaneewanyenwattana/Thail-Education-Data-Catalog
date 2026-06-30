@@ -15,8 +15,13 @@ function categoryLabel(
 
 function agencyLabel(
   agencyName: string | null | undefined,
-  metadata: Record<string, unknown> | null | undefined
+  metadata: Record<string, unknown> | null | undefined,
+  agencyNameEn?: string | null,
+  locale?: string
 ): string {
+  if (locale === "en" && typeof agencyNameEn === "string" && agencyNameEn.trim()) {
+    return agencyNameEn.trim();
+  }
   if (typeof agencyName === "string" && agencyName.trim()) {
     return agencyName.trim();
   }
@@ -41,7 +46,9 @@ export function mapApiDatasetToHomeCard(
     category: categoryLabel(dataset.category_id, categories, locale),
     agency: agencyLabel(
       dataset.agency_name,
-      dataset.metadata as Record<string, unknown> | null
+      dataset.metadata as Record<string, unknown> | null,
+      dataset.agency_name_en,
+      locale
     ),
     status: (dataset.status === "published"
       ? "published"
@@ -56,5 +63,6 @@ export function mapApiDatasetToHomeCard(
     createdAt: dataset.created_at,
     publishedAt: dataset.published_at ?? dataset.created_at,
     license: dataset.license as DatasetLicense,
+    imageUrl: dataset.image_url ?? null,
   };
 }

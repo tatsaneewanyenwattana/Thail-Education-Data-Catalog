@@ -10,6 +10,10 @@ type ApiDataset = {
   category_id: string | null;
   metadata?: Record<string, unknown> | null;
   dataset_metadata?: Record<string, unknown> | null;
+  tags?: string[];
+  tag_names?: string[];
+  file_info?: { file_name: string; file_size: number; file_format: string } | null;
+  image_url?: string | null;
   status: string;
 };
 
@@ -117,7 +121,7 @@ export async function fetchDatasetFormInitial(
       description: ds.description ?? "",
       categoryId: ds.category_id ?? "",
       license: ds.license as AgencyDatasetFormInitial["license"],
-      tags: [],
+      tags: ds.tag_names ?? ds.tags ?? [],
       yearStart:
         typeof meta.year_start === "number"
           ? meta.year_start
@@ -128,6 +132,8 @@ export async function fetchDatasetFormInitial(
         typeof meta.year_end === "number" ? meta.year_end : undefined,
       province:
         typeof meta.province === "string" ? meta.province : "all",
+      fileInfo: ds.file_info ?? undefined,
+      image_url: ds.image_url ?? null,
     };
   } catch {
     return null;

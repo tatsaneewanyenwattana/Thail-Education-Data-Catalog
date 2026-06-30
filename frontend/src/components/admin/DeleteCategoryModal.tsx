@@ -65,9 +65,9 @@ export default function DeleteCategoryModal({
         onClick={onClose}
         aria-label={hasDatasets ? t("close") : t("cancel")}
       />
-      <div className="relative w-full max-w-md overflow-hidden rounded-radius-lg bg-surface-card p-8 shadow-level-3">
+      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white p-8 shadow-xl">
         <div className="flex flex-col items-center text-center">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-radius-full bg-status-error-bg">
+          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
             <WarningIcon />
           </div>
           <h2
@@ -84,7 +84,7 @@ export default function DeleteCategoryModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full rounded-radius-lg bg-surface-container-highest py-3 font-kanit text-label font-bold text-text-primary transition-colors hover:bg-surface-container"
+                className="w-full rounded-full bg-surface-container-highest py-3 font-kanit text-label font-bold text-text-primary transition-colors hover:bg-surface-container"
               >
                 {t("close")}
               </button>
@@ -94,7 +94,7 @@ export default function DeleteCategoryModal({
                   type="button"
                   onClick={onClose}
                   disabled={deleteMutation.isPending}
-                  className="w-full rounded-radius-lg border border-border-default py-3 font-kanit text-label font-medium text-text-secondary transition-colors hover:bg-surface-container disabled:opacity-50"
+                  className="w-full rounded-full border border-border-default py-3 font-kanit text-label font-medium text-text-secondary transition-colors hover:bg-surface-container disabled:opacity-50"
                 >
                   {t("cancel")}
                 </button>
@@ -102,7 +102,7 @@ export default function DeleteCategoryModal({
                   type="button"
                   onClick={handleDelete}
                   disabled={deleteMutation.isPending}
-                  className="w-full rounded-radius-lg bg-status-error py-3 font-kanit text-label font-medium text-surface-card transition-opacity hover:opacity-90 disabled:opacity-50"
+                  className="w-full rounded-full bg-status-error py-3 font-kanit text-label font-medium text-surface-card transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                   {deleteMutation.isPending ? t("deleting") : t("confirmDelete")}
                 </button>

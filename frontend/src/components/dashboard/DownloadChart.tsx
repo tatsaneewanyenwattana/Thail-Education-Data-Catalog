@@ -54,16 +54,10 @@ export default function DownloadChart({ data }: DownloadChartProps) {
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border-default/60 bg-surface-card p-6 shadow-level-1">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6">
         <h2 className="font-kanit text-heading-3-mobile font-semibold text-text-primary">
           {t("downloadChart")}
         </h2>
-        <button
-          type="button"
-          className="rounded-xl border border-primary-dark/30 px-4 py-2 font-sarabun text-label font-medium text-primary-dark transition-colors hover:bg-primary-light"
-        >
-          {t("viewDetails")}
-        </button>
       </div>
       <div className="h-[260px] w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">

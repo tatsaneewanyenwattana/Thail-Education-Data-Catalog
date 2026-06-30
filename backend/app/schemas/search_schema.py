@@ -27,6 +27,7 @@ class SearchResponse(BaseModel):
     download_count: int
     published_at: datetime | None
     agency_name: str | None
+    agency_name_en: str | None = None
     file_format: str | None = None
 
 
@@ -60,6 +61,7 @@ class SearchFilterCategoryOption(BaseModel):
 class SearchFilterAgencyOption(BaseModel):
     agency_user_id: uuid.UUID
     agency_name: str
+    agency_name_en: str | None = None
 
 
 class SearchFiltersResponse(BaseModel):

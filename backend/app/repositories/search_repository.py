@@ -243,7 +243,7 @@ def get_search_filter_options(
             )
 
     agency_query = (
-        db.query(User.id, User.agency_name)
+        db.query(User.id, User.agency_name, User.agency_name_en)
         .join(Dataset, Dataset.user_id == User.id)
         .filter(
             User.role == "agency",
@@ -268,7 +268,7 @@ def get_search_filter_options(
         agency_rows = agency_query.distinct().order_by(User.agency_name.asc()).all()
 
     agencies = [
-        {"agency_user_id": row[0], "agency_name": row[1]}
+        {"agency_user_id": row[0], "agency_name": row[1], "agency_name_en": row[2]}
         for row in agency_rows
         if row[1]
     ]

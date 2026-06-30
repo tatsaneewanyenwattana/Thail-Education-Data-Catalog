@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgencyDatasetTable from "@/components/dataset/AgencyDatasetTable";
 import DeleteDatasetModal from "@/components/dataset/DeleteDatasetModal";
 import type { AgencyDatasetRow } from "@/types/dataset";
 import {
   useAgencyDatasets,
+  useAgencyDatasetYears,
   type AgencyDatasetStatusFilter,
 } from "@/hooks/useAgencyDatasets";
+import { useAgencyDashboard } from "@/hooks/useAgencyDashboard";
 
 export default function AgencyDatasetsPage() {
   const t = useTranslations("agency.datasets");
@@ -19,27 +21,28 @@ export default function AgencyDatasetsPage() {
   const [activeTab, setActiveTab] = useState<AgencyDatasetStatusFilter>("all");
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
   const [deleteTarget, setDeleteTarget] = useState<AgencyDatasetRow | null>(
     null
   );
   const [deleteTitle, setDeleteTitle] = useState("");
   const [toastError, setToastError] = useState<string | null>(null);
 
-  const allQuery = useAgencyDatasets("all", 1, 999);
-  const allRows = allQuery.data?.data ?? [];
-  const draftCount = allRows.filter((r) => r.status === "draft").length;
-  const publishedCount = allRows.filter((r) => r.status === "published").length;
-  const totalCount = allRows.length;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  const publishedRows = allRows.filter((r) => r.status === "published");
-  const avgQuality =
-    publishedRows.length > 0
-      ? (
-          publishedRows.reduce((s, r) => s + r.qualityScore, 0) /
-          publishedRows.length
-        ).toFixed(1)
-      : "0";
-  const totalDownloads = allRows.reduce((s, r) => s + r.downloadCount, 0);
+  const { data: yearsList } = useAgencyDatasetYears();
+  const { data: dashStats } = useAgencyDashboard();
+  const totalCount = dashStats?.totalDatasets ?? 0;
+  const publishedCount = dashStats?.publishedDatasets ?? 0;
+  const draftCount = dashStats?.draftDatasets ?? 0;
+  const totalDownloads = dashStats?.totalDownloads ?? 0;
 
   const tabs: {
     id: AgencyDatasetStatusFilter;
@@ -136,19 +139,45 @@ export default function AgencyDatasetsPage() {
               <SearchIcon />
             </span>
           </div>
-          <button
-            type="button"
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-border-input bg-surface-card px-4 font-sarabun text-label text-text-muted transition-colors hover:bg-surface-container hover:text-primary-dark"
+          <select
+            value={selectedYear ?? ""}
+            onChange={(e) => {
+              setSelectedYear(e.target.value ? Number(e.target.value) : undefined);
+              setPage(1);
+            }}
+            className="h-10 rounded-xl border border-border-input bg-surface-card px-3 font-sarabun text-label text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
           >
-            <FilterIcon />
-            <span className="hidden sm:inline">กรองข้อมูล</span>
-          </button>
-          <select className="h-10 rounded-xl border border-border-input bg-surface-card px-3 font-sarabun text-label text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20">
-            <option>ปีงบประมาณ 2568</option>
-            <option>ปีงบประมาณ 2567</option>
-            <option>ปีงบประมาณ 2566</option>
+            <option value="">ทุกปี</option>
+            {yearsList?.map((y) => (
+              <option key={y} value={y}>ปีงบประมาณ {y}</option>
+            ))}
           </select>
         </div>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <SummaryCard
+          icon={<PublishIcon />}
+          iconBg="bg-primary-light"
+          iconColor="text-primary-dark"
+          label="เผยแพร่สำเร็จรวม"
+          value={`${publishedCount} รายการ`}
+        />
+        <SummaryCard
+          icon={<StarIcon />}
+          iconBg="bg-[#fff3e0]"
+          iconColor="text-[#f57c00]"
+          label="Dataset ทั้งหมด"
+          value={`${totalCount} รายการ`}
+        />
+        <SummaryCard
+          icon={<TrendIcon />}
+          iconBg="bg-[#e8f5e9]"
+          iconColor="text-[#43a047]"
+          label="การดาวน์โหลดรวม"
+          value={`${totalDownloads.toLocaleString()} ครั้ง`}
+        />
       </div>
 
       {toastError && (
@@ -165,34 +194,9 @@ export default function AgencyDatasetsPage() {
         page={page}
         onPageChange={setPage}
         onDelete={handleDeleteRequest}
+        search={debouncedSearch || undefined}
+        year={selectedYear}
       />
-
-      {/* Summary cards */}
-      {activeTab === "published" && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <SummaryCard
-            icon={<PublishIcon />}
-            iconBg="bg-primary-light"
-            iconColor="text-primary-dark"
-            label="เผยแพร่สำเร็จรวม"
-            value={`${publishedCount} รายการ`}
-          />
-          <SummaryCard
-            icon={<StarIcon />}
-            iconBg="bg-[#fff3e0]"
-            iconColor="text-[#f57c00]"
-            label="คะแนนข้อมูลเฉลี่ย"
-            value={`${avgQuality} / 100`}
-          />
-          <SummaryCard
-            icon={<TrendIcon />}
-            iconBg="bg-[#e8f5e9]"
-            iconColor="text-[#43a047]"
-            label="การดาวน์โหลดรวม"
-            value={`${totalDownloads.toLocaleString()} ครั้ง`}
-          />
-        </div>
-      )}
 
       <DeleteDatasetModal
         open={Boolean(deleteTarget)}
@@ -255,13 +259,6 @@ function SearchIcon() {
   );
 }
 
-function FilterIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M10 18h4v-2h-4v2ZM3 6v2h18V6H3Zm3 7h12v-2H6v2Z" />
-    </svg>
-  );
-}
 
 function PublishIcon() {
   return (

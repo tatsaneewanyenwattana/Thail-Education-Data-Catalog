@@ -158,6 +158,21 @@ def get_latest_dataset_file_format(db: Session, dataset_id: uuid.UUID) -> str | 
     return row[0] if row else None
 
 
+def get_latest_dataset_file_info(db: Session, dataset_id: uuid.UUID) -> dict | None:
+    row = (
+        db.query(DatasetFile.file_name, DatasetFile.file_size, DatasetFile.file_format)
+        .filter(
+            DatasetFile.dataset_id == dataset_id,
+            DatasetFile.is_deleted.is_(False),
+        )
+        .order_by(DatasetFile.created_at.desc())
+        .first()
+    )
+    if not row:
+        return None
+    return {"file_name": row[0], "file_size": row[1], "file_format": row[2]}
+
+
 def get_latest_version_number(db: Session, dataset_id: uuid.UUID) -> int:
     from sqlalchemy import func as sa_func
 

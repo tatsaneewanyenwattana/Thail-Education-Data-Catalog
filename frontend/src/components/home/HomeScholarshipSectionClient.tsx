@@ -125,7 +125,7 @@ export default function HomeScholarshipSectionClient({
 
         <Link
           href={`/${locale}/scholarship`}
-          className="relative mt-6 inline-flex items-center gap-1 py-2 pl-5 pr-7 font-sarabun text-label font-bold text-white"
+          className="relative mt-6 inline-flex items-center gap-1 py-2 pl-5 pr-7 font-sarabun text-label font-normal text-white"
           style={{
             backgroundColor: "#33691e",
             clipPath: "polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%)",

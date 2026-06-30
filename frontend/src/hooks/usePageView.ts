@@ -10,6 +10,8 @@ export function usePageView(pageName: string) {
   const [counts, setCounts] = useState<PageViewCounts>({ today: 0, total: 0 });
 
   useEffect(() => {
+    if (!pageName) return;
+
     fetch(`${API}/page-views?page=${pageName}`, { method: "POST" }).catch(() => {});
 
     fetch(`${API}/page-views?page=${pageName}`)

@@ -138,6 +138,7 @@ def _map_to_search_response(item: dict) -> SearchResponse:
         download_count=item.get("download_count", 0),
         published_at=item.get("published_at"),
         agency_name=item.get("agency_name"),
+        agency_name_en=item.get("agency_name_en"),
         file_format=item.get("file_format"),
     )
 
@@ -167,6 +168,7 @@ def get_filter_options(
         SearchFilterAgencyOption(
             agency_user_id=item["agency_user_id"],
             agency_name=item["agency_name"],
+            agency_name_en=item.get("agency_name_en"),
         )
         for item in raw["agencies"]
     ]

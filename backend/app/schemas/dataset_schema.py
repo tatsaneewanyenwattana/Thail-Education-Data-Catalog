@@ -78,9 +78,13 @@ class DatasetResponse(BaseModel):
     updated_at: datetime
     user_id: uuid.UUID
     agency_name: str | None = None
+    agency_name_en: str | None = None
     category_name_th: str | None = None
     category_name_en: str | None = None
+    image_url: str | None = None
     file_format: str | None = None
+    tag_names: list[str] = Field(default_factory=list)
+    file_info: dict[str, Any] | None = None
 
     model_config = {"from_attributes": True, "populate_by_name": True}
 
@@ -137,6 +141,7 @@ class CategoryResponse(BaseModel):
     parent_id: uuid.UUID | None
     created_by: uuid.UUID
     created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
 

@@ -36,6 +36,7 @@ def _datasets_to_responses(
         item = DatasetResponse.model_validate(dataset)
         item.tags = tag_ids
         item.agency_name = owner.agency_name if owner else None
+        item.agency_name_en = owner.agency_name_en if owner else None
         name_th, name_en = _resolve_category_names(db, dataset.category_id)
         item.category_name_th = name_th
         item.category_name_en = name_en

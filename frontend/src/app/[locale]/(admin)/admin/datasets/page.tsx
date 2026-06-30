@@ -93,7 +93,7 @@ export default function AdminDatasetsPage() {
       </header>
 
       {dashData ? (
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <AdminStatsCard
             label={t("totalDatasets")}
             value={totalDatasets.toLocaleString(numberLocale)}
@@ -128,13 +128,6 @@ export default function AdminDatasetsPage() {
                 {t("awaitingReview")}
               </span>
             }
-          />
-          <AdminStatsCard
-            label={t("qualityAvg")}
-            value="88.4%"
-            icon={<QualityIcon />}
-            iconClassName="bg-blue-50 text-blue-600"
-            badge={<QualityMiniBar value={88.4} />}
           />
         </section>
       ) : null}
@@ -271,26 +264,6 @@ function DraftIcon() {
   );
 }
 
-function QualityIcon() {
-  return (
-    <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
-    </svg>
-  );
-}
-
-function QualityMiniBar({ value }: { value: number }) {
-  return (
-    <div className="flex w-20 items-center gap-1.5">
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
-        <div
-          className="h-full rounded-full bg-primary-dark"
-          style={{ width: `${Math.min(100, value)}%` }}
-        />
-      </div>
-    </div>
-  );
-}
 
 function FilterDropdown({
   value,

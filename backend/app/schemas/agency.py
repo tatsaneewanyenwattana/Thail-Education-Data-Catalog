@@ -61,6 +61,7 @@ class AgencyActivityLogItem(BaseModel):
     item_type: str = Field(serialization_alias="itemType")
     activity_type: str = Field(serialization_alias="activityType")
     title: str | None = None
+    target_id: uuid.UUID | None = Field(None, serialization_alias="targetId")
 
     model_config = {"populate_by_name": True}
 

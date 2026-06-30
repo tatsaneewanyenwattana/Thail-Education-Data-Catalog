@@ -76,7 +76,9 @@ function mapDataset(item: ApiAgencyDataset): AgencyDatasetRow {
 async function fetchAgencyDatasets(
   status: AgencyDatasetStatusFilter,
   page: number,
-  limit?: number
+  limit?: number,
+  search?: string,
+  year?: number,
 ): Promise<AgencyDatasetsResponse> {
   const pageSize = limit ?? PAGE_SIZE;
   const res = await apiClient.get<ListResponse>("/agency/datasets", {
@@ -86,6 +88,8 @@ async function fetchAgencyDatasets(
       sort: "updated_at",
       order: "desc",
       ...(status !== "all" ? { status } : {}),
+      ...(search ? { search } : {}),
+      ...(year ? { year } : {}),
     },
   });
 
@@ -105,12 +109,25 @@ async function fetchAgencyDatasets(
 export function useAgencyDatasets(
   status: AgencyDatasetStatusFilter = "all",
   page = 1,
-  limit?: number
+  limit?: number,
+  search?: string,
+  year?: number,
 ) {
   return useQuery({
-    queryKey: ["agency", "datasets", status, page, limit ?? PAGE_SIZE],
-    queryFn: () => fetchAgencyDatasets(status, page, limit),
+    queryKey: ["agency", "datasets", status, page, limit ?? PAGE_SIZE, search, year],
+    queryFn: () => fetchAgencyDatasets(status, page, limit, search, year),
     staleTime: 1000 * 60 * 5,
     retry: 1,
+  });
+}
+
+export function useAgencyDatasetYears() {
+  return useQuery({
+    queryKey: ["agency", "datasets", "years"],
+    queryFn: async () => {
+      const res = await apiClient.get<{ success: boolean; data: number[] }>("/agency/datasets/years");
+      return res.data.data;
+    },
+    staleTime: 1000 * 60 * 10,
   });
 }

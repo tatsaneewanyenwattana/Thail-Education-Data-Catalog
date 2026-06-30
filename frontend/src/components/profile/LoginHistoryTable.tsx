@@ -61,7 +61,7 @@ export default function LoginHistoryTable() {
           <thead className="bg-surface-container font-sarabun text-label text-text-secondary">
             <tr>
               <th className="px-4 py-3 font-semibold">วันเวลา</th>
-              <th className="px-4 py-3 font-semibold">ip_address</th>
+              <th className="px-4 py-3 font-semibold">ที่อยู่ IP</th>
               <th className="px-4 py-3 font-semibold">Browser</th>
               <th className="px-4 py-3 font-semibold">ผลลัพธ์</th>
             </tr>

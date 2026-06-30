@@ -19,13 +19,12 @@ function getPageNumbers(
   return [1, "ellipsis", current, "ellipsis", total];
 }
 
-type FilterTab = "all" | "dataset" | "scholarship" | "teacher";
+type FilterTab = "all" | "dataset" | "scholarship";
 
 const FILTER_TABS: { key: FilterTab; label: string }[] = [
   { key: "all", label: "ทั้งหมด" },
   { key: "dataset", label: "Dataset" },
   { key: "scholarship", label: "Scholarship" },
-  { key: "teacher", label: "Teacher Records" },
 ];
 
 function actionStyle(activityType: AgencyActivityLogItem["activityType"]) {
@@ -74,28 +73,42 @@ function mapItemTypeLabel(
   return itemType === "scholarship" ? t("typeScholarship") : t("typeDataset");
 }
 
+function exportCsv(items: AgencyActivityLogItem[]) {
+  const header = "วันที่,เวลา,ประเภท,การดำเนินการ,ชื่อ";
+  const rows = items.map((item) => {
+    const d = new Date(item.created_at);
+    const date = d.toLocaleDateString("th-TH");
+    const time = d.toLocaleTimeString("th-TH");
+    const type = item.itemType === "scholarship" ? "ทุนการศึกษา" : "ชุดข้อมูล";
+    const action = item.activityType;
+    const title = (item.title ?? "-").replace(/,/g, " ");
+    return `${date},${time},${type},${action},${title}`;
+  });
+  const csv = "﻿" + [header, ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `activity-log-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AgencyActivityPage() {
   const t = useTranslations("agency.activity");
   const locale = useLocale();
   const base = `/${locale}`;
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
+
+  const itemTypeParam = activeTab === "all" ? undefined : activeTab;
   const { data, isLoading, isError, error } = useAgencyActivityLogs(
     page,
-    ACTIVITY_LOG_PAGE_SIZE
+    ACTIVITY_LOG_PAGE_SIZE,
+    itemTypeParam,
   );
 
-  const allItems = data?.items ?? [];
-  const items =
-    activeTab === "all"
-      ? allItems
-      : allItems.filter((item) => {
-          if (activeTab === "dataset") return item.itemType === "dataset";
-          if (activeTab === "scholarship")
-            return item.itemType === "scholarship";
-          return false;
-        });
-
+  const items = data?.items ?? [];
   const pagination = data?.pagination;
   const totalPages = Math.max(1, pagination?.total_pages ?? 1);
   const totalItems = pagination?.total_items ?? 0;
@@ -127,22 +140,15 @@ export default function AgencyActivityPage() {
             {t("subtitle")}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-xl border border-border-input bg-surface-card px-5 py-2.5 font-sarabun text-label font-medium text-text-primary transition-colors hover:bg-surface-container"
-          >
-            <FilterIcon />
-            กรองข้อมูล
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-xl bg-primary-dark px-5 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90"
-          >
-            <ExportIcon />
-            ส่งออก CSV
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => items.length > 0 && exportCsv(items)}
+          disabled={items.length === 0}
+          className="inline-flex items-center gap-2 rounded-xl bg-primary-dark px-5 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90 disabled:opacity-50"
+        >
+          <ExportIcon />
+          ส่งออก CSV
+        </button>
       </header>
 
       {/* Filter tabs */}
@@ -164,10 +170,6 @@ export default function AgencyActivityPage() {
             {tab.label}
           </button>
         ))}
-        <span className="ml-2 inline-flex items-center gap-1.5 rounded-full border border-border-input bg-surface-card px-4 py-2 font-sarabun text-caption text-text-muted">
-          <ClockSmallIcon />
-          30 วันล่าสุด
-        </span>
       </div>
 
       {isError && (
@@ -221,6 +223,12 @@ export default function AgencyActivityPage() {
                   const aStyle = actionStyle(item.activityType);
                   const tPill = typePillStyle(item.itemType);
 
+                  const detailHref = item.targetId
+                    ? item.itemType === "scholarship"
+                      ? `${base}/scholarship/${item.targetId}`
+                      : `${base}/datasets/${item.targetId}`
+                    : null;
+
                   return (
                     <tr
                       key={item.id}
@@ -260,13 +268,19 @@ export default function AgencyActivityPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            type="button"
-                            className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-container hover:text-primary-dark"
-                            title="ดูรายละเอียด"
-                          >
-                            <EyeIcon />
-                          </button>
+                          {detailHref ? (
+                            <Link
+                              href={detailHref}
+                              className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-container hover:text-primary-dark"
+                              title="ดูรายละเอียด"
+                            >
+                              <EyeIcon />
+                            </Link>
+                          ) : (
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted/40">
+                              <EyeIcon />
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -333,82 +347,10 @@ export default function AgencyActivityPage() {
           </nav>
         </div>
       )}
-
-      {/* Bottom stat cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <BottomStatCard
-          icon={<SyncIcon />}
-          iconBg="bg-primary-dark"
-          label="การซิงค์ข้อมูลล่าสุด"
-          value="100% สำเร็จ"
-          badge="เสถียร"
-          badgeColor="bg-[#e8f5e9] text-[#43a047]"
-        />
-        <BottomStatCard
-          icon={<StorageIcon />}
-          iconBg="bg-[#e3f2fd]"
-          label="อัตราการเพิ่มของข้อมูล"
-          value="2.4 GB / สัปดาห์"
-          badge="+12%"
-          badgeColor="bg-[#e8f5e9] text-[#43a047]"
-        />
-        <BottomStatCard
-          icon={<WarningIcon />}
-          iconBg="bg-[#fff3e0]"
-          label="ข้อมูลที่ต้องตรวจสอบ"
-          value="พร้อมใช้งานทั้งหมด"
-          badge="0 รายการ"
-          badgeColor="bg-[#e8f5e9] text-[#43a047]"
-        />
-      </div>
     </div>
   );
 }
 
-function BottomStatCard({
-  icon,
-  iconBg,
-  label,
-  value,
-  badge,
-  badgeColor,
-}: {
-  icon: React.ReactNode;
-  iconBg: string;
-  label: string;
-  value: string;
-  badge: string;
-  badgeColor: string;
-}) {
-  return (
-    <div className="flex items-center gap-4 rounded-2xl border border-border-default/60 bg-surface-card px-6 py-5 shadow-level-1">
-      <div
-        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${iconBg} text-white`}
-      >
-        {icon}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="font-sarabun text-caption text-text-muted">{label}</p>
-        <p className="font-kanit text-body-lg font-bold text-text-primary">
-          {value}
-        </p>
-      </div>
-      <span
-        className={`shrink-0 rounded-full px-3 py-1 font-sarabun text-[11px] font-bold ${badgeColor}`}
-      >
-        {badge}
-      </span>
-    </div>
-  );
-}
-
-function FilterIcon() {
-  return (
-    <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M10 18h4v-2h-4v2ZM3 6v2h18V6H3Zm3 7h12v-2H6v2Z" />
-    </svg>
-  );
-}
 function ExportIcon() {
   return (
     <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -416,38 +358,10 @@ function ExportIcon() {
     </svg>
   );
 }
-function ClockSmallIcon() {
-  return (
-    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z" />
-    </svg>
-  );
-}
 function EyeIcon() {
   return (
     <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-    </svg>
-  );
-}
-function SyncIcon() {
-  return (
-    <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" />
-    </svg>
-  );
-}
-function StorageIcon() {
-  return (
-    <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M2 20h20v-4H2v4zm2-3h2v2H4v-2zM2 4v4h20V4H2zm4 3H4V5h2v2zm-4 7h20v-4H2v4zm2-3h2v2H4v-2z" />
-    </svg>
-  );
-}
-function WarningIcon() {
-  return (
-    <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
     </svg>
   );
 }

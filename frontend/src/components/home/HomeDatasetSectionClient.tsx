@@ -63,7 +63,7 @@ function PopularCarousel({ datasets }: { datasets: ReturnType<typeof mapApiDatas
       >
         {datasets.map((dataset, i) => (
           <div key={dataset.id} className="w-[calc((100%-3rem)/3)] min-w-[280px] shrink-0">
-            <DatasetCard {...dataset} variant="popular" index={i} />
+            <DatasetCard {...dataset} variant="popular" index={i} imageUrl={dataset.imageUrl} />
           </div>
         ))}
       </div>
@@ -129,7 +129,7 @@ export default function HomeDatasetSectionClient({
       </div>
       <Link
         href={`/${locale}/search`}
-        className="relative inline-flex shrink-0 items-center gap-1 py-2 pl-5 pr-7 font-sarabun text-label font-bold text-white"
+        className="relative inline-flex shrink-0 items-center gap-1 py-2 pl-5 pr-7 font-sarabun text-label font-normal text-white"
         style={{
           backgroundColor: "#33691e",
           clipPath: "polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%)",

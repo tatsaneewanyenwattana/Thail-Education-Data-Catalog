@@ -4,9 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import apiClient from "@/services/api";
 import {
   SCHOLARSHIP_TYPE_VALUES,
   TARGET_LEVEL_VALUES,
@@ -38,10 +39,11 @@ type ScholarshipFormProps = {
   mode: "create" | "edit";
   scholarshipId?: string;
   initialData?: Scholarship;
+  redirectUrl?: string;
 };
 
 const inputClass =
-  "w-full rounded-xl border border-border-input bg-surface-page px-4 py-3 font-sarabun text-label text-text-primary outline-none transition-all focus:border-primary-dark focus:ring-2 focus:ring-primary-dark/20";
+  "w-full rounded-full border border-border-input bg-surface-page px-5 py-3 font-sarabun text-label text-text-primary outline-none transition-all focus:border-primary-dark focus:ring-2 focus:ring-primary-dark/20";
 
 const labelClass =
   "mb-2 block font-sarabun text-label font-medium text-text-primary";
@@ -119,6 +121,7 @@ export default function ScholarshipForm({
   mode,
   scholarshipId,
   initialData,
+  redirectUrl,
 }: ScholarshipFormProps) {
   const locale = useLocale();
   const router = useRouter();
@@ -137,6 +140,34 @@ export default function ScholarshipForm({
   const updateMutation = useUpdateScholarship();
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
   const isPublished = initialData?.status === "published";
+
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialData?.image_url) {
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+      setExistingImageUrl(`${apiBase}${initialData.image_url}`);
+    }
+  }, [initialData]);
+
+  const handleImageSelect = (file: File | null) => {
+    if (!file) return;
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      toast.error("ไฟล์ไม่ใช่ JPEG, PNG หรือ WebP");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("ไฟล์ใหญ่เกิน 10MB");
+      return;
+    }
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+    setExistingImageUrl(null);
+  };
 
   const {
     register,
@@ -192,14 +223,25 @@ export default function ScholarshipForm({
     };
 
     try {
+      let id = scholarshipId;
       if (mode === "create") {
-        await createMutation.mutateAsync(payload);
+        const result = await createMutation.mutateAsync(payload);
+        id = result.id;
         toast.success(tForm("createSuccess"));
       } else if (scholarshipId) {
         await updateMutation.mutateAsync({ id: scholarshipId, payload });
         toast.success(tForm("updateSuccess"));
       }
-      router.push(`${base}/manage/scholarships`);
+
+      if (selectedImage && id) {
+        const formData = new FormData();
+        formData.append("file", selectedImage);
+        await apiClient.post(`/scholarship/${id}/image`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+
+      router.push(redirectUrl ?? `${base}/manage/scholarships`);
     } catch {
       toast.error(tForm("saveError"));
     }
@@ -213,7 +255,7 @@ export default function ScholarshipForm({
           {mode === "create" ? tForm("createTitle") : tForm("editTitle")}
         </h1>
         <Link
-          href={`${base}/manage/scholarships`}
+          href={redirectUrl ?? `${base}/manage/scholarships`}
           className="inline-flex items-center gap-2 font-sarabun text-label font-medium text-primary-dark transition-opacity hover:opacity-80"
         >
           <BackIcon />
@@ -245,7 +287,7 @@ export default function ScholarshipForm({
               <textarea
                 id="description"
                 rows={3}
-                className={inputClass}
+                className={`${inputClass} !rounded-2xl`}
                 {...register("description")}
               />
               <FieldError message={errors.description?.message} />
@@ -300,7 +342,7 @@ export default function ScholarshipForm({
             <textarea
               id="eligibility"
               rows={6}
-              className={`${inputClass} min-h-[160px] resize-y`}
+              className={`${inputClass} !rounded-2xl min-h-[160px] resize-y`}
               {...register("eligibility")}
             />
             <FieldError message={errors.eligibility?.message} />
@@ -415,9 +457,76 @@ export default function ScholarshipForm({
           </div>
         </section>
 
-        {/* Section 5 — สถานะเริ่มต้น */}
+        {/* Section 5 — รูปภาพทุน */}
         <section className="rounded-2xl border border-border-default/60 bg-surface-card p-6 shadow-level-1">
-          <SectionHeader number={5} title="สถานะเริ่มต้น" />
+          <SectionHeader number={5} title="รูปภาพทุน" />
+
+          <div>
+            {imagePreview || existingImageUrl ? (
+              <div className="space-y-3">
+                <div className="relative overflow-hidden rounded-2xl border border-border-default/40">
+                  <img
+                    src={imagePreview ?? existingImageUrl!}
+                    alt="preview"
+                    className="h-48 w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedImage(null);
+                      setImagePreview(null);
+                      setExistingImageUrl(null);
+                    }}
+                    className="absolute right-3 top-3 rounded-full bg-black/50 p-1.5 text-white transition-colors hover:bg-black/70"
+                    aria-label="ลบรูป"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                      <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                    </svg>
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  className="font-sarabun text-label text-primary-dark hover:underline"
+                >
+                  เปลี่ยนรูป
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => imageInputRef.current?.click()}
+                className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border-input bg-surface-page px-6 py-10 text-center transition-colors hover:border-primary-dark/40 hover:bg-surface-container"
+              >
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-light text-primary-dark">
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                  </svg>
+                </div>
+                <p className="font-sarabun text-label font-medium text-text-primary">
+                  คลิกเพื่อเลือกรูปภาพ
+                </p>
+                <p className="mt-1 font-sarabun text-caption text-text-muted">
+                  JPG, PNG, WebP · สูงสุด 10MB
+                </p>
+              </div>
+            )}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                handleImageSelect(e.target.files?.[0] ?? null);
+                e.target.value = "";
+              }}
+            />
+          </div>
+        </section>
+
+        {/* Section 6 — สถานะเริ่มต้น */}
+        <section className="rounded-2xl border border-border-default/60 bg-surface-card p-6 shadow-level-1">
+          <SectionHeader number={6} title="สถานะเริ่มต้น" />
 
           <div>
             <label htmlFor="status" className={labelClass}>
@@ -433,15 +542,15 @@ export default function ScholarshipForm({
         {/* Footer */}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <Link
-            href={`${base}/manage/scholarships`}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-border-input px-8 font-sarabun text-label font-medium text-text-primary transition-colors hover:bg-surface-container"
+            href={redirectUrl ?? `${base}/manage/scholarships`}
+            className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-border-input px-8 font-sarabun text-label font-medium text-text-primary transition-colors hover:bg-surface-container"
           >
             {tForm("cancel")}
           </Link>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-primary-dark px-8 font-sarabun text-label font-semibold text-white shadow-level-1 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-primary-dark px-8 font-sarabun text-label font-semibold text-white shadow-level-1 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <SaveIcon />
             {tForm("save")}

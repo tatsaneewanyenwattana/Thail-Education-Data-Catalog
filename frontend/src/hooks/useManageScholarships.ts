@@ -34,9 +34,15 @@ export type MyScholarshipsResult = {
 
 const STALE_TIME_MS = 30_000;
 
-export function useMyScholarships(page = 1, status?: string) {
+export function useMyScholarships(
+  page = 1,
+  status?: string,
+  search?: string,
+  scholarshipType?: string,
+  targetLevel?: string,
+) {
   return useQuery<MyScholarshipsResult, Error>({
-    queryKey: ["agency", "scholarships", "mine", { page, status }],
+    queryKey: ["agency", "scholarships", "mine", { page, status, search, scholarshipType, targetLevel }],
     queryFn: async () => {
       const res = await apiClient.get<{
         data: Scholarship[];
@@ -46,6 +52,9 @@ export function useMyScholarships(page = 1, status?: string) {
           page,
           page_size: 20,
           status: status || undefined,
+          search: search || undefined,
+          scholarship_type: scholarshipType || undefined,
+          target_level: targetLevel || undefined,
         },
       });
 

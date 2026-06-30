@@ -8,19 +8,13 @@ import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { LockIcon, EyeIcon } from "@/components/common/auth/AuthIcons";
+import PasswordStrengthIndicator from "@/components/common/auth/PasswordStrength";
 import apiClient from "@/services/api";
 
 type ResetPasswordValues = {
   new_password: string;
   confirm_password: string;
-};
-
-type PasswordChecks = {
-  length: boolean;
-  lower: boolean;
-  upper: boolean;
-  number: boolean;
-  special: boolean;
 };
 
 type PageView = "missing" | "form" | "expired";
@@ -32,129 +26,6 @@ function getErrorCode(error: unknown): string | undefined {
   return undefined;
 }
 
-function getPasswordChecks(password: string): PasswordChecks {
-  return {
-    length: password.length >= 8,
-    lower: /[a-z]/.test(password),
-    upper: /[A-Z]/.test(password),
-    number: /[0-9]/.test(password),
-    special: /[!@#$%^&*]/.test(password),
-  };
-}
-
-function getPasswordLevel(checks: PasswordChecks): number {
-  return Object.values(checks).filter(Boolean).length;
-}
-
-function LockIcon() {
-  return (
-    <svg
-      className="h-5 w-5 text-text-muted"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-      />
-    </svg>
-  );
-}
-
-function EyeIcon({ off }: { off?: boolean }) {
-  if (off) {
-    return (
-      <svg
-        className="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        aria-hidden
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029M6.223 6.223A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.543 7a9.965 9.965 0 01-4.293 5.411M15 12a3 3 0 11-6 0 3 3 0 016 0zM3 3l18 18"
-        />
-      </svg>
-    );
-  }
-  return (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-      />
-    </svg>
-  );
-}
-
-function PasswordStrengthIndicator({
-  password,
-  t,
-}: {
-  password: string;
-  t: ReturnType<typeof useTranslations<"auth.resetPassword">>;
-}) {
-  if (!password) return null;
-
-  const checks = getPasswordChecks(password);
-  const level = getPasswordLevel(checks);
-
-  const checklist = [
-    { key: "passwordCheckLength", met: checks.length },
-    { key: "passwordCheckLower", met: checks.lower },
-    { key: "passwordCheckUpper", met: checks.upper },
-    { key: "passwordCheckNumber", met: checks.number },
-    { key: "passwordCheckSpecial", met: checks.special },
-  ] as const;
-
-  return (
-    <div className="mt-2 space-y-2">
-      <div className="flex gap-1">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div
-            key={index}
-            className={`h-1 flex-1 rounded-radius-full transition-colors duration-300 ${
-              index < level ? "bg-primary" : "bg-surface-container"
-            }`}
-          />
-        ))}
-      </div>
-      <ul className="space-y-1">
-        {checklist.map((item) => (
-          <li
-            key={item.key}
-            className={`font-sarabun text-caption ${
-              item.met ? "text-primary" : "text-text-muted"
-            }`}
-          >
-            {item.met ? "✓" : "✗"} {t(item.key)}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 export default function ResetPasswordPage() {
   const t = useTranslations("auth.resetPassword");
@@ -240,11 +111,11 @@ export default function ResetPasswordPage() {
   };
 
   const cardClass =
-    "w-full max-sm:-mx-4 max-sm:w-[calc(100%+2rem)] max-sm:max-w-none max-sm:rounded-none max-sm:border-x-0 max-sm:p-spacing-6 bg-surface-card shadow-level-1 sm:max-w-[440px] sm:rounded-none sm:rounded-radius-lg sm:border sm:border-border-default sm:p-10";
+    "w-full max-sm:-mx-4 max-sm:w-[calc(100%+2rem)] max-sm:max-w-none max-sm:rounded-none max-sm:border-x-0 max-sm:p-spacing-6 rounded-2xl border border-white/80 bg-white shadow-md sm:max-w-[440px] sm:p-10";
 
   const inputClass = (hasError: boolean) =>
-    `h-10 w-full rounded-radius-sm border bg-surface-card font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-dark/20 ${
-      hasError ? "border-status-error" : "border-border-input"
+    `h-11 w-full rounded-xl border bg-gray-50 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20 transition-all ${
+      hasError ? "border-status-error" : "border-gray-200"
     }`;
 
   return (
@@ -252,7 +123,7 @@ export default function ResetPasswordPage() {
       <div className="mx-auto flex justify-center">
         <div className={cardClass}>
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-radius-md bg-primary-light">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-light">
               <span className="font-kanit text-heading-3 text-primary-dark">
                 ED
               </span>
@@ -277,7 +148,7 @@ export default function ResetPasswordPage() {
               </p>
               <Link
                 href={`/${locale}/forgot-password`}
-                className="inline-flex h-10 w-full items-center justify-center rounded-radius-sm bg-primary font-sarabun text-label font-medium text-white transition-colors hover:bg-primary-hover"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-primary-dark font-sarabun text-label font-medium text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg"
               >
                 {t("requestNewLink")}
               </Link>
@@ -291,7 +162,7 @@ export default function ResetPasswordPage() {
               </p>
               <Link
                 href={`/${locale}/forgot-password`}
-                className="inline-flex h-10 w-full items-center justify-center rounded-radius-sm bg-primary font-sarabun text-label font-medium text-white transition-colors hover:bg-primary-hover"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-primary-dark font-sarabun text-label font-medium text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg"
               >
                 {t("requestNewLink")}
               </Link>
@@ -336,7 +207,13 @@ export default function ResetPasswordPage() {
                 </div>
                 <PasswordStrengthIndicator
                   password={newPasswordValue}
-                  t={t}
+                  labels={{
+                    length: t("passwordCheckLength"),
+                    lower: t("passwordCheckLower"),
+                    upper: t("passwordCheckUpper"),
+                    number: t("passwordCheckNumber"),
+                    special: t("passwordCheckSpecial"),
+                  }}
                 />
                 {errors.new_password && (
                   <p className="mt-1 font-sarabun text-caption text-status-error">
@@ -375,7 +252,7 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={!isValid || mutation.isPending}
-                className="flex h-10 w-full items-center justify-center rounded-radius-sm bg-primary font-sarabun text-label font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-11 w-full items-center justify-center rounded-full bg-primary-dark font-sarabun text-label font-medium text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {mutation.isPending ? t("submitting") : t("submit")}
               </button>
@@ -396,7 +273,7 @@ export default function ResetPasswordPage() {
       {toast && (
         <div
           role="alert"
-          className={`fixed bottom-6 right-6 z-50 max-w-sm rounded-radius-md border-l-4 px-4 py-3 shadow-level-2 ${
+          className={`fixed bottom-6 right-6 z-50 max-w-sm rounded-xl border-l-4 px-4 py-3 shadow-md ${
             toast.type === "success"
               ? "border-status-success bg-status-success-bg"
               : "border-status-error bg-status-error-bg"

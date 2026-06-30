@@ -28,19 +28,19 @@ export default function CodeBlock({
   }, [code]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border-default/40 shadow-level-1">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-border-default/40 shadow-level-1">
       {showHeader && (
-        <div className="flex items-center justify-between border-b border-blue-100 px-5 py-2.5" style={{ backgroundColor: "#e3f2fd" }}>
-          <span className="font-sarabun text-caption font-bold uppercase" style={{ color: "#1565c0" }}>
+        <div className="flex items-center justify-between border-b border-blue-100 px-5 py-3" style={{ backgroundColor: "#e3f2fd" }}>
+          <span className="font-sarabun text-label font-bold uppercase" style={{ color: "#1565c0" }}>
             {t("response")}
           </span>
-          <span className="font-sarabun text-caption font-semibold" style={{ color: "#1976d2" }}>
+          <span className="font-sarabun text-label font-semibold" style={{ color: "#1976d2" }}>
             {label}
           </span>
         </div>
       )}
-      <div className="relative px-5 py-4" style={{ backgroundColor: "#f5f9ff" }}>
-        <pre className="overflow-x-auto font-mono text-body-md leading-relaxed" style={{ color: "#1a3a2a" }}>
+      <div className="relative px-5 py-5" style={{ backgroundColor: "#f5f9ff", minHeight: "80px" }}>
+        <pre className="overflow-x-auto font-mono text-body-lg leading-loose" style={{ color: "#1a3a2a" }}>
           <code>{code}</code>
         </pre>
         <button

@@ -39,14 +39,25 @@ def list_agency_datasets(
     user_id: uuid.UUID,
     pagination: PaginationParams,
     status_filter: str | None = None,
+    search: str | None = None,
+    year: int | None = None,
 ) -> tuple[list[AgencyDatasetListItem], int]:
     items, total = agency_repo.list_agency_datasets(
         db=db,
         user_id=user_id,
         pagination=pagination,
         status_filter=status_filter,
+        search=search,
+        year=year,
     )
     return [AgencyDatasetListItem(**item) for item in items], total
+
+
+def list_agency_dataset_years(
+    db: Session,
+    user_id: uuid.UUID,
+) -> list[int]:
+    return agency_repo.list_agency_dataset_years(db=db, user_id=user_id)
 
 
 def _classify_upload_history_activity(
@@ -71,11 +82,13 @@ def list_agency_activity_logs(
     db: Session,
     user_id: uuid.UUID,
     pagination: PaginationParams,
+    item_type: str | None = None,
 ) -> tuple[list[AgencyActivityLogItem], int]:
     rows, total = agency_repo.list_agency_activity_logs(
         db=db,
         user_id=user_id,
         pagination=pagination,
+        item_type=item_type,
     )
     items: list[AgencyActivityLogItem] = []
     for row in rows:
@@ -96,6 +109,7 @@ def list_agency_activity_logs(
                 item_type=item_type,
                 activity_type=activity_type,
                 title=row.get("title"),
+                target_id=row.get("target_id"),
             )
         )
     return items, total

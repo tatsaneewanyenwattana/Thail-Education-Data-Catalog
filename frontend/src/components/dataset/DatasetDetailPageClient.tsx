@@ -85,11 +85,15 @@ export default function DatasetDetailPageClient({
     );
   }
 
+  const agencyDisplay =
+    uiLocale === "en" && apiDataset.agency_name_en
+      ? apiDataset.agency_name_en
+      : (citation?.agency_name ?? apiDataset.agency_name);
   const detail = buildDatasetDetailView(
     apiDataset,
     categories,
     uiLocale,
-    citation?.agency_name
+    agencyDisplay
   );
 
   // ถ้า updated_at != created_at → แสดง "อัปเดตล่าสุด" ถ้าเหมือนกัน → "เผยแพร่เมื่อ" ตาม #5 M5

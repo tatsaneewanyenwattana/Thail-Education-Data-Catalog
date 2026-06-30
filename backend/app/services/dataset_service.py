@@ -303,10 +303,12 @@ def _build_dataset_index_document(db: Session, dataset) -> dict:
         "description": dataset.description,
         "tags": tag_names,
         "agency_name": user.agency_name if user else None,
+        "agency_name_en": user.agency_name_en if user else None,
         "category_id": str(dataset.category_id) if dataset.category_id else None,
         "user_id": str(dataset.user_id),
         "license": dataset.license,
         "file_format": dataset_repo.get_latest_dataset_file_format(db, dataset.id),
+        "file_info": dataset_repo.get_latest_dataset_file_info(db, dataset.id),
         "status": dataset.status,
         "published_at": published_at,
         "download_count": dataset.download_count,
@@ -352,10 +354,15 @@ def _build_dataset_response(
     data.tags = tag_ids
     owner = db.query(User).filter(User.id == dataset.user_id).first()
     data.agency_name = owner.agency_name if owner else None
+    data.agency_name_en = owner.agency_name_en if owner else None
     name_th, name_en = _resolve_category_names(db, dataset.category_id)
     data.category_name_th = name_th
     data.category_name_en = name_en
     data.file_format = dataset_repo.get_latest_dataset_file_format(db, dataset_id)
+    from app.models.tag_model import Tag
+    tag_objs = db.query(Tag.name).filter(Tag.id.in_(tag_ids)).all() if tag_ids else []
+    data.tag_names = [t[0] for t in tag_objs]
+    data.file_info = dataset_repo.get_latest_dataset_file_info(db, dataset_id)
     return data
 
 
@@ -693,6 +700,7 @@ def list_datasets(
         r = DatasetResponse.model_validate(ds)
         r.tags = tag_ids
         r.agency_name = owner.agency_name if owner else None
+        r.agency_name_en = owner.agency_name_en if owner else None
         r.file_format = dataset_repo.get_latest_dataset_file_format(db, ds.id)
         responses.append(r)
     return responses, total

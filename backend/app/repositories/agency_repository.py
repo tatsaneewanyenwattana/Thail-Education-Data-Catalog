@@ -268,6 +268,8 @@ def list_agency_datasets(
     user_id: uuid.UUID,
     pagination: PaginationParams,
     status_filter: str | None = None,
+    search: str | None = None,
+    year: int | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
     query = db.query(Dataset).filter(
         Dataset.user_id == user_id,
@@ -275,6 +277,14 @@ def list_agency_datasets(
     )
     if status_filter:
         query = query.filter(Dataset.status == status_filter)
+    if search:
+        like = f"%{search}%"
+        query = query.outerjoin(Category, Dataset.category_id == Category.id).filter(
+            Dataset.title.ilike(like) | Category.name_th.ilike(like) | Category.name_en.ilike(like)
+        )
+    if year:
+        ad_year = year - 543
+        query = query.filter(extract("year", Dataset.updated_at) == ad_year)
 
     total = query.count()
     datasets = (
@@ -311,10 +321,25 @@ def list_agency_datasets(
     return items, total
 
 
+def list_agency_dataset_years(
+    db: Session,
+    user_id: uuid.UUID,
+) -> list[int]:
+    rows = (
+        db.query(extract("year", Dataset.updated_at).label("y"))
+        .filter(Dataset.user_id == user_id, Dataset.is_deleted.is_(False))
+        .distinct()
+        .order_by(extract("year", Dataset.updated_at).desc())
+        .all()
+    )
+    return [int(r.y) + 543 for r in rows if r.y]
+
+
 def list_agency_activity_logs(
     db: Session,
     user_id: uuid.UUID,
     pagination: PaginationParams,
+    item_type: str | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
     cutoff = datetime.now(timezone.utc) - timedelta(days=ACTIVITY_LOG_DISPLAY_DAYS)
     query = (
@@ -340,6 +365,8 @@ def list_agency_activity_logs(
             AuditLog.created_at >= cutoff,
         )
     )
+    if item_type:
+        query = query.filter(AuditLog.target_type == item_type)
     total = query.count()
     rows = (
         query.order_by(AuditLog.created_at.desc())
@@ -366,6 +393,7 @@ def list_agency_activity_logs(
                 "created_at": log.created_at,
                 "action": log.action,
                 "target_type": log.target_type,
+                "target_id": log.target_id,
                 "title": title or (log.detail or {}).get("title"),
                 "entity_status": entity_status,
                 "detail": log.detail,

@@ -9,4 +9,5 @@ export type PIIFinding = {
 export type PIIScanResult = {
   findings: PIIFinding[];
   has_pii: boolean;
+  quality_score: number | null;
 };

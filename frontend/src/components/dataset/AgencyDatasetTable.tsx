@@ -16,6 +16,8 @@ type AgencyDatasetTableProps = {
   page: number;
   onPageChange: (page: number) => void;
   onDelete: (dataset: AgencyDatasetRow, title: string) => void;
+  search?: string;
+  year?: number;
 };
 
 function DatasetRowIcon() {
@@ -109,12 +111,14 @@ export default function AgencyDatasetTable({
   page,
   onPageChange,
   onDelete,
+  search,
+  year,
 }: AgencyDatasetTableProps) {
   const t = useTranslations("agency.datasets");
   const tStatus = useTranslations("agency.status");
   const locale = useLocale();
   const base = `/${locale}`;
-  const { data, isLoading, isError, error } = useAgencyDatasets(status, page);
+  const { data, isLoading, isError, error } = useAgencyDatasets(status, page, undefined, search, year);
   const publishMutation = usePublishDataset();
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);

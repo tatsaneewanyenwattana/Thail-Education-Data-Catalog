@@ -9,6 +9,7 @@ export type AgencyActivityLogItem = {
   itemType: "dataset" | "scholarship";
   activityType: "upload" | "draft" | "update" | "delete";
   title: string | null;
+  targetId: string | null;
 };
 
 export type AgencyActivityLogsResult = {
@@ -34,9 +35,13 @@ type ActivityLogListResponse = {
 
 export const ACTIVITY_LOG_PAGE_SIZE = 20;
 
-export function useAgencyActivityLogs(page = 1, pageSize = ACTIVITY_LOG_PAGE_SIZE) {
+export function useAgencyActivityLogs(
+  page = 1,
+  pageSize = ACTIVITY_LOG_PAGE_SIZE,
+  itemType?: string,
+) {
   return useQuery<AgencyActivityLogsResult>({
-    queryKey: ["agency", "activity-logs", page, pageSize],
+    queryKey: ["agency", "activity-logs", page, pageSize, itemType],
     queryFn: async () => {
       const res = await apiClient.get<ActivityLogListResponse>(
         "/agency/activity-logs",
@@ -46,6 +51,7 @@ export function useAgencyActivityLogs(page = 1, pageSize = ACTIVITY_LOG_PAGE_SIZ
             page_size: pageSize,
             sort: "created_at",
             order: "desc",
+            item_type: itemType || undefined,
           },
         }
       );

@@ -40,7 +40,7 @@ export default function SearchPageContent() {
   );
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden" style={{ background: "linear-gradient(135deg, #80cbc4 0%, #ffffff 17%, #ffecb3 33%, #80cbc4 50%, #ffffff 67%, #fff9c4 83%, #ffecb3 100%)" }}>
+    <div className="relative min-h-screen overflow-x-hidden" style={{ backgroundColor: "#e1f5fe" }}>
     <div className="relative mx-auto max-w-container-max px-4 py-spacing-4 md:px-spacing-10">
       <div className="mb-8">
         <h1 className="mb-4 font-kanit text-[2rem] font-bold md:text-[2.5rem]" style={{ color: "#33691e" }}>
