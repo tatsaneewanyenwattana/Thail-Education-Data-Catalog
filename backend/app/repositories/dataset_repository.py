@@ -145,6 +145,34 @@ def get_dataset_versions(
     )
 
 
+def get_all_dataset_files(db: Session, dataset_id: uuid.UUID) -> list[DatasetFile]:
+    return (
+        db.query(DatasetFile)
+        .filter(
+            DatasetFile.dataset_id == dataset_id,
+            DatasetFile.is_deleted.is_(False),
+        )
+        .order_by(DatasetFile.created_at.asc())
+        .all()
+    )
+
+
+def get_all_dataset_file_infos(db: Session, dataset_id: uuid.UUID) -> list[dict]:
+    rows = (
+        db.query(DatasetFile.id, DatasetFile.file_name, DatasetFile.file_size, DatasetFile.file_format)
+        .filter(
+            DatasetFile.dataset_id == dataset_id,
+            DatasetFile.is_deleted.is_(False),
+        )
+        .order_by(DatasetFile.created_at.asc())
+        .all()
+    )
+    return [
+        {"id": str(r[0]), "file_name": r[1], "file_size": r[2], "file_format": r[3]}
+        for r in rows
+    ]
+
+
 def get_latest_dataset_file_format(db: Session, dataset_id: uuid.UUID) -> str | None:
     row = (
         db.query(DatasetFile.file_format)
