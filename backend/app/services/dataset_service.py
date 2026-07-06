@@ -363,6 +363,7 @@ def _build_dataset_response(
     tag_objs = db.query(Tag.name).filter(Tag.id.in_(tag_ids)).all() if tag_ids else []
     data.tag_names = [t[0] for t in tag_objs]
     data.file_info = dataset_repo.get_latest_dataset_file_info(db, dataset_id)
+    data.files = dataset_repo.get_all_dataset_file_infos(db, dataset_id)
     return data
 
 
@@ -420,19 +421,13 @@ def run_full_pii_scan(
         db.close()
 
 
-def upload(
-    db: Session,
-    minio_client,
-    es_client,
-    background_tasks: BackgroundTasks,
+def _process_single_file(
     file: UploadFile,
-    request: DatasetCreateRequest,
-    current_user: dict,
-    ip_address: str,
-) -> DatasetResponse:
+    content: bytes,
+) -> tuple[bytes, str, str, list[str], int | None]:
+    """Process one file: validate, mask PII, calculate quality. Returns (masked_content, file_format, ext, masked_columns, quality_score)."""
     from app.utils.pii_masking import mask_text_content
 
-    content = file.file.read()
     file_format = _validate_file(file, content)
     ext = FORMAT_TO_EXT[file_format]
     masked_columns: list[str] = []
@@ -464,10 +459,35 @@ def upload(
             masked_df.to_excel(buf, index=False)
             masked_content = buf.getvalue()
 
+    return masked_content, file_format, ext, masked_columns, quality_score
+
+
+def upload(
+    db: Session,
+    minio_client,
+    es_client,
+    background_tasks: BackgroundTasks,
+    files: list[tuple[UploadFile, bytes]],
+    request: DatasetCreateRequest,
+    current_user: dict,
+    ip_address: str,
+) -> DatasetResponse:
+
+    processed_files: list[tuple[UploadFile, bytes, bytes, str, str, list[str], int | None]] = []
+    for file, content in files:
+        masked_content, file_format, ext, masked_columns, quality_score = _process_single_file(file, content)
+        processed_files.append((file, content, masked_content, file_format, ext, masked_columns, quality_score))
+
+    scores = [qs for *_, qs in processed_files if qs is not None]
+    overall_quality = min(scores) if scores else None
+    all_masked_columns: list[str] = []
+    for *_, masked_cols, _ in processed_files:
+        all_masked_columns.extend(masked_cols)
+
     if request.category_id is not None:
         category_service.validate_category_is_leaf(db, request.category_id)
 
-    object_name: str | None = None
+    saved_objects: list[str] = []
     try:
         dataset = dataset_repo.create_dataset(
             db,
@@ -477,24 +497,28 @@ def upload(
             license=request.license,
             category_id=request.category_id,
             metadata=request.metadata,
-            quality_score=quality_score,
+            quality_score=overall_quality,
         )
 
-        object_name = _save_to_minio(minio_client, dataset.id, masked_content, ext)
+        for file, content, masked_content, file_format, ext, masked_columns, quality_score in processed_files:
+            object_name = _save_to_minio(minio_client, dataset.id, masked_content, ext)
+            saved_objects.append(object_name)
 
-        dataset_repo.create_dataset_file(
-            db,
-            dataset_id=dataset.id,
-            file_name=file.filename or f"{dataset.id}.{ext}",
-            file_path=object_name,
-            file_size=len(masked_content),
-            file_format=file_format,
-        )
+            dataset_repo.create_dataset_file(
+                db,
+                dataset_id=dataset.id,
+                file_name=file.filename or f"{dataset.id}.{ext}",
+                file_path=object_name,
+                file_size=len(masked_content),
+                file_format=file_format,
+            )
+
+        first_object = saved_objects[0] if saved_objects else ""
         dataset_repo.create_dataset_version(
             db,
             dataset_id=dataset.id,
             version_number=1,
-            file_path=object_name,
+            file_path=first_object,
             changelog="Initial upload",
             created_by=uuid.UUID(current_user["sub"]),
         )
@@ -516,15 +540,12 @@ def upload(
         role = current_user.get("role")
         requested_status = (request.status or "draft").lower()
         if role == "admin":
-            # Admin เผยแพร่ทันทีเสมอ
             dataset.status = "published"
             dataset.published_at = datetime.now(timezone.utc)
         elif requested_status == "published":
-            # Agency เลือกเผยแพร่ทันที
             dataset.status = "published"
             dataset.published_at = datetime.now(timezone.utc)
         else:
-            # Agency บันทึก Draft
             dataset.status = "draft"
             dataset.published_at = None
 
@@ -535,8 +556,9 @@ def upload(
             target_type="dataset",
             target_id=dataset.id,
             detail={
-                "masked_columns": masked_columns,
-                "quality_score": quality_score,
+                "masked_columns": all_masked_columns,
+                "quality_score": overall_quality,
+                "file_count": len(processed_files),
                 "status": dataset.status,
             },
             ip_address=ip_address,
@@ -550,8 +572,8 @@ def upload(
         print(traceback.format_exc(), file=sys.stderr, flush=True)
         logger.error(f"UPLOAD ERROR: {traceback.format_exc()}")
         db.rollback()
-        if object_name:
-            _delete_from_minio(minio_client, object_name)
+        for obj in saved_objects:
+            _delete_from_minio(minio_client, obj)
         raise_app_error("FILE_UPLOAD_FAILED", str(exc))
 
     if dataset.status == "published":
@@ -564,13 +586,124 @@ def upload(
         db.commit()
         email_service.notify_subscribers_new_dataset(background_tasks, db, dataset)
         email_service.notify_saved_search(background_tasks, db, dataset)
-        background_tasks.add_task(
-            run_full_pii_scan,
-            dataset.id,
-            content,
-            file.content_type or "",
-        )
+        for file, content, *_ in processed_files:
+            background_tasks.add_task(
+                run_full_pii_scan,
+                dataset.id,
+                content,
+                file.content_type or "",
+            )
     return _build_dataset_response(db, dataset.id)
+
+
+def add_files_to_dataset(
+    db: Session,
+    minio_client,
+    dataset_id: uuid.UUID,
+    files: list,
+    current_user: dict,
+    ip_address: str,
+    background_tasks: BackgroundTasks | None = None,
+) -> DatasetResponse:
+    dataset = dataset_repo.get_dataset_by_id(db, dataset_id)
+    if dataset is None:
+        raise_app_error("DATASET_NOT_FOUND")
+    if current_user.get("role") != "admin" and str(dataset.user_id) != current_user["sub"]:
+        raise_app_error("DATASET_PERMISSION_DENIED")
+
+    saved_objects: list[str] = []
+    new_scores: list[int] = []
+    try:
+        for file in files:
+            content = file.file.read()
+            masked_content, file_format, ext, masked_columns, quality_score = _process_single_file(file, content)
+            file.file.seek(0)
+
+            object_name = _save_to_minio(minio_client, dataset_id, masked_content, ext)
+            saved_objects.append(object_name)
+
+            dataset_repo.create_dataset_file(
+                db,
+                dataset_id=dataset_id,
+                file_name=file.filename or f"{dataset_id}.{ext}",
+                file_path=object_name,
+                file_size=len(masked_content),
+                file_format=file_format,
+            )
+            if quality_score is not None:
+                new_scores.append(quality_score)
+
+            if background_tasks and dataset.status == "published":
+                background_tasks.add_task(
+                    run_full_pii_scan, dataset_id, content, file.content_type or "",
+                )
+
+        if new_scores:
+            existing_score = dataset.quality_score
+            all_scores = ([existing_score] if existing_score is not None else []) + new_scores
+            dataset_repo.update_dataset(db, dataset_id, quality_score=min(all_scores))
+
+        dataset_repo.create_audit_log(
+            db,
+            user_id=uuid.UUID(current_user["sub"]),
+            action="dataset.add_files",
+            target_type="dataset",
+            target_id=dataset_id,
+            detail={"file_count": len(files)},
+            ip_address=ip_address,
+        )
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        for obj in saved_objects:
+            _delete_from_minio(minio_client, obj)
+        raise_app_error("FILE_UPLOAD_FAILED", str(exc))
+
+    return _build_dataset_response(db, dataset_id)
+
+
+def remove_file_from_dataset(
+    db: Session,
+    dataset_id: uuid.UUID,
+    file_id: uuid.UUID,
+    current_user: dict,
+    ip_address: str,
+) -> DatasetResponse:
+    dataset = dataset_repo.get_dataset_by_id(db, dataset_id)
+    if dataset is None:
+        raise_app_error("DATASET_NOT_FOUND")
+    if current_user.get("role") != "admin" and str(dataset.user_id) != current_user["sub"]:
+        raise_app_error("DATASET_PERMISSION_DENIED")
+
+    all_files = dataset_repo.get_all_dataset_files(db, dataset_id)
+    if len(all_files) <= 1:
+        raise_app_error("VALIDATION_ERROR", message="ต้องมีไฟล์อย่างน้อย 1 ไฟล์")
+
+    target = next((f for f in all_files if f.id == file_id), None)
+    if target is None:
+        raise_app_error("FILE_NOT_FOUND")
+
+    target.is_deleted = True
+    dataset_repo.create_audit_log(
+        db,
+        user_id=uuid.UUID(current_user["sub"]),
+        action="dataset.remove_file",
+        target_type="dataset",
+        target_id=dataset_id,
+        detail={"file_id": str(file_id), "file_name": target.file_name},
+        ip_address=ip_address,
+    )
+
+    remaining = [f for f in all_files if f.id != file_id]
+    remaining_scores = [
+        calculate_quality_score(
+            _read_dataframe(b"", "text/csv")
+        )
+        for f in remaining
+    ] if False else []
+    db.commit()
+
+    return _build_dataset_response(db, dataset_id)
 
 
 def publish_dataset_directly(
