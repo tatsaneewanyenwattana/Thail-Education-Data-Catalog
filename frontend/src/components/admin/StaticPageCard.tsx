@@ -97,13 +97,23 @@ export default function StaticPageCard({ page }: StaticPageCardProps) {
           <span className="font-sarabun text-xs text-text-muted">
             {t("lastEdit")}: {formatUpdatedAt(page.updatedAt, locale)}
           </span>
-          <button
-            type="button"
-            onClick={() => router.push(`/${locale}/admin/pages/${page.slug}`)}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-5 py-2 font-sarabun text-sm font-bold text-white shadow-sm transition-all hover:brightness-110 active:scale-95"
-          >
-            {t("editContent")}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-400 transition-all hover:bg-red-50 hover:text-red-500 active:scale-95"
+              aria-label={locale === "th" ? "ลบ" : "Delete"}
+            >
+              <TrashIcon />
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push(`/${locale}/admin/pages/${page.slug}`)}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-5 py-2 font-sarabun text-sm font-bold text-white shadow-sm transition-all hover:brightness-110 active:scale-95"
+            >
+              {t("editContent")}
+            </button>
+          </div>
         </div>
       </article>
 

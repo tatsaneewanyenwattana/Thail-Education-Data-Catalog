@@ -70,7 +70,7 @@ export default function CreatePageModal({
   ];
 
   const inputClass =
-    "w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20";
+    "w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-[#0081A7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0081A7]/20";
 
   return (
     <div
@@ -140,7 +140,7 @@ export default function CreatePageModal({
               <button
                 type="button"
                 onClick={() => setStatusOpen(!statusOpen)}
-                className="flex w-full items-center justify-between rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+                className="flex w-full items-center justify-between rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-[#0081A7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0081A7]/20"
               >
                 <span>{statusOptions.find((o) => o.value === status)?.label}</span>
                 <svg
@@ -164,7 +164,7 @@ export default function CreatePageModal({
                         }}
                         className={`flex w-full px-4 py-2.5 text-left font-sarabun text-body-md transition-colors ${
                           status === opt.value
-                            ? "bg-primary-dark/10 font-bold text-primary-dark"
+                            ? "bg-[#053F5C]/10 font-bold text-[#053F5C]"
                             : "text-text-primary hover:bg-gray-50"
                         }`}
                       >
@@ -189,7 +189,7 @@ export default function CreatePageModal({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-full border border-gray-200 bg-white px-5 py-2.5 font-sarabun text-label font-medium text-text-secondary shadow-sm transition-all hover:bg-gray-50 disabled:opacity-60"
+            className="rounded-full border-2 border-gray-200 px-6 py-2.5 font-sarabun text-label font-semibold text-text-secondary transition-all hover:bg-gray-50 disabled:opacity-60"
           >
             {t("cancel")}
           </button>
@@ -197,7 +197,7 @@ export default function CreatePageModal({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="rounded-full bg-primary-dark px-5 py-2.5 font-sarabun text-label font-semibold text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg disabled:opacity-60"
+            className="rounded-full bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-6 py-2.5 font-sarabun text-label font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-60"
           >
             {isSubmitting ? t("creating") : t("submit")}
           </button>
