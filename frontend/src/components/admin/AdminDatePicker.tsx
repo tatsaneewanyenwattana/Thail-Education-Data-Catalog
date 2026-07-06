@@ -39,7 +39,7 @@ export default function AdminDatePicker({
     <DatePicker
       id={id}
       selected={toDate(value)}
-      onChange={(date) => onChange(toIso(date))}
+      onChange={(date: Date | null) => onChange(toIso(date))}
       locale={locale === "th" ? "th" : undefined}
       dateFormat="dd/MM/yyyy"
       placeholderText={placeholder}
