@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import AdminDatePicker from "@/components/admin/AdminDatePicker";
 import EmailLogsTable, {
   EMAIL_LOG_STATUS_OPTIONS,
   EMAIL_LOG_TEMPLATE_OPTIONS,
@@ -72,13 +73,13 @@ export default function AdminEmailLogsPage() {
       {/* Header */}
       <header>
         <nav className="mb-2 flex font-sarabun text-body-sm text-text-muted">
-          <Link href={`${base}/admin`} className="hover:text-primary-dark">
+          <Link href={`${base}/admin`} className="hover:text-[#0081A7]">
             Admin
           </Link>
           <span className="mx-2">&gt;</span>
-          <span className="font-medium text-primary-dark">{t("title")}</span>
+          <span className="font-semibold text-[#053F5C]">{t("title")}</span>
         </nav>
-        <h1 className="font-kanit text-[32px] font-bold leading-tight text-text-primary">
+        <h1 className="font-kanit text-[32px] font-bold leading-tight text-[#053F5C]">
           {t("title")}
         </h1>
         <p className="mt-1 font-sarabun text-body-md text-text-muted">
@@ -113,7 +114,7 @@ export default function AdminEmailLogsPage() {
               value={recipientEmail}
               onChange={(e) => updateFilter("recipient_email", e.target.value)}
               placeholder={t("filterEmailPlaceholder")}
-              className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+              className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-[#0081A7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0081A7]/20"
             />
           </div>
 
@@ -136,11 +137,10 @@ export default function AdminEmailLogsPage() {
             <span className="block font-sarabun text-body-sm font-semibold text-text-secondary">
               {t("filterDateFrom")}
             </span>
-            <input
-              type="date"
+            <AdminDatePicker
               value={dateFrom}
-              onChange={(e) => updateFilter("date_from", e.target.value)}
-              className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+              onChange={(v) => updateFilter("date_from", v)}
+              locale={locale}
             />
           </div>
 
@@ -149,11 +149,10 @@ export default function AdminEmailLogsPage() {
             <span className="block font-sarabun text-body-sm font-semibold text-text-secondary">
               {t("filterDateTo")}
             </span>
-            <input
-              type="date"
+            <AdminDatePicker
               value={dateTo}
-              onChange={(e) => updateFilter("date_to", e.target.value)}
-              className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+              onChange={(v) => updateFilter("date_to", v)}
+              locale={locale}
             />
           </div>
         </div>
@@ -212,7 +211,7 @@ function FilterDropdown({
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="flex h-11 w-full items-center justify-between rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+          className="flex h-11 w-full items-center justify-between rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-[#0081A7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0081A7]/20"
         >
           <span className="truncate">{selectedLabel}</span>
           <svg
@@ -236,7 +235,7 @@ function FilterDropdown({
                   }}
                   className={`flex w-full px-4 py-2.5 text-left font-sarabun text-body-md transition-colors ${
                     value === opt.value
-                      ? "bg-primary-dark/10 font-bold text-primary-dark"
+                      ? "bg-[#053F5C]/10 font-bold text-[#053F5C]"
                       : "text-text-primary hover:bg-gray-50"
                   }`}
                 >

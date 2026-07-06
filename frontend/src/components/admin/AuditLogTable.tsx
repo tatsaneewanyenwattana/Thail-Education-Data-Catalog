@@ -174,7 +174,7 @@ export default function AuditLogTable({
                   onClick={() => onPageChange(p)}
                   className={`flex h-10 w-10 items-center justify-center rounded-full font-sarabun text-body-sm font-bold transition-all ${
                     currentPage === p
-                      ? "bg-primary-dark text-white shadow-md"
+                      ? "bg-gradient-to-r from-[#053F5C] to-[#0081A7] text-white shadow-lg shadow-[#0081A7]/30"
                       : "border border-gray-200 bg-white text-text-muted hover:bg-gray-50 hover:shadow-sm"
                   }`}
                   aria-current={p === currentPage ? "page" : undefined}

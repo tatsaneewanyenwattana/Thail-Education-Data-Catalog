@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminDatasetTable from "@/components/admin/AdminDatasetTable";
 import AdminStatsCard from "@/components/admin/AdminStatsCard";
 import MoveDatasetCategoryModal from "@/components/dataset/MoveDatasetCategoryModal";
@@ -21,8 +21,6 @@ export default function AdminDatasetsPage() {
   const numberLocale = locale === "th" ? "th-TH" : "en-US";
 
   const [searchInput, setSearchInput] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [agencyFilter, setAgencyFilter] = useState("all");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [appliedStatus, setAppliedStatus] = useState<StatusFilter>("all");
   const [appliedAgency, setAppliedAgency] = useState("all");
@@ -30,6 +28,7 @@ export default function AdminDatasetsPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastError, setToastError] = useState<string | null>(null);
   const [moveTarget, setMoveTarget] = useState<AdminDataset | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { data: categoriesData } = useAdminCategories({ page: 1 });
   const moveMutation = useMoveDatasetCategory();
 
@@ -46,14 +45,21 @@ export default function AdminDatasetsPage() {
     [appliedSearch, appliedStatus, appliedAgency, page]
   );
 
-  const applyFilters = (next?: {
-    search?: string;
-    status?: StatusFilter;
-    agency?: string;
-  }) => {
-    setAppliedSearch(next?.search ?? searchInput.trim());
-    setAppliedStatus(next?.status ?? statusFilter);
-    setAppliedAgency(next?.agency ?? agencyFilter);
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const trimmed = value.trim();
+      if (trimmed.length >= 2 || trimmed.length === 0) {
+        setAppliedSearch(trimmed);
+        setPage(1);
+      }
+    }, 500);
+  }, []);
+
+  const clearSearch = () => {
+    setSearchInput("");
+    setAppliedSearch("");
     setPage(1);
   };
 
@@ -78,7 +84,7 @@ export default function AdminDatasetsPage() {
     <div className="mx-auto max-w-container-max space-y-6 pb-24">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-kanit text-[28px] font-bold leading-tight text-text-primary">
+          <h1 className="font-kanit text-[32px] font-bold leading-tight text-[#053F5C]">
             {t("title")}
           </h1>
           <nav className="mt-1 flex font-sarabun text-label text-text-muted">
@@ -86,12 +92,12 @@ export default function AdminDatasetsPage() {
               {t("breadcrumbHome")}
             </Link>
             <span className="mx-2">/</span>
-            <span className="font-medium text-primary-dark">{t("breadcrumbDatasets")}</span>
+            <span className="font-medium text-[#0081A7]">{t("breadcrumbDatasets")}</span>
           </nav>
         </div>
         <Link
-          href={`${base}/datasets/create`}
-          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-primary-dark px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg"
+          href={`${base}/admin/datasets/create`}
+          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-6 py-2.5 font-sarabun text-label font-bold text-white shadow-xl shadow-[#053F5C]/20 transition-all hover:shadow-[#0081A7]/30"
         >
           <UploadIcon />
           {t("uploadDataset")}
@@ -104,10 +110,10 @@ export default function AdminDatasetsPage() {
             label={t("totalDatasets")}
             value={totalDatasets.toLocaleString(numberLocale)}
             icon={<DatasetIcon />}
-            iconClassName="bg-blue-50 text-blue-600"
+            iconClassName="bg-[#053F5C]/10 text-[#053F5C]"
             badge={
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-sarabun text-caption font-bold text-emerald-600">
-                +{dashData.datasetTrendPercent}%
+              <span className="flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 font-sarabun text-[10px] font-bold text-green-700">
+                ↑ +{dashData.datasetTrendPercent}%
               </span>
             }
           />
@@ -115,11 +121,12 @@ export default function AdminDatasetsPage() {
             label={t("publishedDatasets")}
             value={publishedCount.toLocaleString(numberLocale)}
             icon={<CheckCircleIcon />}
-            iconClassName="bg-emerald-50 text-emerald-600"
+            iconClassName="bg-[#00AFB9]/10 text-[#00AFB9]"
+            className="border-l-4 border-l-green-500"
             badge={
-              <span className="flex items-center gap-1 font-sarabun text-caption font-medium text-emerald-600">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                {t("activeStatus")}
+              <span className="flex items-center gap-1.5 font-sarabun text-[10px] font-bold uppercase text-green-600">
+                <span className="h-2 w-2 rounded-full bg-green-500" />
+                Active
               </span>
             }
           />
@@ -149,26 +156,30 @@ export default function AdminDatasetsPage() {
                 <SearchIcon />
               </span>
               <input
-                type="search"
+                type="text"
                 value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    applyFilters();
-                  }
-                }}
+                onChange={(event) => handleSearchChange(event.target.value)}
                 placeholder={t("searchPlaceholder")}
-                className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 pl-10 pr-4 font-sarabun text-body-md shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+                className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 pl-10 pr-10 font-sarabun text-body-md shadow-sm transition-all hover:border-gray-300 focus:border-[#0081A7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0081A7]/20"
               />
+              {searchInput && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-text-muted transition-colors hover:text-[#053F5C]"
+                >
+                  <ClearIcon />
+                </button>
+              )}
             </div>
           </div>
 
           <FilterDropdown
             label={t("owningAgency")}
-            value={agencyFilter}
+            value={appliedAgency}
             onChange={(v) => {
-              setAgencyFilter(v);
-              applyFilters({ agency: v });
+              setAppliedAgency(v);
+              setPage(1);
             }}
             options={[
               { value: "all", label: t("filterAllAgency") },
@@ -178,11 +189,10 @@ export default function AdminDatasetsPage() {
 
           <FilterDropdown
             label={t("filterStatus")}
-            value={statusFilter}
+            value={appliedStatus}
             onChange={(v) => {
-              const val = v as StatusFilter;
-              setStatusFilter(val);
-              applyFilters({ status: val });
+              setAppliedStatus(v as StatusFilter);
+              setPage(1);
             }}
             options={[
               { value: "all", label: t("filterAllStatus") },
@@ -190,14 +200,6 @@ export default function AdminDatasetsPage() {
               { value: "draft", label: t("status.draft") },
             ]}
           />
-
-          <button
-            type="button"
-            onClick={() => applyFilters()}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-primary-dark px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg"
-          >
-            <FilterBtnIcon />
-          </button>
         </div>
       </section>
 
@@ -229,7 +231,7 @@ export default function AdminDatasetsPage() {
       )}
 
       {toastMessage ? (
-        <div className="fixed bottom-6 right-6 z-[110] rounded-2xl bg-primary-dark px-4 py-3 font-sarabun text-label text-white shadow-lg">
+        <div className="fixed bottom-6 right-6 z-[110] rounded-2xl bg-[#053F5C] px-4 py-3 font-sarabun text-label text-white shadow-lg">
           {toastMessage}
         </div>
       ) : null}
@@ -250,10 +252,10 @@ function SearchIcon() {
   );
 }
 
-function FilterBtnIcon() {
+function ClearIcon() {
   return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M10 18h4v-2h-4v2ZM3 6v2h18V6H3Zm3 7h12v-2H6v2Z" />
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
     </svg>
   );
 }
@@ -339,7 +341,7 @@ function FilterDropdown({
               onClick={() => { onChange(opt.value); setOpen(false); }}
               className={`flex w-full px-4 py-2.5 font-sarabun text-label transition-colors ${
                 opt.value === value
-                  ? "bg-primary-dark/10 font-bold text-primary-dark"
+                  ? "bg-[#053F5C]/10 font-bold text-[#053F5C]"
                   : "text-text-primary hover:bg-gray-50"
               }`}
             >

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminStatsCard from "@/components/admin/AdminStatsCard";
 import UserTable from "@/components/admin/UserTable";
 import type { AdminUsersFilters } from "@/types/admin";
@@ -52,14 +52,13 @@ export default function AdminUsersPage() {
   const { data: dashData } = useAdminDashboard();
 
   const [searchInput, setSearchInput] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [appliedStatus, setAppliedStatus] = useState<StatusFilter>("all");
   const [appliedRole, setAppliedRole] = useState<RoleFilter>("all");
   const [page, setPage] = useState(1);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastError, setToastError] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const numberLocale = locale === "th" ? "th-TH" : "en-US";
 
@@ -73,10 +72,31 @@ export default function AdminUsersPage() {
     [appliedSearch, appliedStatus, appliedRole, page]
   );
 
-  const handleApplyFilters = () => {
-    setAppliedSearch(searchInput.trim());
-    setAppliedStatus(statusFilter);
-    setAppliedRole(roleFilter);
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const trimmed = value.trim();
+      if (trimmed.length >= 2 || trimmed.length === 0) {
+        setAppliedSearch(trimmed);
+        setPage(1);
+      }
+    }, 500);
+  }, []);
+
+  const clearSearch = () => {
+    setSearchInput("");
+    setAppliedSearch("");
+    setPage(1);
+  };
+
+  const handleRoleChange = (v: string) => {
+    setAppliedRole(v as RoleFilter);
+    setPage(1);
+  };
+
+  const handleStatusChange = (v: string) => {
+    setAppliedStatus(v as StatusFilter);
     setPage(1);
   };
 
@@ -95,7 +115,7 @@ export default function AdminUsersPage() {
   return (
     <div className="mx-auto max-w-container-max space-y-6 pb-24">
       <header>
-        <h1 className="font-kanit text-[28px] font-bold leading-tight text-text-primary">
+        <h1 className="font-kanit text-[32px] font-bold leading-tight text-[#053F5C]">
           {t("title")}
         </h1>
         <nav className="mt-1 flex font-sarabun text-label text-text-muted">
@@ -103,7 +123,7 @@ export default function AdminUsersPage() {
             {t("breadcrumbHome")}
           </Link>
           <span className="mx-2">/</span>
-          <span className="font-medium text-primary-dark">{t("title")}</span>
+          <span className="font-medium text-[#0081A7]">{t("title")}</span>
         </nav>
       </header>
 
@@ -113,9 +133,9 @@ export default function AdminUsersPage() {
             label={tDash("totalUsers")}
             value={dashData.totalUsers.toLocaleString(numberLocale)}
             icon={<UsersIcon />}
-            iconClassName="bg-blue-50 text-blue-600"
+            variant="highlight"
             badge={
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-sarabun text-caption font-bold text-emerald-600">
+              <span className="rounded-radius-sm bg-white/20 px-2.5 py-1 font-sarabun text-caption font-bold text-white">
                 +{dashData.userTrendPercent}%
               </span>
             }
@@ -125,17 +145,17 @@ export default function AdminUsersPage() {
             value={dashData.pendingUsers.toLocaleString(numberLocale)}
             icon={<HourglassIcon />}
             variant="warning"
-            badge={<span className="h-2 w-2 animate-pulse rounded-full bg-status-error" />}
+            badge={dashData.pendingUsers > 0 ? <span className="h-3 w-3 animate-pulse rounded-full bg-red-500" /> : undefined}
           />
           <AdminStatsCard
             label={t("activeUsers")}
             value={(dashData.totalUsers - dashData.pendingUsers).toLocaleString(numberLocale)}
             icon={<ActiveIcon />}
-            iconClassName="bg-emerald-50 text-emerald-600"
+            iconClassName="bg-green-100 text-green-600"
             badge={
-              <span className="flex items-center gap-1 font-sarabun text-caption font-medium text-emerald-600">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                {t("status.active")}
+              <span className="flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 font-sarabun text-[10px] font-bold text-green-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                ACTIVE
               </span>
             }
           />
@@ -159,24 +179,28 @@ export default function AdminUsersPage() {
                 <SearchIcon />
               </span>
               <input
-                type="search"
+                type="text"
                 value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    handleApplyFilters();
-                  }
-                }}
+                onChange={(event) => handleSearchChange(event.target.value)}
                 placeholder={t("searchPlaceholder")}
-                className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 pl-10 pr-4 font-sarabun text-body-md shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+                className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 pl-10 pr-10 font-sarabun text-body-md shadow-sm transition-all hover:border-gray-300 focus:border-[#0081A7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0081A7]/20"
               />
+              {searchInput && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-text-muted transition-colors hover:text-[#053F5C]"
+                >
+                  <ClearIcon />
+                </button>
+              )}
             </div>
           </div>
 
           <FilterDropdown
             label={t("filterRole")}
-            value={roleFilter}
-            onChange={(v) => setRoleFilter(v as RoleFilter)}
+            value={appliedRole}
+            onChange={handleRoleChange}
             options={[
               { value: "all", label: t("filterAll") },
               { value: "agency", label: t("role.agency") },
@@ -186,8 +210,8 @@ export default function AdminUsersPage() {
 
           <FilterDropdown
             label={t("filterStatus")}
-            value={statusFilter}
-            onChange={(v) => setStatusFilter(v as StatusFilter)}
+            value={appliedStatus}
+            onChange={handleStatusChange}
             options={[
               { value: "all", label: t("filterAll") },
               { value: "pending", label: t("status.pending") },
@@ -196,15 +220,6 @@ export default function AdminUsersPage() {
               { value: "suspended", label: t("status.suspended") },
             ]}
           />
-
-          <button
-            type="button"
-            onClick={handleApplyFilters}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-primary-dark px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg"
-          >
-            <FilterIcon />
-            {t("applyFilter")}
-          </button>
         </div>
       </section>
 
@@ -216,7 +231,7 @@ export default function AdminUsersPage() {
       />
 
       {toastMessage ? (
-        <div className="fixed bottom-6 right-6 z-[110] rounded-2xl bg-primary-dark px-4 py-3 font-sarabun text-label text-white shadow-lg">
+        <div className="fixed bottom-6 right-6 z-[110] rounded-2xl bg-[#053F5C] px-4 py-3 font-sarabun text-label text-white shadow-lg">
           {toastMessage}
         </div>
       ) : null}
@@ -242,10 +257,10 @@ function SearchIcon() {
   );
 }
 
-function FilterIcon() {
+function ClearIcon() {
   return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M10 18h4v-2h-4v2ZM3 6v2h18V6H3Zm3 7h12v-2H6v2Z" />
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
     </svg>
   );
 }
@@ -298,7 +313,7 @@ function FilterDropdown({
               onClick={() => { onChange(opt.value); setOpen(false); }}
               className={`flex w-full px-4 py-2.5 font-sarabun text-label transition-colors ${
                 opt.value === value
-                  ? "bg-primary-dark/10 font-bold text-primary-dark"
+                  ? "bg-[#053F5C]/10 font-bold text-[#053F5C]"
                   : "text-text-primary hover:bg-gray-50"
               }`}
             >

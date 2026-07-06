@@ -10,19 +10,19 @@ import { useTogglePageStatus, useDeletePage } from "@/hooks/useAdminPageContent"
 const ICON_CONFIG = {
   policy: {
     Icon: PolicyIcon,
-    bgClass: "bg-primary/10 text-primary",
+    bgClass: "bg-[#0081A7]/10 text-[#0081A7]",
   },
   gavel: {
     Icon: GavelIcon,
-    bgClass: "bg-primary-light text-primary-dark",
+    bgClass: "bg-[#ef6c00]/10 text-[#ef6c00]",
   },
   api: {
     Icon: ApiIcon,
-    bgClass: "bg-primary-container/10 text-primary-container",
+    bgClass: "bg-[#00AFB9]/10 text-[#00AFB9]",
   },
   help: {
     Icon: HelpIcon,
-    bgClass: "bg-primary-container/10 text-primary-container",
+    bgClass: "bg-[#053F5C]/10 text-[#053F5C]",
   },
 } as const;
 
@@ -64,69 +64,45 @@ export default function StaticPageCard({ page }: StaticPageCardProps) {
 
   return (
     <>
-      <article className="group relative flex flex-col justify-between rounded-2xl border border-white/80 bg-white p-7 shadow-md transition-all hover:shadow-lg">
-        <div>
-          {/* Icon + Toggle */}
-          <div className="mb-5 flex items-start justify-between">
+      <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/80 bg-white/90 shadow-sm backdrop-blur-sm transition-all hover:shadow-xl">
+        <div className="h-2 w-full bg-gradient-to-r from-[#053F5C] to-[#0081A7]" />
+        <div className="flex flex-1 flex-col p-8">
+          <div className="mb-6 flex justify-center">
             <div
-              className={`flex h-14 w-14 items-center justify-center rounded-2xl ${bgClass}`}
+              className={`flex h-16 w-16 items-center justify-center rounded-2xl ${bgClass} transition-transform group-hover:scale-110`}
             >
               <Icon />
             </div>
-            <div className="flex items-center gap-2">
-              <span className={`font-sarabun text-caption font-semibold ${isPublished ? "text-emerald-600" : "text-gray-400"}`}>
-                {isPublished ? t("published") : t("draft")}
-              </span>
-              <ToggleSwitch
-                checked={isPublished}
-                onChange={handleToggle}
-                disabled={toggleStatus.isPending}
-                label={page.slug}
-              />
-            </div>
           </div>
 
-          {/* Title */}
-          <h4 className="font-kanit text-xl font-bold text-text-primary transition-colors group-hover:text-primary-dark">
+          <h4 className="text-center font-kanit text-xl font-bold text-[#053F5C] transition-colors group-hover:text-[#0081A7]">
             {title}
           </h4>
-          <p className="mt-1 font-sarabun text-body-sm text-text-muted">
+          <p className="mt-2 text-center font-sarabun text-sm text-text-muted line-clamp-2">
             {page.route}
           </p>
 
-          {/* Meta row */}
-          <div className="mt-5 flex items-center justify-between text-text-muted">
-            <div>
-              <p className="font-sarabun text-body-sm">{t("lastEdit")}</p>
-              <p className="font-sarabun text-body-md font-bold text-text-primary">
-                {formatUpdatedAt(page.updatedAt, locale)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="font-sarabun text-body-sm">{t("totalViews")}</p>
-              <p className="font-sarabun text-body-md font-bold text-text-primary">
-                &mdash;
-              </p>
-            </div>
+          <div className="mt-4 flex justify-center">
+            <span className={`inline-flex rounded-full px-3 py-1 font-sarabun text-xs font-bold ${
+              isPublished
+                ? "bg-[#E6F4EA] text-[#1E8E3E]"
+                : "bg-[#FFF3E0] text-[#8c6f53]"
+            }`}>
+              {isPublished ? t("published") : t("draft")}
+            </span>
           </div>
         </div>
 
-        <div className="mt-6 flex gap-3">
+        <div className="flex items-center justify-between border-t border-gray-100 bg-white/40 px-6 py-4">
+          <span className="font-sarabun text-xs text-text-muted">
+            {t("lastEdit")}: {formatUpdatedAt(page.updatedAt, locale)}
+          </span>
           <button
             type="button"
             onClick={() => router.push(`/${locale}/admin/pages/${page.slug}`)}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-primary-dark py-2.5 font-sarabun text-body-md font-semibold text-primary-dark transition-all hover:bg-primary-dark/5 hover:shadow-md"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-5 py-2 font-sarabun text-sm font-bold text-white shadow-sm transition-all hover:brightness-110 active:scale-95"
           >
-            <EditIcon />
             {t("editContent")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            className="inline-flex items-center justify-center rounded-full border-2 border-red-300 px-4 py-2.5 font-sarabun text-body-md font-semibold text-red-500 transition-all hover:bg-red-50 hover:shadow-md"
-            aria-label={`Delete ${page.slug}`}
-          >
-            <TrashIcon />
           </button>
         </div>
       </article>

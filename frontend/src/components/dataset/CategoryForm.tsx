@@ -176,7 +176,7 @@ export default function CategoryForm({
         <div className="mb-6 flex items-center justify-between">
           <h2
             id="category-form-title"
-            className="font-kanit text-heading-3 font-semibold text-text-primary"
+            className="font-kanit text-heading-3 font-bold text-[#053F5C]"
           >
             {title}
           </h2>
@@ -214,7 +214,7 @@ export default function CategoryForm({
             <input
               id="nameTh"
               type="text"
-              className={`h-10 w-full rounded-radius-sm border bg-surface-card px-3 font-sarabun text-body-md outline-none transition-colors focus:ring-2 focus:ring-primary-dark/20 ${
+              className={`h-10 w-full rounded-radius-sm border bg-surface-card px-3 font-sarabun text-body-md outline-none transition-colors focus:ring-2 focus:ring-[#0081A7]/20 ${
                 errors.nameTh ? "border-status-error" : "border-border-input"
               }`}
               placeholder={t("fieldNameThPlaceholder")}
@@ -237,7 +237,7 @@ export default function CategoryForm({
             <input
               id="nameEn"
               type="text"
-              className={`h-10 w-full rounded-radius-sm border bg-surface-card px-3 font-sarabun text-body-md outline-none transition-colors focus:ring-2 focus:ring-primary-dark/20 ${
+              className={`h-10 w-full rounded-radius-sm border bg-surface-card px-3 font-sarabun text-body-md outline-none transition-colors focus:ring-2 focus:ring-[#0081A7]/20 ${
                 errors.nameEn ? "border-status-error" : "border-border-input"
               }`}
               placeholder={t("fieldNameEnPlaceholder")}
@@ -260,7 +260,7 @@ export default function CategoryForm({
             <input
               id="slug"
               type="text"
-              className={`h-10 w-full rounded-radius-sm border bg-surface-card px-3 font-mono text-code outline-none transition-colors focus:ring-2 focus:ring-primary-dark/20 ${
+              className={`h-10 w-full rounded-radius-sm border bg-surface-card px-3 font-mono text-code outline-none transition-colors focus:ring-2 focus:ring-[#0081A7]/20 ${
                 errors.slug ? "border-status-error" : "border-border-input"
               }`}
               placeholder={t("fieldSlugPlaceholder")}
@@ -286,14 +286,14 @@ export default function CategoryForm({
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="flex-1 rounded-radius-sm border border-primary-dark py-3 font-sarabun text-label font-bold text-primary-dark transition-colors hover:bg-primary-light disabled:opacity-50"
+              className="flex-1 rounded-full border-2 border-gray-200 py-3 font-sarabun text-label font-semibold text-text-secondary transition-colors hover:bg-gray-50 disabled:opacity-50"
             >
               {t("cancel")}
             </button>
             <button
               type="submit"
               disabled={!isValid || isPending}
-              className="flex-1 rounded-radius-sm bg-primary py-3 font-sarabun text-label font-bold text-surface-card shadow-level-1 transition-opacity hover:bg-primary-hover disabled:opacity-50"
+              className="flex-1 rounded-full bg-gradient-to-r from-[#053F5C] to-[#0081A7] py-3 font-sarabun text-label font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
             >
               {isPending ? t("saving") : t("save")}
             </button>

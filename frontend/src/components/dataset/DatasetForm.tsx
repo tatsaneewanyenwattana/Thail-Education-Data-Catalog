@@ -32,7 +32,7 @@ type DatasetFormProps = {
 };
 
 const inputClass =
-  "w-full rounded-xl border border-border-input bg-surface-page px-4 py-3 font-sarabun text-label text-text-primary outline-none transition-all focus:border-primary-dark focus:ring-2 focus:ring-primary-dark/20";
+  "w-full rounded-xl border border-border-input bg-surface-page px-4 py-3 font-sarabun text-label text-text-primary outline-none transition-all focus:border-[#0081A7] focus:ring-2 focus:ring-[#0081A7]/20";
 const ALL_PROVINCES_VALUE = "all";
 
 export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
@@ -59,8 +59,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     return initialFromApi ?? null;
   }, [mode, initialFromApi]);
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [analysis, setAnalysis] = useState<PIIScanResult | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<{ file: File; analysis: PIIScanResult }[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [provinceQuery, setProvinceQuery] = useState("");
   const [provinceDropdownOpen, setProvinceDropdownOpen] = useState(false);
@@ -231,7 +230,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
         </p>
         <Link
           href={`${base}/datasets`}
-          className="mt-4 inline-block font-sarabun text-label text-primary-dark hover:underline"
+          className="mt-4 inline-block font-sarabun text-label text-[#0081A7] hover:underline"
         >
           {t("backToList")}
         </Link>
@@ -239,8 +238,8 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     );
   }
 
-  const piiFindings: PIIFinding[] = analysis?.findings ?? [];
-  const hasPii = piiFindings.length > 0;
+  const allPiiFindings: PIIFinding[] = selectedFiles.flatMap((f) => f.analysis?.findings ?? []);
+  const hasPii = allPiiFindings.length > 0;
 
   const handleSelectProvince = (value: string) => {
     setValue("province", value, { shouldValidate: true, shouldDirty: true });
@@ -284,8 +283,8 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     if (values.province) {
       formData.append("province", values.province);
     }
-    if (selectedFile) {
-      formData.append("file", selectedFile);
+    for (const { file } of selectedFiles) {
+      formData.append("file", file);
     }
     return formData;
   };
@@ -294,7 +293,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     values: DatasetFormValues,
     status: "draft" | "published"
   ) => {
-    if (mode === "create" && !selectedFile && !analysis) {
+    if (mode === "create" && selectedFiles.length === 0) {
       setFileError(t("fileRequired"));
       return;
     }
@@ -322,74 +321,118 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
   };
 
   const handleAnalyzed = (result: PIIScanResult, file: File) => {
-    setAnalysis(result);
-    setSelectedFile(file);
+    setSelectedFiles((prev) => {
+      if (prev.some((f) => f.file.name === file.name && f.file.size === file.size)) {
+        return prev;
+      }
+      return [...prev, { file, analysis: result }];
+    });
     setFileError(null);
   };
 
-  const handleEditFileReanalyze = () => {
-    setAnalysis(null);
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
     <div className="mx-auto max-w-[800px] space-y-8 pb-24">
       {/* Breadcrumb */}
       <nav className="flex flex-wrap items-center gap-2 font-sarabun text-caption uppercase tracking-wider text-text-muted">
-        <Link href={`${base}/dashboard`} className="hover:text-primary-dark">
+        <Link href={`${base}/dashboard`} className="hover:text-[#0081A7]">
           {t("breadcrumbDashboard")}
         </Link>
         <span>›</span>
-        <Link href={`${base}/datasets`} className="hover:text-primary-dark">
+        <Link href={`${base}/datasets`} className="hover:text-[#0081A7]">
           {t("breadcrumbDatasets")}
         </Link>
         <span>›</span>
-        <span className="font-semibold text-text-primary">
+        <span className="font-semibold text-[#053F5C]">
           {mode === "create" ? t("breadcrumbCurrent") : t("breadcrumbEdit")}
         </span>
       </nav>
 
-      <h1 className="font-kanit text-[28px] font-bold text-text-primary">
+      <h1 className="font-kanit text-[32px] font-bold text-[#053F5C]">
         {mode === "create" ? t("title") : t("editTitle")}
       </h1>
 
       {/* Step 1 — File Upload */}
-      <section className="rounded-2xl border border-border-default/60 bg-surface-card p-8 shadow-level-1">
+      <section className="rounded-2xl border border-[#0081A7]/8 bg-white/95 p-8 shadow-xl shadow-black/5 backdrop-blur-sm">
         <div className="mb-6 flex items-center gap-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-dark font-sarabun text-label font-bold text-white">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#053F5C] font-sarabun text-label font-bold text-white">
             1
           </span>
-          <h2 className="font-kanit text-heading-3-mobile font-semibold text-text-primary">
+          <h2 className="font-kanit text-heading-3-mobile font-semibold text-[#053F5C]">
             {t("fileSection")}
           </h2>
         </div>
-        {selectedFile ? (
-          <div className="flex items-center gap-3 rounded-xl border border-primary-dark/30 bg-primary-light/30 px-4 py-3">
-            <svg className="h-5 w-5 shrink-0 text-primary-dark" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-              <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-            </svg>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-sarabun text-label font-medium text-text-primary">
-                {selectedFile.name}
-              </p>
-              <p className="font-sarabun text-caption text-text-muted">
-                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedFile(null);
-                setAnalysis(null);
-              }}
-              className="shrink-0 rounded-full p-1 text-text-muted hover:bg-red-50 hover:text-status-error"
-              aria-label="ลบไฟล์"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-              </svg>
-            </button>
+        {selectedFiles.length > 0 && (
+          <div className="mb-4 space-y-3">
+            {selectedFiles.map((entry, index) => {
+              const filePii = entry.analysis?.findings ?? [];
+              const fileHasPii = filePii.length > 0;
+              const qs = entry.analysis?.quality_score;
+              return (
+                <div key={`${entry.file.name}-${index}`} className="rounded-xl border border-[#0081A7]/10 bg-slate-50 p-4 transition-colors hover:bg-slate-100/80">
+                  <div className="flex items-center gap-3">
+                    <svg className="h-5 w-5 shrink-0 text-[#0081A7]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                    </svg>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-sarabun text-label font-medium text-text-primary">
+                        {entry.file.name}
+                      </p>
+                      <p className="font-sarabun text-caption text-text-muted">
+                        {(entry.file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    {fileHasPii ? (
+                      <span className="rounded-full bg-red-100 px-2.5 py-0.5 font-sarabun text-caption font-bold text-status-error">
+                        PII
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-green-100 px-2.5 py-0.5 font-sarabun text-caption font-bold text-status-success">
+                        ✓
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="shrink-0 rounded-full p-1 text-text-muted hover:bg-red-50 hover:text-status-error"
+                      aria-label="ลบไฟล์"
+                    >
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                        <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                      </svg>
+                    </button>
+                  </div>
+                  {qs !== null && qs !== undefined && (
+                    <div className="mt-3 flex items-center gap-3">
+                      <div className="h-2 flex-1 rounded-full bg-surface-container">
+                        <div
+                          className={`h-2 rounded-full transition-all ${
+                            qs >= 80 ? "bg-status-success" : qs >= 50 ? "bg-[#f57c00]" : "bg-status-error"
+                          }`}
+                          style={{ width: `${Math.min(100, Math.max(0, qs))}%` }}
+                        />
+                      </div>
+                      <span className={`font-sarabun text-caption font-bold ${
+                        qs >= 80 ? "text-status-success" : qs >= 50 ? "text-[#f57c00]" : "text-status-error"
+                      }`}>
+                        {qs}%
+                      </span>
+                    </div>
+                  )}
+                  {fileHasPii && (
+                    <div className="mt-2">
+                      <PIIWarning findings={filePii} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        ) : mode === "edit" && initialData?.fileInfo ? (
+        )}
+        {mode === "edit" && initialData?.fileInfo && selectedFiles.length === 0 ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
               <svg className="h-5 w-5 shrink-0 text-text-muted" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -407,50 +450,16 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
                 ไฟล์ปัจจุบัน
               </span>
             </div>
-            <FileUploadZone onAnalyzed={handleAnalyzed} disabled={isSubmitting} />
+            <FileUploadZone onAnalyzed={handleAnalyzed} disabled={isSubmitting} multiple />
             <p className="font-sarabun text-caption text-text-muted">อัปโหลดไฟล์ใหม่เพื่อแทนที่ไฟล์เดิม</p>
           </div>
         ) : (
-          <FileUploadZone onAnalyzed={handleAnalyzed} disabled={isSubmitting} />
+          <FileUploadZone onAnalyzed={handleAnalyzed} disabled={isSubmitting} multiple />
         )}
         {fileError && (
           <p className="mt-2 font-sarabun text-caption text-status-error">
             {fileError}
           </p>
-        )}
-        {analysis && analysis.quality_score !== null && analysis.quality_score !== undefined && (
-          <div className="mt-4 rounded-xl border border-border-default/60 bg-surface-card p-4">
-            <div className="flex items-center justify-between">
-              <span className="font-sarabun text-label font-medium text-text-primary">
-                คะแนนคุณภาพข้อมูล
-              </span>
-              <span className={`font-kanit text-heading-3-mobile font-bold ${
-                analysis.quality_score >= 80 ? "text-status-success" :
-                analysis.quality_score >= 50 ? "text-[#f57c00]" : "text-status-error"
-              }`}>
-                {analysis.quality_score}/100
-              </span>
-            </div>
-            <div className="mt-2 h-2.5 w-full rounded-full bg-surface-container">
-              <div
-                className={`h-2.5 rounded-full transition-all ${
-                  analysis.quality_score >= 80 ? "bg-status-success" :
-                  analysis.quality_score >= 50 ? "bg-[#f57c00]" : "bg-status-error"
-                }`}
-                style={{ width: `${Math.min(100, Math.max(0, analysis.quality_score))}%` }}
-              />
-            </div>
-            {!hasPii && (
-              <p className="mt-2 font-sarabun text-caption text-status-success">
-                ✓ ไม่พบข้อมูลส่วนบุคคลในไฟล์นี้
-              </p>
-            )}
-          </div>
-        )}
-        {analysis && hasPii && (
-          <div className="-mx-8 mt-6">
-            <PIIWarning findings={piiFindings} />
-          </div>
         )}
       </section>
 
@@ -465,12 +474,12 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
         })}
         className="space-y-8"
       >
-        <section className="rounded-2xl border border-border-default/60 bg-surface-card p-8 shadow-level-1">
+        <section className="rounded-2xl border border-[#0081A7]/8 bg-white/95 p-8 shadow-xl shadow-black/5 backdrop-blur-sm">
           <div className="mb-6 flex items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-dark font-sarabun text-label font-bold text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#053F5C] font-sarabun text-label font-bold text-white">
               2
             </span>
-            <h2 className="font-kanit text-heading-3-mobile font-semibold text-text-primary">
+            <h2 className="font-kanit text-heading-3-mobile font-semibold text-[#053F5C]">
               {t("dataSection")}
             </h2>
           </div>
@@ -631,9 +640,9 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
         </section>
 
         {/* Image upload (optional) */}
-        <section className="rounded-2xl border border-border-default/60 bg-surface-card p-6 shadow-level-1">
-          <h3 className="mb-4 flex items-center gap-2 font-kanit text-heading-3-mobile font-bold text-text-primary">
-            <svg className="h-5 w-5 text-primary-dark" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <section className="rounded-2xl border border-[#0081A7]/8 bg-white/95 p-6 shadow-xl shadow-black/5 backdrop-blur-sm">
+          <h3 className="mb-4 flex items-center gap-2 font-kanit text-heading-3-mobile font-bold text-[#053F5C]">
+            <svg className="h-5 w-5 text-[#0081A7]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
             </svg>
             รูปภาพปก
@@ -666,7 +675,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
               <button
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
-                className="font-sarabun text-label text-primary-dark hover:underline"
+                className="font-sarabun text-label text-[#0081A7] hover:underline"
               >
                 เปลี่ยนรูป
               </button>
@@ -674,9 +683,9 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
           ) : (
             <div
               onClick={() => imageInputRef.current?.click()}
-              className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border-input bg-surface-page px-6 py-10 text-center transition-colors hover:border-primary-dark/40 hover:bg-surface-container"
+              className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#0081A7]/30 bg-surface-page px-6 py-10 text-center transition-colors hover:border-[#0081A7]/50 hover:bg-[#0081A7]/5"
             >
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-light text-primary-dark">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#0081A7]/10 text-[#0081A7]">
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                   <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
                 </svg>
@@ -707,7 +716,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
             type="button"
             onClick={() => router.back()}
             disabled={isSubmitting}
-            className="rounded-xl border border-border-input px-8 py-2.5 font-sarabun text-label font-medium text-text-muted transition-colors hover:bg-surface-container disabled:opacity-50"
+            className="rounded-full border-2 border-gray-200 px-8 py-2.5 font-sarabun text-label font-semibold text-text-muted transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             {t("cancel")}
           </button>
@@ -715,7 +724,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
             type="submit"
             disabled={isSubmitting}
             onClick={() => { submitStatusRef.current = "draft"; setSubmitStatus("draft"); }}
-            className="rounded-xl border border-primary-dark/30 px-8 py-2.5 font-sarabun text-label font-medium text-primary-dark transition-colors hover:bg-primary-light disabled:opacity-50"
+            className="rounded-full border-2 border-[#0081A7]/30 px-8 py-2.5 font-sarabun text-label font-semibold text-[#053F5C] transition-colors hover:bg-[#0081A7]/5 disabled:opacity-50"
           >
             {isSubmitting && submitStatus === "draft" && <Spinner />}
             {t("saveDraft")}
@@ -725,7 +734,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
               type="submit"
               disabled={isSubmitting || hasPii}
               onClick={() => { submitStatusRef.current = "published"; setSubmitStatus("published"); }}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-dark px-10 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-10 py-2.5 font-sarabun text-label font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
             >
               {isSubmitting && submitStatus === "published" && <Spinner />}
               {t("publish")}

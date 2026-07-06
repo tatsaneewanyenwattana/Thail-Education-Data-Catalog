@@ -1402,7 +1402,8 @@
       "rejectModalDesc": "Provide a reason for rejecting {agency}",
       "rejectReasonPlaceholder": "Enter rejection reason...",
       "cancelReject": "Cancel",
-      "rejecting": "Rejecting..."
+      "rejecting": "Rejecting...",
+      "loading": "Loading..."
     },
     "users": {
       "title": "Manage users",

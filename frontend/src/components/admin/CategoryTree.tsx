@@ -51,7 +51,7 @@ function TreeRow({
     <>
       <tr
         className={`transition-colors ${
-          isRoot ? "hover:bg-gray-50/50" : "bg-gray-50/30 hover:bg-gray-100/50"
+          isRoot ? "hover:bg-[#f8f9fa]" : "bg-[#fafbfc] hover:bg-[#f3f4f5]/50"
         }`}
       >
         {/* Name + Slug */}
@@ -61,7 +61,7 @@ function TreeRow({
               <button
                 type="button"
                 onClick={() => onToggle(node.id)}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-primary-dark transition-colors hover:bg-blue-50"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#053F5C] transition-colors hover:bg-[#053F5C]/10"
                 aria-expanded={isExpanded}
               >
                 <ChevronIcon expanded={isExpanded} />
@@ -86,8 +86,12 @@ function TreeRow({
         </td>
         {/* Dataset count */}
         <td className="px-6 py-4 text-center">
-          <span className="font-sarabun text-body-md font-bold text-primary-dark">
-            {formatCount(node.datasetCount, locale)}
+          <span className={`inline-flex rounded-full px-3 py-1 font-sarabun text-xs font-bold ${
+            isRoot
+              ? "bg-[#00AFB9]/15 text-[#006e74]"
+              : "bg-gray-100 text-text-muted"
+          }`}>
+            {formatCount(node.datasetCount, locale)} ชุดข้อมูล
           </span>
         </td>
         {/* Actions */}
@@ -184,7 +188,7 @@ export default function CategoryTree({
         <button
           type="button"
           onClick={onAddRoot}
-          className="mt-4 rounded-full bg-primary-dark px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg"
+          className="mt-4 rounded-full bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-6 py-2.5 font-sarabun text-label font-bold text-white shadow-lg shadow-[#053F5C]/20 transition-all hover:shadow-[#0081A7]/30"
         >
           {t("addRoot")}
         </button>
@@ -197,7 +201,7 @@ export default function CategoryTree({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[700px] text-left">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/80 font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
+            <tr className="border-b border-gray-200 bg-[#f3f4f5] font-sarabun text-[10px] font-bold uppercase tracking-wider text-[#053F5C]">
               <th className="px-6 py-4">
                 <span className="flex items-center gap-1">
                   {t("colName")} / {t("colSlug")}
@@ -250,8 +254,8 @@ function ActionButton({
       onClick={onClick}
       className={`rounded-full p-2 transition-colors ${
         danger
-          ? "text-red-400 hover:bg-red-50 hover:text-status-error"
-          : "text-blue-400 hover:bg-blue-50 hover:text-primary-dark"
+          ? "text-red-400 hover:bg-red-50 hover:text-red-600"
+          : "text-[#0081A7] hover:bg-[#053F5C]/10 hover:text-[#053F5C]"
       }`}
     >
       {children}

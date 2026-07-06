@@ -121,7 +121,7 @@ export default function EmailLogsTable({
                   <td className="px-6 py-4 font-sarabun text-body-md text-text-primary">
                     {templateLabel(log.template_name)}
                   </td>
-                  <td className="px-6 py-4 font-sarabun text-body-md text-primary-dark">
+                  <td className="px-6 py-4 font-sarabun text-body-md text-[#0081A7]">
                     {log.recipient_email}
                   </td>
                   <td

@@ -124,15 +124,15 @@ export default function AdminCategoriesPage() {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <nav className="mb-2 flex font-sarabun text-label text-text-muted">
-            <Link href={base} className="hover:text-primary-dark">
+            <Link href={base} className="hover:text-[#0081A7]">
               {t("breadcrumbHome")}
             </Link>
             <span className="mx-2">&gt;</span>
             <span>{t("breadcrumbManagement")}</span>
             <span className="mx-2">&gt;</span>
-            <span className="font-medium text-primary-dark">{t("breadcrumbCategories")}</span>
+            <span className="font-semibold text-[#053F5C]">{t("breadcrumbCategories")}</span>
           </nav>
-          <h1 className="font-kanit text-[28px] font-bold leading-tight text-text-primary">
+          <h1 className="font-kanit text-[32px] font-bold leading-tight text-[#053F5C]">
             {t("title")}
           </h1>
           <p className="mt-1 font-sarabun text-body-md text-text-muted">
@@ -143,7 +143,7 @@ export default function AdminCategoriesPage() {
           <button
             type="button"
             onClick={openCreateRoot}
-            className="inline-flex items-center gap-2 rounded-full bg-primary-dark px-5 py-2.5 font-sarabun text-label font-medium text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg"
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-6 py-3 font-sarabun text-label font-bold text-white shadow-lg shadow-[#053F5C]/20 transition-all hover:shadow-[#0081A7]/30 active:scale-95"
           >
             <PlusCircleIcon />
             {t("addRoot")}
@@ -168,33 +168,35 @@ export default function AdminCategoriesPage() {
                 }
               }}
               placeholder={t("searchPlaceholder")}
-              className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 pl-10 pr-4 font-sarabun text-body-md shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+              className="h-12 w-full rounded-full border border-gray-200 bg-gray-50 pl-10 pr-4 font-sarabun text-body-md shadow-sm transition-all hover:border-gray-300 focus:border-[#0081A7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0081A7]/20"
             />
           </div>
         </div>
 
         {/* Tab buttons */}
-        <div className="mt-4 flex gap-2 border-t border-gray-100 pt-4">
+        <div className="mt-4 flex gap-3 border-t border-gray-100 pt-4">
           <button
             type="button"
             onClick={() => { setTab("agency"); setPage(1); }}
-            className={`rounded-full px-5 py-2 font-sarabun text-label font-medium transition-all ${
+            className={`flex items-center gap-2 rounded-full px-6 py-2 font-sarabun text-label font-semibold transition-all ${
               tab === "agency"
-                ? "bg-primary-dark text-white shadow-md"
+                ? "bg-gradient-to-r from-[#053F5C] to-[#0081A7] text-white shadow-lg shadow-[#0081A7]/30"
                 : "bg-gray-100 text-text-secondary hover:bg-gray-200"
             }`}
           >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z" /></svg>
             {t("tabAgency")}
           </button>
           <button
             type="button"
             onClick={() => { setTab("admin"); setPage(1); }}
-            className={`rounded-full px-5 py-2 font-sarabun text-label font-medium transition-all ${
+            className={`flex items-center gap-2 rounded-full px-6 py-2 font-sarabun text-label font-semibold transition-all ${
               tab === "admin"
-                ? "bg-primary-dark text-white shadow-md"
+                ? "bg-gradient-to-r from-[#053F5C] to-[#0081A7] text-white shadow-lg shadow-[#0081A7]/30"
                 : "bg-gray-100 text-text-secondary hover:bg-gray-200"
             }`}
           >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" /></svg>
             {t("tabAdmin")}
           </button>
         </div>
@@ -244,7 +246,7 @@ export default function AdminCategoriesPage() {
                     onClick={() => setPage(p)}
                     className={`flex h-10 w-10 items-center justify-center rounded-full font-sarabun text-label font-bold transition-all ${
                       safePage === p
-                        ? "bg-primary-dark text-white shadow-md"
+                        ? "bg-gradient-to-r from-[#053F5C] to-[#0081A7] text-white shadow-lg shadow-[#0081A7]/30"
                         : "border border-gray-200 bg-white text-text-muted hover:bg-gray-50 hover:shadow-sm"
                     }`}
                   >

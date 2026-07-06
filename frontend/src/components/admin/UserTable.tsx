@@ -69,10 +69,10 @@ function RoleBadge({ role, label }: { role: AdminUser["role"]; label: string }) 
   const isAdmin = role === "admin";
   return (
     <span
-      className={`inline-flex rounded-full px-3 py-1 font-sarabun text-caption font-bold ${
+      className={`inline-flex rounded-full border px-3 py-1 font-sarabun text-[10px] font-bold uppercase ${
         isAdmin
-          ? "bg-emerald-50 text-emerald-700"
-          : "bg-blue-50 text-blue-700"
+          ? "border-green-200 bg-green-100 text-green-700"
+          : "border-blue-200 bg-blue-100 text-blue-700"
       }`}
     >
       {label}
@@ -138,7 +138,7 @@ export default function UserTable({
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/80 font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
+                  <tr className="border-b border-gray-100 bg-slate-50 font-sarabun text-[10px] font-bold uppercase tracking-widest text-text-muted">
                     <th className="px-6 py-4">{t("colAgency")}</th>
                     <th className="px-6 py-4">{t("colEmail")}</th>
                     <th className="px-6 py-4">{t("colRole")}</th>
@@ -361,14 +361,14 @@ function UserRowActions({
         <button
           type="button"
           onClick={onApprove}
-          className="rounded-full bg-emerald-500 px-3.5 py-1.5 font-sarabun text-caption font-bold text-white shadow-sm transition-all hover:bg-emerald-600 hover:shadow-md"
+          className="rounded-full bg-green-600 px-4 py-1.5 font-sarabun text-xs font-bold text-white shadow-sm transition-all hover:bg-green-700 hover:shadow-md"
         >
           {approveLabel}
         </button>
         <button
           type="button"
           onClick={onReject}
-          className="rounded-full border border-gray-300 bg-white px-3.5 py-1.5 font-sarabun text-caption font-bold text-gray-600 transition-all hover:border-red-400 hover:text-red-600"
+          className="rounded-full border border-slate-200 bg-white px-4 py-1.5 font-sarabun text-xs font-bold text-slate-500 transition-all hover:border-red-400 hover:text-red-600"
         >
           {rejectLabel}
         </button>
@@ -393,7 +393,7 @@ function UserRowActions({
           type="button"
           onClick={onSuspend}
           disabled={user.role === "admin"}
-          className="rounded-full border border-gray-300 bg-white px-3.5 py-1.5 font-sarabun text-caption font-bold text-gray-600 transition-all hover:border-gray-400 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-full border border-slate-200 bg-white px-4 py-1.5 font-sarabun text-xs font-bold text-slate-500 transition-all hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {suspendLabel}
         </button>
@@ -467,7 +467,7 @@ function ChangeRoleButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="rounded-full border border-blue-300 bg-white px-3.5 py-1.5 font-sarabun text-caption font-bold text-blue-600 transition-all hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+      className="rounded-full border border-[#0081A7]/30 bg-white px-4 py-1.5 font-sarabun text-xs font-bold text-[#0081A7] transition-all hover:bg-[#0081A7]/5 disabled:cursor-not-allowed disabled:opacity-40"
     >
       {label}
     </button>
@@ -535,7 +535,7 @@ function UserTablePagination({
             onClick={() => onPageChange?.(page)}
             className={`flex h-10 w-10 items-center justify-center rounded-full font-sarabun text-label font-bold transition-all ${
               page === currentPage
-                ? "bg-primary-dark text-white shadow-md"
+                ? "bg-[#053F5C] text-white shadow-md"
                 : "border border-gray-200 bg-white text-text-muted shadow-sm hover:bg-gray-50 hover:shadow-md"
             }`}
             aria-current={page === currentPage ? "page" : undefined}

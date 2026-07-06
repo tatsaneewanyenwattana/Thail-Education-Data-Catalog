@@ -1405,7 +1405,8 @@
       "rejectModalDesc": "ระบุเหตุผลในการปฏิเสธ {agency}",
       "rejectReasonPlaceholder": "กรอกเหตุผลที่ปฏิเสธ...",
       "cancelReject": "ยกเลิก",
-      "rejecting": "กำลังปฏิเสธ..."
+      "rejecting": "กำลังปฏิเสธ...",
+      "loading": "กำลังโหลด..."
     },
     "users": {
       "title": "จัดการ User",

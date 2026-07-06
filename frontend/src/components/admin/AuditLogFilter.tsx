@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import AdminDatePicker from "@/components/admin/AdminDatePicker";
 
 export type AuditLogFilterValues = {
   dateFrom: string;
@@ -22,6 +23,7 @@ export default function AuditLogFilter({
   onSearch,
 }: AuditLogFilterProps) {
   const t = useTranslations("admin.auditLogs");
+  const locale = useLocale();
   const [actionOpen, setActionOpen] = useState(false);
   const actionRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +57,7 @@ export default function AuditLogFilter({
   ];
 
   const inputClass =
-    "h-11 w-full rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20";
+    "h-11 w-full rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-[#0081A7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0081A7]/20";
 
   return (
     <section className="rounded-2xl border border-white/80 bg-white p-6 shadow-md">
@@ -71,12 +73,11 @@ export default function AuditLogFilter({
           >
             {t("filterDateFrom")}
           </label>
-          <input
+          <AdminDatePicker
             id="audit-date-from"
-            type="date"
             value={values.dateFrom}
-            onChange={(e) => update({ dateFrom: e.target.value })}
-            className={inputClass}
+            onChange={(v) => update({ dateFrom: v })}
+            locale={locale}
           />
         </div>
 
@@ -88,12 +89,11 @@ export default function AuditLogFilter({
           >
             {t("filterDateTo")}
           </label>
-          <input
+          <AdminDatePicker
             id="audit-date-to"
-            type="date"
             value={values.dateTo}
-            onChange={(e) => update({ dateTo: e.target.value })}
-            className={inputClass}
+            onChange={(v) => update({ dateTo: v })}
+            locale={locale}
           />
         </div>
 
@@ -106,7 +106,7 @@ export default function AuditLogFilter({
             <button
               type="button"
               onClick={() => setActionOpen(!actionOpen)}
-              className="flex h-11 w-full items-center justify-between rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
+              className="flex h-11 w-full items-center justify-between rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-[#0081A7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0081A7]/20"
             >
               <span>
                 {actionOptions.find((o) => o.value === values.action)?.label}
@@ -132,7 +132,7 @@ export default function AuditLogFilter({
                       }}
                       className={`flex w-full px-4 py-2.5 text-left font-sarabun text-body-md transition-colors ${
                         values.action === opt.value
-                          ? "bg-primary-dark/10 font-bold text-primary-dark"
+                          ? "bg-[#053F5C]/10 font-bold text-[#053F5C]"
                           : "text-text-primary hover:bg-gray-50"
                       }`}
                     >
@@ -172,7 +172,7 @@ export default function AuditLogFilter({
         <div className="md:col-span-2">
           <button
             type="submit"
-            className="h-11 w-full rounded-full bg-primary-dark font-sarabun text-body-md font-bold text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg active:scale-95"
+            className="h-11 w-full rounded-full bg-gradient-to-r from-[#053F5C] to-[#0081A7] font-sarabun text-body-md font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95"
           >
             {t("search")}
           </button>

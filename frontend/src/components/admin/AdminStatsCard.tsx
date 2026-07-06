@@ -9,6 +9,7 @@ type AdminStatsCardProps = {
   iconClassName?: string;
   variant?: "default" | "warning" | "highlight";
   badge?: ReactNode;
+  className?: string;
 };
 
 const waveSvg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Ccircle cx='250' cy='-20' r='120' fill='rgba(0,129,167,0.04)'/%3E%3Ccircle cx='280' cy='160' r='80' fill='rgba(0,175,185,0.03)'/%3E%3C/svg%3E")`;
@@ -22,6 +23,7 @@ export default function AdminStatsCard({
   iconClassName = "bg-surface-container text-status-draft",
   variant = "default",
   badge,
+  className = "",
 }: AdminStatsCardProps) {
   const isWarning = variant === "warning";
   const isHighlight = variant === "highlight";
@@ -34,7 +36,7 @@ export default function AdminStatsCard({
           : isHighlight
             ? "border-transparent shadow-sm"
             : "shadow-sm"
-      }`}
+      } ${className}`}
       style={
         isHighlight
           ? {

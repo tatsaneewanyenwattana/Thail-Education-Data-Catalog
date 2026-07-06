@@ -47,15 +47,22 @@ function StatusBadge({
   status: AdminDataset["status"];
   label: string;
 }) {
-  const dotColor: Record<string, string> = {
-    published: "bg-emerald-500",
-    draft: "bg-amber-400",
-  };
+  const isPublished = status === "published";
 
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={`h-2 w-2 rounded-full ${dotColor[status] ?? dotColor.draft}`} />
-      <span className="font-sarabun text-caption font-semibold text-text-primary">{label}</span>
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-sarabun text-xs font-bold ${
+        isPublished
+          ? "bg-green-100 text-green-700"
+          : "bg-amber-100 text-[#ef6c00]"
+      }`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          isPublished ? "bg-green-600" : "bg-[#ef6c00] animate-pulse"
+        }`}
+      />
+      {label}
     </span>
   );
 }
@@ -139,7 +146,7 @@ export default function AdminDatasetTable({
             <div className="overflow-x-auto">
               <table className="w-full min-w-[960px] text-left">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/80 font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
+                  <tr className="border-b border-gray-100 bg-slate-50 font-sarabun text-[10px] font-bold uppercase tracking-widest text-text-muted">
                     <th className="px-6 py-4">{t("colTitle")}</th>
                     <th className="px-6 py-4">{t("colAgency")}</th>
                     <th className="px-6 py-4">{t("colCategory")}</th>
@@ -176,7 +183,7 @@ export default function AdminDatasetTable({
                           <td className="px-6 py-4">
                             <Link
                               href={`${base}/datasets/${dataset.id}`}
-                              className="font-sarabun text-body-md text-text-primary hover:underline"
+                              className="font-sarabun text-body-md font-semibold text-[#053F5C] transition-colors hover:text-[#0081A7] hover:underline"
                             >
                               {title}
                             </Link>
@@ -217,7 +224,7 @@ export default function AdminDatasetTable({
                               <button
                                 type="button"
                                 onClick={() => handleEdit(dataset.id)}
-                                className="rounded-full p-2 text-text-muted transition-colors hover:bg-blue-50 hover:text-primary-dark"
+                                className="rounded-full p-2 text-text-muted transition-colors hover:bg-blue-50 hover:text-[#0081A7]"
                                 aria-label={t("edit")}
                               >
                                 <EditIcon />
@@ -315,7 +322,7 @@ function DatasetTablePagination({
             onClick={() => onPageChange?.(page)}
             className={`flex h-10 w-10 items-center justify-center rounded-full font-sarabun text-label font-bold transition-all ${
               page === currentPage
-                ? "bg-primary-dark text-white shadow-md"
+                ? "bg-[#053F5C] text-white shadow-md"
                 : "border border-gray-200 bg-white text-text-muted hover:bg-gray-50 hover:shadow-sm"
             }`}
             aria-current={page === currentPage ? "page" : undefined}

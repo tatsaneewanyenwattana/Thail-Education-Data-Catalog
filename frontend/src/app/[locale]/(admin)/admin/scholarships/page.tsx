@@ -171,9 +171,9 @@ function AdminScholarshipsContent() {
   ];
 
   return (
-    <div className="mx-auto max-w-container-max space-y-spacing-8 pb-24">
+    <div className="mx-auto max-w-container-max space-y-6 pb-24">
       <header>
-        <h1 className="font-kanit text-[28px] font-bold leading-tight text-text-primary">
+        <h1 className="font-kanit text-[32px] font-bold leading-tight text-[#053F5C]">
           {tAdmin("title")}
         </h1>
         <p className="mt-1 font-sarabun text-label text-text-muted">
@@ -181,8 +181,8 @@ function AdminScholarshipsContent() {
         </p>
       </header>
 
-      <section className="rounded-2xl border border-white/80 bg-white p-4 shadow-md md:p-6">
-        <div className="grid gap-4 md:grid-cols-3">
+      <section className="rounded-2xl border border-white/80 bg-white p-6 shadow-md">
+        <div className="grid gap-6 md:grid-cols-3">
           <FilterDropdown
             label={tAdmin("filterStatus")}
             value={status}
@@ -217,7 +217,7 @@ function AdminScholarshipsContent() {
       )}
 
       {!isLoading && !isError && items.length === 0 && (
-        <div className="rounded-2xl border border-white/80 bg-white px-6 py-12 text-center shadow-md">
+        <div className="rounded-2xl border border-white/80 bg-white px-6 py-16 text-center shadow-md">
           <p className="font-sarabun text-body-md text-text-muted">
             {tAdmin("empty")}
           </p>
@@ -227,12 +227,12 @@ function AdminScholarshipsContent() {
       {!isLoading && !isError && items.length > 0 && (
         <div className="overflow-x-auto rounded-2xl border border-white/80 bg-white shadow-md">
           <table className="min-w-full divide-y divide-border-default/60">
-            <thead className="bg-surface-container">
+            <thead className="bg-[#f3f4f5]">
               <tr>
                 {columnHeaders.map((heading) => (
                   <th
                     key={heading}
-                    className="px-4 py-3 text-left font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted"
+                    className="px-6 py-4 text-left font-sarabun text-[10px] font-bold uppercase tracking-wider text-text-muted"
                   >
                     {heading}
                   </th>
@@ -241,52 +241,52 @@ function AdminScholarshipsContent() {
             </thead>
             <tbody className="divide-y divide-border-default/40">
               {items.map((scholarship) => (
-                <tr key={scholarship.id} className="hover:bg-surface-page/60">
-                  <td className="px-4 py-4 font-sarabun text-body-sm font-medium text-text-primary">
+                <tr key={scholarship.id} className="transition-colors hover:bg-[#f8f9fa]">
+                  <td className="px-6 py-5 font-sarabun text-body-sm font-medium text-text-primary">
                     {scholarship.title}
                   </td>
-                  <td className="px-4 py-4 font-sarabun text-body-sm text-text-secondary">
+                  <td className="px-6 py-5 font-sarabun text-body-sm text-text-secondary">
                     {scholarship.agency_name ?? t("common.noAgency")}
                   </td>
-                  <td className="px-4 py-4 font-sarabun text-body-sm text-text-secondary">
+                  <td className="px-6 py-5 font-sarabun text-body-sm text-text-secondary">
                     {tTypes(scholarship.scholarship_type)}
                   </td>
-                  <td className="px-4 py-4 font-sarabun text-body-sm text-text-secondary">
+                  <td className="px-6 py-5 font-sarabun text-body-sm text-text-secondary">
                     {tLevels(scholarship.target_level)}
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-6 py-5 text-center">
                     <StatusBadge
                       status={scholarship.status}
                       publishedLabel={t("common.statusPublished")}
                       draftLabel={t("common.statusDraft")}
                     />
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-6 py-5 text-center">
                     <SourceBadge
                       source={scholarship.source}
                       label={tSources(scholarship.source)}
                     />
                   </td>
-                  <td className="px-4 py-4 font-sarabun text-body-sm text-text-secondary">
+                  <td className="px-6 py-5 font-sarabun text-body-sm text-text-secondary">
                     {formatDate(scholarship.close_date, locale)}
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-6 py-5">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         type="button"
                         onClick={() => router.push(`${base}/admin/scholarships/${scholarship.id}/edit`)}
-                        className="rounded-full p-2 text-text-muted transition-colors hover:bg-blue-50 hover:text-primary-dark"
+                        className="rounded-full bg-blue-50 p-2 text-blue-600 transition-colors hover:bg-blue-100"
                       >
-                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                           <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
                         </svg>
                       </button>
                       <button
                         type="button"
                         onClick={() => setDeleteTarget(scholarship)}
-                        className="rounded-full p-2 text-text-muted transition-colors hover:bg-red-50 hover:text-status-error"
+                        className="rounded-full bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100"
                       >
-                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                           <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
                         </svg>
                       </button>
@@ -307,22 +307,29 @@ function AdminScholarshipsContent() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
           <button
             type="button"
-            className="absolute inset-0 bg-surface-navy/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setDeleteTarget(null)}
           />
-          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="mb-2 font-kanit text-heading-3 font-bold text-text-primary">
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+            <div className="mb-4 flex justify-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-50 text-red-600">
+                <svg className="h-10 w-10" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+                </svg>
+              </div>
+            </div>
+            <h2 className="mb-2 text-center font-kanit text-2xl font-bold text-text-primary">
               {tAdmin("deleteTitle")}
             </h2>
-            <p className="mb-6 font-sarabun text-body-md text-text-muted">
+            <p className="mb-6 text-center font-sarabun text-body-md text-text-muted">
               {tAdmin("deleteConfirm", { title: deleteTarget.title })}
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleteMutation.isPending}
-                className="flex-1 rounded-full border border-gray-300 py-3 font-sarabun text-label font-medium text-text-secondary hover:bg-gray-50 disabled:opacity-50"
+                className="flex-1 rounded-full border-2 border-gray-300 py-3 font-sarabun text-label font-bold text-text-secondary transition-colors hover:bg-gray-50 disabled:opacity-50"
               >
                 {tAdmin("cancelBtn")}
               </button>
@@ -330,7 +337,7 @@ function AdminScholarshipsContent() {
                 type="button"
                 onClick={() => deleteMutation.mutate(deleteTarget.id)}
                 disabled={deleteMutation.isPending}
-                className="flex-1 rounded-full bg-status-error py-3 font-sarabun text-label font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="flex-1 rounded-full bg-red-600 py-3 font-sarabun text-label font-bold text-white shadow-lg transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
               >
                 {tAdmin("deleteBtn")}
               </button>
@@ -384,13 +391,13 @@ function FilterDropdown({
 
   return (
     <div className="relative" ref={ref}>
-      <span className="mb-2 block font-sarabun text-label font-medium text-text-muted">
+      <span className="mb-2 block font-sarabun text-sm font-semibold text-text-muted">
         {label}
       </span>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-11 w-full items-center justify-between rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 hover:shadow-md"
+        className="flex h-12 w-full items-center justify-between rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 hover:shadow-md"
       >
         <span className="truncate">{selected?.label ?? "—"}</span>
         <svg className="h-4 w-4 shrink-0 text-gray-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -406,7 +413,7 @@ function FilterDropdown({
               onClick={() => { onChange(opt.value); setOpen(false); }}
               className={`flex w-full px-4 py-2.5 font-sarabun text-label transition-colors ${
                 opt.value === value
-                  ? "bg-primary-dark/10 font-bold text-primary-dark"
+                  ? "bg-[#053F5C]/10 font-bold text-[#053F5C]"
                   : "text-text-primary hover:bg-gray-50"
               }`}
             >

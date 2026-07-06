@@ -152,7 +152,7 @@ export default function CategoryForm({
         <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 px-6 py-5">
           <h2
             id="admin-category-form-title"
-            className="font-kanit text-heading-3 font-bold text-text-primary"
+            className="font-kanit text-heading-3 font-bold text-[#053F5C]"
           >
             {title}
           </h2>
@@ -177,7 +177,7 @@ export default function CategoryForm({
             <input
               id="admin-nameTh"
               type="text"
-              className={`h-11 w-full rounded-xl border bg-gray-50 px-4 font-sarabun text-body-md outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-primary-dark/20 ${
+              className={`h-11 w-full rounded-xl border bg-gray-50 px-4 font-sarabun text-body-md outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-[#0081A7]/20 ${
                 errors.nameTh ? "border-status-error" : "border-border-input"
               }`}
               placeholder={t("fieldNameThPlaceholder")}
@@ -200,7 +200,7 @@ export default function CategoryForm({
             <input
               id="admin-nameEn"
               type="text"
-              className={`h-11 w-full rounded-xl border bg-gray-50 px-4 font-sarabun text-body-md outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-primary-dark/20 ${
+              className={`h-11 w-full rounded-xl border bg-gray-50 px-4 font-sarabun text-body-md outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-[#0081A7]/20 ${
                 errors.nameEn ? "border-status-error" : "border-border-input"
               }`}
               placeholder={t("fieldNameEnPlaceholder")}
@@ -224,7 +224,7 @@ export default function CategoryForm({
               <input
                 id="admin-slug"
                 type="text"
-                className={`h-11 w-full rounded-xl border bg-gray-50 px-4 font-mono text-code outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-primary-dark/20 ${
+                className={`h-11 w-full rounded-xl border bg-gray-50 px-4 font-mono text-code outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-[#0081A7]/20 ${
                   errors.slug ? "border-status-error" : "border-border-input"
                 }`}
                 placeholder={t("fieldSlugPlaceholder")}
@@ -256,14 +256,14 @@ export default function CategoryForm({
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="rounded-full border border-gray-200 px-5 py-2 font-kanit text-label font-medium text-text-secondary transition-colors hover:bg-gray-50 disabled:opacity-50"
+              className="rounded-full border-2 border-gray-200 px-5 py-2 font-kanit text-label font-semibold text-text-secondary transition-colors hover:bg-gray-50 disabled:opacity-50"
             >
               {t("cancel")}
             </button>
             <button
               type="submit"
               disabled={!isValid || isPending}
-              className="rounded-full bg-primary-dark px-8 py-2 font-kanit text-label font-bold text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg disabled:opacity-50"
+              className="rounded-full bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-8 py-2 font-kanit text-label font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
             >
               {isPending ? t("saving") : t("save")}
             </button>

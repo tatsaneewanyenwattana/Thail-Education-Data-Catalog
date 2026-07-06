@@ -136,7 +136,7 @@ export default function AdminPageEditorPage() {
         <button
           type="button"
           onClick={goBackToPages}
-          className="mt-4 font-sarabun text-label font-semibold text-primary hover:underline"
+          className="mt-4 font-sarabun text-label font-semibold text-[#0081A7] hover:underline"
         >
           {t("backToPages")}
         </button>
@@ -149,16 +149,16 @@ export default function AdminPageEditorPage() {
   return (
     <div className="space-y-6 pb-24">
       {/* Breadcrumb */}
-      <nav className="flex font-sarabun text-body-md text-text-muted">
-        <Link href={`${base}/admin`} className="hover:text-primary-dark">
+      <nav className="flex font-sarabun text-body-sm text-text-muted">
+        <Link href={`${base}/admin`} className="hover:text-[#0081A7]">
           Admin
         </Link>
         <span className="mx-2">&gt;</span>
-        <Link href={`${base}/admin/pages`} className="hover:text-primary-dark">
+        <Link href={`${base}/admin/pages`} className="hover:text-[#0081A7]">
           Static Pages
         </Link>
         <span className="mx-2">&gt;</span>
-        <span className="font-medium text-primary-dark">Edit /{slug}</span>
+        <span className="font-semibold text-[#053F5C]">Edit /{slug}</span>
       </nav>
 
       {/* Header card */}
@@ -166,7 +166,7 @@ export default function AdminPageEditorPage() {
         <p className="font-mono text-body-sm uppercase tracking-wide text-text-muted">
           SLUG: /{slug}
         </p>
-        <h1 className="mt-1 font-kanit text-[28px] font-bold text-text-primary">
+        <h1 className="mt-1 font-kanit text-[28px] font-bold text-[#053F5C]">
           {t("editTitle", { title: pageTitle })}
         </h1>
       </header>
@@ -179,7 +179,7 @@ export default function AdminPageEditorPage() {
         <select
           value={displayMode}
           onChange={(e) => setDisplayMode(e.target.value as DisplayMode)}
-          className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-sarabun text-body-md text-text-primary shadow-sm focus:border-primary-dark focus:outline-none focus:ring-1 focus:ring-primary-dark"
+          className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 font-sarabun text-body-md text-text-primary shadow-sm focus:border-[#0081A7] focus:outline-none focus:ring-1 focus:ring-[#0081A7]/20"
         >
           <option value="markdown">Markdown</option>
           <option value="pdf">PDF</option>
@@ -201,7 +201,7 @@ export default function AdminPageEditorPage() {
       {/* PDF upload — show when pdf or both */}
       {(displayMode === "pdf" || displayMode === "both") && (
         <div className="rounded-2xl border border-white/80 bg-white px-8 py-6 shadow-md">
-          <h3 className="mb-4 font-kanit text-lg font-bold text-text-primary">
+          <h3 className="mb-4 font-kanit text-lg font-bold text-[#053F5C]">
             ไฟล์ PDF
           </h3>
 
@@ -222,7 +222,7 @@ export default function AdminPageEditorPage() {
                 href={`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1${pdfUrl}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-lg border border-gray-200 px-3 py-1.5 font-sarabun text-body-sm font-medium text-primary-dark hover:bg-gray-50"
+                className="rounded-lg border border-[#0081A7]/30 px-3 py-1.5 font-sarabun text-body-sm font-medium text-[#0081A7] hover:bg-[#0081A7]/5"
               >
                 ดูไฟล์
               </a>
@@ -243,7 +243,7 @@ export default function AdminPageEditorPage() {
                 const file = e.dataTransfer.files[0];
                 if (file) handleUploadPdf(file);
               }}
-              className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50/50 px-6 py-10 transition-colors hover:border-primary-dark/50"
+              className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#0081A7]/30 bg-gray-50/50 px-6 py-10 transition-colors hover:border-[#0081A7]/50"
             >
               <svg className="mb-3 h-10 w-10 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -302,7 +302,7 @@ export default function AdminPageEditorPage() {
             type="button"
             onClick={handleSave}
             disabled={updateMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-full bg-primary-dark px-6 py-2.5 font-sarabun text-body-md font-semibold text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-6 py-2.5 font-sarabun text-body-md font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-60"
           >
             <SaveIcon />
             {updateMutation.isPending ? t("saving") : t("save")}
@@ -311,7 +311,7 @@ export default function AdminPageEditorPage() {
       </div>
 
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-[110] rounded-2xl bg-primary-dark px-4 py-3 font-sarabun text-label text-white shadow-lg">
+        <div className="fixed bottom-6 right-6 z-[110] rounded-2xl bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-4 py-3 font-sarabun text-label text-white shadow-lg">
           {toastMessage}
         </div>
       )}

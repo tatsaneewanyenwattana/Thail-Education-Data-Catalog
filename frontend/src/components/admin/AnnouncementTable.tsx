@@ -101,11 +101,11 @@ export default function AnnouncementTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/80 bg-white shadow-md">
+    <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[800px] text-left">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/80 font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
+            <tr className="border-b border-gray-200 bg-[#e7e8e9] font-sarabun text-[10px] font-bold uppercase tracking-wider text-[#3f484e]">
               <th className="px-6 py-4">{t("colTitle")}</th>
               <th className="px-6 py-4">{t("colContent")}</th>
               <th className="px-6 py-4">{t("colCategory")}</th>
@@ -134,14 +134,14 @@ export default function AnnouncementTable({
                 return (
                   <tr
                     key={announcement.id}
-                    className="transition-colors hover:bg-gray-50/50"
+                    className="transition-colors hover:bg-white/50"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <span
                           className={`h-2.5 w-2.5 shrink-0 rounded-full ${
                             announcement.isActive
-                              ? "bg-primary-dark"
+                              ? "bg-[#00AFB9]"
                               : "bg-gray-300"
                           }`}
                         />
@@ -183,7 +183,7 @@ export default function AnnouncementTable({
                           type="button"
                           aria-label={t("edit")}
                           onClick={() => onEdit(announcement)}
-                          className="rounded-full p-2 text-text-muted transition-colors hover:bg-blue-50 hover:text-primary-dark"
+                          className="rounded-lg p-2 text-[#0081A7] transition-colors hover:bg-[#053F5C]/10 hover:text-[#053F5C]"
                         >
                           <EditIcon />
                         </button>
@@ -191,7 +191,7 @@ export default function AnnouncementTable({
                           type="button"
                           aria-label={t("delete")}
                           onClick={() => onDelete(announcement)}
-                          className="rounded-full p-2 text-text-muted transition-colors hover:bg-red-50 hover:text-status-error"
+                          className="rounded-lg p-2 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
                         >
                           <DeleteIcon />
                         </button>
@@ -235,7 +235,7 @@ export default function AnnouncementTable({
                   onClick={() => onPageChange(p)}
                   className={`flex h-10 w-10 items-center justify-center rounded-full font-sarabun text-label font-bold transition-all ${
                     page === p
-                      ? "bg-primary-dark text-white shadow-md"
+                      ? "bg-gradient-to-r from-[#053F5C] to-[#0081A7] text-white shadow-lg shadow-[#0081A7]/30"
                       : "border border-gray-200 bg-white text-text-muted hover:bg-gray-50 hover:shadow-sm"
                   }`}
                 >

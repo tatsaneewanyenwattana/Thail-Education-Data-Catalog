@@ -91,7 +91,7 @@ export default function AnnouncementForm({
   };
 
   const inputClass =
-    "w-full rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20";
+    "w-full rounded-full border border-gray-200 bg-gray-50 px-4 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-[#0081A7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0081A7]/20";
 
   return (
     <div
@@ -110,7 +110,7 @@ export default function AnnouncementForm({
         <div className="px-8 py-6">
           <h2
             id="announcement-form-title"
-            className="font-kanit text-2xl font-bold text-text-primary"
+            className="font-kanit text-2xl font-bold text-[#053F5C]"
           >
             {title}
           </h2>
@@ -150,7 +150,7 @@ export default function AnnouncementForm({
             <textarea
               id="announcement-content"
               rows={4}
-              className={`rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-primary-dark focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark/20 w-full ${
+              className={`rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 font-sarabun text-body-md text-text-primary shadow-sm transition-all hover:border-gray-300 focus:border-[#0081A7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0081A7]/20 w-full ${
                 errors.content ? "border-red-400" : ""
               }`}
               placeholder={t("fieldContentPlaceholder")}
@@ -185,14 +185,14 @@ export default function AnnouncementForm({
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="rounded-full border border-gray-200 bg-white px-5 py-2.5 font-sarabun text-body-md font-medium text-text-secondary shadow-sm transition-all hover:bg-gray-50 disabled:opacity-50"
+              className="rounded-full border-2 border-gray-200 px-5 py-2.5 font-sarabun text-body-md font-semibold text-text-secondary transition-colors hover:bg-gray-50 disabled:opacity-50"
             >
               {t("cancel")}
             </button>
             <button
               type="submit"
               disabled={!isValid || isPending}
-              className="rounded-full bg-primary-dark px-6 py-2.5 font-sarabun text-body-md font-bold text-white shadow-md transition-all hover:bg-primary-hover hover:shadow-lg disabled:opacity-50"
+              className="rounded-full bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-6 py-2.5 font-sarabun text-body-md font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
             >
               {isPending ? t("saving") : t("save")}
             </button>

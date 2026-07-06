@@ -31,6 +31,7 @@ const FILE_TYPE_BADGES = ["CSV", "XLSX", "JSON", "PDF", "SQL"];
 type FileUploadZoneProps = {
   onAnalyzed: (result: PIIScanResult, file: File) => void;
   disabled?: boolean;
+  multiple?: boolean;
 };
 
 function isAcceptedFile(file: File): boolean {
@@ -46,12 +47,13 @@ function isAcceptedFile(file: File): boolean {
 export default function FileUploadZone({
   onAnalyzed,
   disabled = false,
+  multiple = false,
 }: FileUploadZoneProps) {
   const t = useTranslations("agency.upload");
   const { scanFile } = usePIIScan();
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [processingName, setProcessingName] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -66,7 +68,7 @@ export default function FileUploadZone({
     }
 
     setError(null);
-    setFileName(file.name);
+    setProcessingName(file.name);
     setIsUploading(true);
     setProgress(0);
 
@@ -89,6 +91,14 @@ export default function FileUploadZone({
     } finally {
       window.clearInterval(progressInterval);
       setIsUploading(false);
+      setProcessingName(null);
+    }
+  };
+
+  const processFiles = async (fileList: FileList) => {
+    const filesToProcess = Array.from(fileList);
+    for (const file of filesToProcess) {
+      await processFile(file);
     }
   };
 
@@ -97,9 +107,13 @@ export default function FileUploadZone({
     if (disabled || isUploading) {
       return;
     }
-    const file = event.dataTransfer.files[0];
-    if (file) {
-      void processFile(file);
+    if (multiple) {
+      void processFiles(event.dataTransfer.files);
+    } else {
+      const file = event.dataTransfer.files[0];
+      if (file) {
+        void processFile(file);
+      }
     }
   };
 
@@ -115,10 +129,10 @@ export default function FileUploadZone({
             inputRef.current?.click();
           }
         }}
-        className={`mb-6 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border-input bg-surface-page px-6 py-12 text-center transition-colors ${
+        className={`mb-6 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#0081A7]/30 bg-surface-page px-6 py-12 text-center transition-colors ${
           disabled || isUploading
             ? "cursor-not-allowed opacity-60"
-            : "cursor-pointer hover:border-primary-dark/40 hover:bg-surface-container"
+            : "cursor-pointer hover:border-[#0081A7]/50 hover:bg-[#0081A7]/5"
         }`}
         onClick={() => {
           if (!disabled && !isUploading) {
@@ -126,7 +140,7 @@ export default function FileUploadZone({
           }
         }}
       >
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-light text-primary-dark">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#0081A7]/10 text-[#0081A7]">
           <UploadIcon />
         </div>
         <p className="mb-4 font-kanit text-body-lg font-semibold text-text-primary">
@@ -135,7 +149,7 @@ export default function FileUploadZone({
         <button
           type="button"
           disabled={disabled || isUploading}
-          className="rounded-full bg-primary-dark px-8 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="rounded-full bg-[#0081A7] px-8 py-2.5 font-sarabun text-label font-medium text-white shadow-md transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
           onClick={(event) => {
             event.stopPropagation();
             inputRef.current?.click();
@@ -160,20 +174,25 @@ export default function FileUploadZone({
           ref={inputRef}
           type="file"
           accept=".csv,.xlsx,.xls,.json,.pdf,.sql"
+          multiple={multiple}
           className="hidden"
           disabled={disabled || isUploading}
           onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) {
-              void processFile(file);
+            const fileList = event.target.files;
+            if (!fileList || fileList.length === 0) return;
+            if (multiple) {
+              void processFiles(fileList);
+            } else {
+              void processFile(fileList[0]);
             }
+            event.target.value = "";
           }}
         />
       </div>
 
-      {fileName && (
+      {processingName && (
         <p className="mb-2 font-sarabun text-label text-text-secondary">
-          {fileName}
+          {processingName}
         </p>
       )}
 
@@ -185,7 +204,7 @@ export default function FileUploadZone({
           </div>
           <div className="h-2 w-full rounded-full bg-surface-container">
             <div
-              className="h-2 rounded-full bg-primary-dark transition-all"
+              className="h-2 rounded-full bg-[#0081A7] transition-all"
               style={{ width: `${progress}%` }}
             />
           </div>

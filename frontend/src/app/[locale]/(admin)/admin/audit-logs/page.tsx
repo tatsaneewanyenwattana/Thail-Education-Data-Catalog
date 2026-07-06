@@ -63,13 +63,13 @@ export default function AdminAuditLogsPage() {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <nav className="mb-2 flex font-sarabun text-body-sm text-text-muted">
-            <Link href={`${base}/admin`} className="hover:text-primary-dark">
+            <Link href={`${base}/admin`} className="hover:text-[#0081A7]">
               Admin
             </Link>
             <span className="mx-2">&gt;</span>
-            <span className="font-medium text-primary-dark">{t("title")}</span>
+            <span className="font-semibold text-[#053F5C]">{t("title")}</span>
           </nav>
-          <h1 className="font-kanit text-[32px] font-bold leading-tight text-text-primary">
+          <h1 className="font-kanit text-[32px] font-bold leading-tight text-[#053F5C]">
             {t("title")}
           </h1>
           <p className="mt-1 font-sarabun text-body-md text-text-muted">
@@ -79,7 +79,7 @@ export default function AdminAuditLogsPage() {
         <button
           type="button"
           onClick={handleExport}
-          className="inline-flex items-center gap-2 rounded-full border-2 border-primary-dark px-6 py-2.5 font-sarabun text-body-md font-semibold text-primary-dark transition-all hover:bg-primary-dark/5"
+          className="inline-flex items-center gap-2 rounded-full border-2 border-[#053F5C] px-6 py-2.5 font-sarabun text-body-md font-semibold text-[#053F5C] transition-all hover:bg-[#053F5C]/5"
         >
           <DownloadIcon />
           {t("export")}
