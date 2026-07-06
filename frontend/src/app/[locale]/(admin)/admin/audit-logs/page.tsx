@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import AdminStatsCard from "@/components/admin/AdminStatsCard";
 import AuditLogFilter, {
   type AuditLogFilterValues,
@@ -25,32 +25,40 @@ export default function AdminAuditLogsPage() {
 
   const { data: stats } = useAuditLogStats();
 
-  const [draftFilters, setDraftFilters] =
-    useState<AuditLogFilterValues>(emptyFilters);
-  const [appliedFilters, setAppliedFilters] =
-    useState<AuditLogFilterValues>(emptyFilters);
+  const [filters, setFilters] = useState<AuditLogFilterValues>(emptyFilters);
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [page, setPage] = useState(1);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleFilterChange = useCallback((newFilters: AuditLogFilterValues) => {
+    setFilters(newFilters);
+    setPage(1);
+
+    if (newFilters.search !== filters.search) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setAppliedSearch(newFilters.search);
+      }, 400);
+    } else {
+      setAppliedSearch(newFilters.search);
+    }
+  }, [filters.search]);
 
   const queryFilters: AuditLogsFilters = {
-    dateFrom: appliedFilters.dateFrom || undefined,
-    dateTo: appliedFilters.dateTo || undefined,
-    action: appliedFilters.action,
-    search: appliedFilters.search || undefined,
+    dateFrom: filters.dateFrom || undefined,
+    dateTo: filters.dateTo || undefined,
+    action: filters.action,
+    search: appliedSearch || undefined,
     page,
-  };
-
-  const handleSearch = () => {
-    setAppliedFilters(draftFilters);
-    setPage(1);
   };
 
   const handleExport = async () => {
     try {
       await exportAuditLogsCsv({
-        dateFrom: appliedFilters.dateFrom || undefined,
-        dateTo: appliedFilters.dateTo || undefined,
-        action: appliedFilters.action,
-        search: appliedFilters.search || undefined,
+        dateFrom: filters.dateFrom || undefined,
+        dateTo: filters.dateTo || undefined,
+        action: filters.action,
+        search: appliedSearch || undefined,
       });
     } catch {
       // Export errors surface via browser download failure
@@ -58,7 +66,7 @@ export default function AdminAuditLogsPage() {
   };
 
   return (
-    <div className="space-y-8 pb-24">
+    <div className="mx-auto max-w-container-max space-y-6 pb-24">
       {/* Header + Breadcrumb */}
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -92,27 +100,26 @@ export default function AdminAuditLogsPage() {
           label={t("statSessions")}
           value={stats?.logins?.toLocaleString() ?? "—"}
           icon={<SessionIcon />}
-          iconClassName="bg-blue-50 text-blue-600"
+          gradient={{ from: "#4a8f4a", to: "#5AA55A" }}
         />
         <AdminStatsCard
           label={t("statDeletions")}
           value={stats?.deletions?.toLocaleString() ?? "—"}
           icon={<DeleteStatIcon />}
-          iconClassName="bg-red-50 text-red-500"
+          gradient={{ from: "#e84e40", to: "#f4a59a", darkText: true }}
         />
         <AdminStatsCard
           label={t("statUploads")}
           value={stats?.uploads?.toLocaleString() ?? "—"}
           icon={<UploadStatIcon />}
-          iconClassName="bg-blue-50 text-blue-600"
+          gradient={{ from: "#6fa3ef", to: "#91BEFF" }}
         />
       </section>
 
       {/* Filters */}
       <AuditLogFilter
-        values={draftFilters}
-        onChange={setDraftFilters}
-        onSearch={handleSearch}
+        values={filters}
+        onChange={handleFilterChange}
       />
 
       {/* Table */}

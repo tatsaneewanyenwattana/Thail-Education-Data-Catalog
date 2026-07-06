@@ -8,13 +8,16 @@ type AdminStatsCardProps = {
   icon: ReactNode;
   iconClassName?: string;
   variant?: "default" | "warning" | "highlight";
+  gradient?: { from: string; to: string; darkText?: boolean };
   badge?: ReactNode;
   className?: string;
 };
 
 const waveSvg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Ccircle cx='250' cy='-20' r='120' fill='rgba(0,129,167,0.04)'/%3E%3Ccircle cx='280' cy='160' r='80' fill='rgba(0,175,185,0.03)'/%3E%3C/svg%3E")`;
 
-const highlightWaveSvg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Ccircle cx='250' cy='-20' r='120' fill='rgba(255,255,255,0.08)'/%3E%3Ccircle cx='280' cy='160' r='80' fill='rgba(255,255,255,0.05)'/%3E%3C/svg%3E")`;
+const highlightWaveSvg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Ccircle cx='250' cy='-20' r='120' fill='rgba(255,255,255,0.15)'/%3E%3Ccircle cx='280' cy='160' r='80' fill='rgba(255,255,255,0.10)'/%3E%3Ccircle cx='40' cy='180' r='60' fill='rgba(255,255,255,0.06)'/%3E%3C/svg%3E")`;
+
+const darkTextWaveSvg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Ccircle cx='250' cy='-20' r='120' fill='rgba(0,0,0,0.08)'/%3E%3Ccircle cx='280' cy='160' r='80' fill='rgba(0,0,0,0.06)'/%3E%3Ccircle cx='40' cy='180' r='60' fill='rgba(0,0,0,0.04)'/%3E%3C/svg%3E")`;
 
 export default function AdminStatsCard({
   label,
@@ -22,26 +25,36 @@ export default function AdminStatsCard({
   icon,
   iconClassName = "bg-surface-container text-status-draft",
   variant = "default",
+  gradient,
   badge,
   className = "",
 }: AdminStatsCardProps) {
   const isWarning = variant === "warning";
   const isHighlight = variant === "highlight";
+  const hasGradient = !!gradient;
+  const isColorful = isHighlight || hasGradient;
+  const isDarkText = hasGradient && gradient.darkText;
+
+  const gradientBg = hasGradient
+    ? `linear-gradient(135deg, ${gradient.from} 0%, ${gradient.to} 100%)`
+    : isHighlight
+      ? `linear-gradient(135deg, #053F5C 0%, #0081A7 100%)`
+      : undefined;
 
   return (
     <div
       className={`rounded-2xl border p-6 transition-all hover:shadow-md ${
-        isWarning
-          ? "border-[#ef6c00]/10 shadow-sm"
-          : isHighlight
-            ? "border-transparent shadow-sm"
+        isColorful
+          ? "border-transparent shadow-sm"
+          : isWarning
+            ? "border-[#ef6c00]/10 shadow-sm"
             : "shadow-sm"
       } ${className}`}
       style={
-        isHighlight
+        isColorful
           ? {
-              background: `linear-gradient(135deg, #053F5C 0%, #0081A7 100%)`,
-              backgroundImage: `${highlightWaveSvg}, linear-gradient(135deg, #053F5C 0%, #0081A7 100%)`,
+              background: gradientBg,
+              backgroundImage: `${isDarkText ? darkTextWaveSvg : highlightWaveSvg}, ${gradientBg}`,
               backgroundRepeat: "no-repeat",
               backgroundPosition: "right top",
             }
@@ -63,8 +76,8 @@ export default function AdminStatsCard({
       <div className="mb-5 flex items-start justify-between">
         <div
           className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
-            isHighlight
-              ? "bg-white/15 text-white"
+            isColorful
+              ? isDarkText ? "bg-black/10 text-[#053F5C]" : "bg-white/20 text-white"
               : isWarning
                 ? "bg-surface-card/50 text-[#ef6c00]"
                 : iconClassName
@@ -75,9 +88,9 @@ export default function AdminStatsCard({
         {badge}
       </div>
       <p
-        className={`mb-1 font-sarabun text-sm font-medium ${
-          isHighlight
-            ? "text-white/70"
+        className={`mb-1 font-sarabun text-sm font-semibold ${
+          isColorful
+            ? isDarkText ? "text-[#053F5C]/70" : "text-white/80"
             : isWarning
               ? "text-[#ef6c00]"
               : "text-text-muted"
@@ -87,8 +100,8 @@ export default function AdminStatsCard({
       </p>
       <p
         className={`font-kanit text-[30px] font-bold leading-tight ${
-          isHighlight
-            ? "text-white"
+          isColorful
+            ? isDarkText ? "text-[#053F5C]" : "text-white"
             : isWarning
               ? "text-[#ef6c00]"
               : "text-[#053F5C]"

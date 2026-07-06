@@ -77,7 +77,7 @@ export default function AdminUsersPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       const trimmed = value.trim();
-      if (trimmed.length >= 2 || trimmed.length === 0) {
+      if (trimmed.length >= 1 || trimmed.length === 0) {
         setAppliedSearch(trimmed);
         setPage(1);
       }
@@ -144,17 +144,17 @@ export default function AdminUsersPage() {
             label={tDash("pendingUsers")}
             value={dashData.pendingUsers.toLocaleString(numberLocale)}
             icon={<HourglassIcon />}
-            variant="warning"
-            badge={dashData.pendingUsers > 0 ? <span className="h-3 w-3 animate-pulse rounded-full bg-red-500" /> : undefined}
+            gradient={{ from: "#e84e40", to: "#f4a59a", darkText: true }}
+            badge={dashData.pendingUsers > 0 ? <span className="h-3 w-3 animate-pulse rounded-full bg-[#e84e40]" /> : undefined}
           />
           <AdminStatsCard
             label={t("activeUsers")}
             value={(dashData.totalUsers - dashData.pendingUsers).toLocaleString(numberLocale)}
             icon={<ActiveIcon />}
-            iconClassName="bg-green-100 text-green-600"
+            gradient={{ from: "#4a8f4a", to: "#5AA55A" }}
             badge={
-              <span className="flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 font-sarabun text-[10px] font-bold text-green-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              <span className="flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 font-sarabun text-[10px] font-bold text-white">
+                <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
                 ACTIVE
               </span>
             }

@@ -50,7 +50,7 @@ export default function AdminDatasetsPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       const trimmed = value.trim();
-      if (trimmed.length >= 2 || trimmed.length === 0) {
+      if (trimmed.length >= 1 || trimmed.length === 0) {
         setAppliedSearch(trimmed);
         setPage(1);
       }
@@ -110,9 +110,9 @@ export default function AdminDatasetsPage() {
             label={t("totalDatasets")}
             value={totalDatasets.toLocaleString(numberLocale)}
             icon={<DatasetIcon />}
-            iconClassName="bg-[#053F5C]/10 text-[#053F5C]"
+            variant="highlight"
             badge={
-              <span className="flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 font-sarabun text-[10px] font-bold text-green-700">
+              <span className="flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 font-sarabun text-[10px] font-bold text-white">
                 ↑ +{dashData.datasetTrendPercent}%
               </span>
             }
@@ -121,11 +121,10 @@ export default function AdminDatasetsPage() {
             label={t("publishedDatasets")}
             value={publishedCount.toLocaleString(numberLocale)}
             icon={<CheckCircleIcon />}
-            iconClassName="bg-[#00AFB9]/10 text-[#00AFB9]"
-            className="border-l-4 border-l-green-500"
+            gradient={{ from: "#4a8f4a", to: "#5AA55A" }}
             badge={
-              <span className="flex items-center gap-1.5 font-sarabun text-[10px] font-bold uppercase text-green-600">
-                <span className="h-2 w-2 rounded-full bg-green-500" />
+              <span className="flex items-center gap-1.5 font-sarabun text-[10px] font-bold uppercase text-white/80">
+                <span className="h-2 w-2 rounded-full bg-white/70" />
                 Active
               </span>
             }
@@ -134,10 +133,10 @@ export default function AdminDatasetsPage() {
             label={t("draftPending")}
             value={draftCount > 0 ? draftCount.toLocaleString(numberLocale) : "0"}
             icon={<DraftIcon />}
-            variant="warning"
+            gradient={{ from: "#e6c95a", to: "#FFED9E", darkText: true }}
             badge={
-              <span className="flex items-center gap-1 font-sarabun text-caption font-medium text-status-warning">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-status-warning" />
+              <span className="flex items-center gap-1 font-sarabun text-caption font-semibold text-[#053F5C]/60">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-[#ef6c00]" />
                 {t("awaitingReview")}
               </span>
             }
