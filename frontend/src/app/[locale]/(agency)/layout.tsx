@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AgencySidebar from "@/components/common/AgencySidebar";
-import Navbar from "@/components/common/Navbar";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function AgencyLayout({
@@ -64,14 +63,11 @@ export default function AgencyLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Navbar variant="agency" />
-      <div className="flex min-h-0 flex-1">
-        <AgencySidebar />
-        <main className="min-w-0 flex-1 overflow-y-auto rounded-tl-2xl bg-surface-page p-6 lg:p-10 [&_aside]:hidden">
-          {children}
-        </main>
-      </div>
+    <div className="flex min-h-screen bg-white">
+      <AgencySidebar />
+      <main className="min-w-0 flex-1 overflow-y-auto p-6 lg:p-10 [&_aside]:hidden">
+        {children}
+      </main>
     </div>
   );
 }

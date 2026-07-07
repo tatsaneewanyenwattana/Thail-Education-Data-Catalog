@@ -210,7 +210,7 @@ export default function ManageScholarshipsPage() {
         </div>
         <Link
           href={`${base}/manage/scholarships/new`}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-dark px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0d5302] px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90"
         >
           <PlusIcon />
           {tManage("createNew")}
@@ -321,7 +321,7 @@ export default function ManageScholarshipsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-border-default/30 font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
+                    <tr className="border-b border-border-default/30 bg-[#f3f4f5] font-sarabun text-[15px] font-bold text-text-muted">
                       <th className="px-6 py-4">{tManage("colTitle")}</th>
                       <th className="px-6 py-4">{tManage("colType")}</th>
                       <th className="px-6 py-4">{tManage("colLevel")}</th>
@@ -332,15 +332,15 @@ export default function ManageScholarshipsPage() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border-default/20">
+                  <tbody className="divide-y divide-gray-100/60">
                     {items.map((scholarship) => (
                       <tr
                         key={scholarship.id}
-                        className="transition-colors hover:bg-surface-page"
+                        className="transition-colors hover:bg-gray-50/50"
                       >
                         <td className="px-6 py-4">
                           <div className="min-w-0">
-                            <span className="block font-sarabun text-label font-semibold text-text-primary">
+                            <span className="block font-sarabun text-body-md font-semibold text-text-primary">
                               {scholarship.title}
                             </span>
                             <span className="font-sarabun text-[11px] text-text-muted">
@@ -365,7 +365,7 @@ export default function ManageScholarshipsPage() {
                             draftLabel={t("common.statusDraft")}
                           />
                         </td>
-                        <td className="px-6 py-4 font-sarabun text-label text-text-muted">
+                        <td className="px-6 py-4 font-sarabun text-body-md text-text-muted">
                           {formatDate(scholarship.close_date, locale)}
                         </td>
                         <td className="px-6 py-4">
@@ -426,7 +426,7 @@ export default function ManageScholarshipsPage() {
                         onClick={() => setPage(p)}
                         className={`flex h-10 w-10 items-center justify-center rounded-xl font-sarabun text-label font-bold transition-colors ${
                           p === page
-                            ? "bg-primary-dark text-white shadow-level-1"
+                            ? "bg-[#0d5302] text-white shadow-level-1"
                             : "border border-border-input text-text-primary hover:bg-surface-container"
                         }`}
                       >
@@ -517,14 +517,14 @@ function FilterIcon() {
 }
 function EditIcon() {
   return (
-    <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
     </svg>
   );
 }
 function DeleteIcon() {
   return (
-    <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
     </svg>
   );

@@ -19,7 +19,7 @@ export default function AgencyCategoriesPage() {
   const base = `/${locale}`;
   const { user } = useAuthStore();
 
-  const [activeLevel, setActiveLevel] = useState<1 | 2>(1);
+  const [activeLevel, setActiveLevel] = useState<number>(1);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editingCategory, setEditingCategory] =
@@ -40,6 +40,19 @@ export default function AgencyCategoriesPage() {
 
   const totalCategories = countNodes(tree);
   const totalDatasets = sumDatasets(tree);
+
+  function getMaxLevel(nodes: CategoryTreeNode[]): number {
+    let max = 1;
+    for (const node of nodes) {
+      if (node.level > max) max = node.level;
+      if (node.children.length > 0) {
+        const childMax = getMaxLevel(node.children);
+        if (childMax > max) max = childMax;
+      }
+    }
+    return max;
+  }
+  const maxLevel = tree.length > 0 ? getMaxLevel(tree) : 2;
 
   const openCreateRoot = () => {
     setFormMode("create");
@@ -99,7 +112,7 @@ export default function AgencyCategoriesPage() {
         <button
           type="button"
           onClick={openCreateRoot}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-dark px-6 py-2.5 font-sarabun text-label font-bold text-white shadow-level-1 transition-opacity hover:opacity-90"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0d5302] px-6 py-2.5 font-sarabun text-label font-bold text-white shadow-level-1 transition-opacity hover:opacity-90"
         >
           <PlusIcon />
           {t("addRoot")}
@@ -111,10 +124,11 @@ export default function AgencyCategoriesPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <SummaryCard
             icon={<GridIcon />}
-            iconBg="bg-primary-light"
-            iconColor="text-primary-dark"
+            iconBg="bg-[#e1f5fe]"
+            iconColor="text-[#039be5]"
             label="หมวดหมู่ทั้งหมด"
             value={`${totalCategories} หมวดหมู่`}
+            waveColor="rgba(3,155,229,0.07)"
           />
           <SummaryCard
             icon={<DataIcon />}
@@ -122,6 +136,7 @@ export default function AgencyCategoriesPage() {
             iconColor="text-[#43a047]"
             label="ชุดข้อมูลรวม"
             value={`${totalDatasets} ชุดข้อมูล`}
+            waveColor="rgba(67,160,71,0.07)"
           />
           <SummaryCard
             icon={<ClockIcon />}
@@ -129,34 +144,27 @@ export default function AgencyCategoriesPage() {
             iconColor="text-[#f57c00]"
             label="อัปเดตล่าสุด"
             value={formatRelativeTime(lastUpdatedAt)}
+            waveColor="rgba(245,124,0,0.07)"
           />
         </div>
       )}
 
       {/* Level tabs */}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setActiveLevel(1)}
-          className={`rounded-t-lg border-b-2 px-5 py-2.5 font-sarabun text-label font-medium transition-all ${
-            activeLevel === 1
-              ? "border-b-primary-dark text-primary-dark"
-              : "border-b-transparent text-text-muted hover:border-b-border-default hover:text-text-secondary"
-          }`}
-        >
-          หมวดระดับ 1
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveLevel(2)}
-          className={`rounded-t-lg border-b-2 px-5 py-2.5 font-sarabun text-label font-medium transition-all ${
-            activeLevel === 2
-              ? "border-b-primary-dark text-primary-dark"
-              : "border-b-transparent text-text-muted hover:border-b-border-default hover:text-text-secondary"
-          }`}
-        >
-          หมวดระดับ 2
-        </button>
+        {Array.from({ length: maxLevel }, (_, i) => i + 1).map((lvl) => (
+          <button
+            key={lvl}
+            type="button"
+            onClick={() => setActiveLevel(lvl)}
+            className={`rounded-t-lg border-b-2 px-5 py-2.5 font-sarabun text-label font-medium transition-all ${
+              activeLevel === lvl
+                ? "border-b-[#0d5302] text-[#0d5302]"
+                : "border-b-transparent text-text-muted hover:border-b-border-default hover:text-text-secondary"
+            }`}
+          >
+            หมวดระดับ {lvl}
+          </button>
+        ))}
       </div>
 
       {toastError && (
@@ -266,26 +274,32 @@ function SummaryCard({
   iconColor,
   label,
   value,
+  waveColor = "rgba(3,155,229,0.08)",
 }: {
   icon: React.ReactNode;
   iconBg: string;
   iconColor: string;
   label: string;
   value: string;
+  waveColor?: string;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-border-default/60 bg-surface-card px-6 py-5 shadow-level-1">
+    <div className="relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border-default/60 bg-surface-card px-6 py-10 shadow-md">
       <div
-        className={`flex h-12 w-12 items-center justify-center rounded-full ${iconBg} ${iconColor}`}
+        className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-full ${iconBg} ${iconColor}`}
       >
         {icon}
       </div>
-      <div>
+      <div className="relative z-10">
         <p className="font-sarabun text-caption text-text-muted">{label}</p>
         <p className="font-kanit text-heading-3-mobile font-bold text-text-primary">
           {value}
         </p>
       </div>
+      <svg className="absolute bottom-0 left-0 w-full pointer-events-none" viewBox="0 0 400 60" preserveAspectRatio="none" style={{ height: "40%" }}>
+        <path d="M0,35 C80,10 150,50 250,30 C320,15 370,40 400,25 L400,60 L0,60 Z" fill={waveColor} />
+        <path d="M0,45 C100,25 200,55 300,35 C360,25 390,45 400,40 L400,60 L0,60 Z" fill={waveColor} />
+      </svg>
     </div>
   );
 }

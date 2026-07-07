@@ -10,6 +10,8 @@ type AgencyStatsCardProps = {
   iconClassName?: string;
   trendBadge?: ReactNode;
   progressBar?: { percent: number; color?: string };
+  bgGradient?: string;
+  patternColor?: string;
 };
 
 export default function AgencyStatsCard({
@@ -20,14 +22,26 @@ export default function AgencyStatsCard({
   iconClassName = "bg-primary-light text-primary-dark",
   trendBadge,
   progressBar,
+  bgGradient,
+  patternColor,
 }: AgencyStatsCardProps) {
   return (
-    <div className="relative rounded-2xl border border-border-default/60 bg-surface-card p-5 shadow-level-1 transition-shadow hover:shadow-level-2">
+    <div
+      className="relative overflow-hidden rounded-2xl border border-border-default/60 p-5 shadow-level-1 transition-shadow hover:shadow-level-2"
+      style={bgGradient ? { background: bgGradient } : { backgroundColor: 'var(--color-surface-card)' }}
+    >
+      {patternColor && (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+          <circle cx="83%" cy="-10%" r="35%" fill={patternColor} />
+          <circle cx="93%" cy="80%" r="25%" fill={patternColor} />
+          <circle cx="13%" cy="90%" r="18%" fill={patternColor} />
+        </svg>
+      )}
       {trendBadge ? (
-        <div className="absolute right-4 top-4">{trendBadge}</div>
+        <div className="absolute right-4 top-4 z-10">{trendBadge}</div>
       ) : null}
 
-      <div className="flex items-start gap-4">
+      <div className="relative z-10 flex items-start gap-4">
         <div
           className={`flex h-11 w-11 items-center justify-center rounded-full ${iconClassName}`}
         >
@@ -42,7 +56,7 @@ export default function AgencyStatsCard({
       </div>
 
       {progressBar ? (
-        <div className="mt-4">
+        <div className="relative z-10 mt-4">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-container">
             <div
               className="h-full rounded-full transition-all"
@@ -55,7 +69,7 @@ export default function AgencyStatsCard({
         </div>
       ) : null}
 
-      {footer ? <div className="mt-3">{footer}</div> : null}
+      {footer ? <div className="relative z-10 mt-3">{footer}</div> : null}
     </div>
   );
 }

@@ -48,7 +48,7 @@ export default function DatasetVersionsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[960px] space-y-spacing-6 pb-24">
+    <div className="mx-auto max-w-[960px] space-y-6 pb-24">
       <header>
         <nav
           aria-label="Breadcrumb"

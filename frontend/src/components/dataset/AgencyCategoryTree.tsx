@@ -13,14 +13,14 @@ type AgencyCategoryTreeProps = {
   onEdit: (node: CategoryTreeNode) => void;
   onDelete: (node: CategoryTreeNode, displayName: string) => void;
   onMove?: (node: CategoryTreeNode) => void;
-  filterLevel?: 1 | 2;
+  filterLevel?: number;
 };
 
 function CategoryIcon({ level }: { level: number }) {
   const colors =
     level === 1
-      ? "bg-primary-light text-primary-dark"
-      : "bg-[#f3e5f5] text-[#8e24aa]";
+      ? "bg-[#e1f5fe] text-[#03a9f4]"
+      : "bg-[#e1f5fe] text-[#03a9f4]";
   return (
     <div
       className={`flex h-9 w-9 items-center justify-center rounded-xl ${colors}`}
@@ -66,7 +66,7 @@ function TreeRow({
 
   return (
     <>
-      <tr className="transition-colors hover:bg-surface-page">
+      <tr className="transition-colors hover:bg-gray-50/50">
         <td className="px-6 py-4">
           <div
             className="flex items-center gap-3"
@@ -86,7 +86,7 @@ function TreeRow({
             )}
             <CategoryIcon level={node.level} />
             <div className="min-w-0">
-              <span className="block font-sarabun text-label font-semibold text-text-primary">
+              <span className="block font-sarabun text-body-md font-semibold text-text-primary">
                 {label}
               </span>
               <span className="font-sarabun text-[11px] text-text-muted">
@@ -95,7 +95,7 @@ function TreeRow({
             </div>
           </div>
         </td>
-        <td className="px-6 py-4 font-mono text-caption text-text-muted">
+        <td className="px-6 py-4 font-mono text-body-md text-text-muted">
           {node.slug}
         </td>
         <td className="px-6 py-4">
@@ -233,14 +233,14 @@ export default function AgencyCategoryTree({
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="border-b border-border-default/30 font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
+            <tr className="border-b border-border-default/30 bg-[#f3f4f5] font-sarabun text-[15px] font-bold text-text-muted">
               <th className="px-6 py-4">{t("colName")}</th>
               <th className="px-6 py-4">SLUG</th>
               <th className="px-6 py-4">{t("colDatasets")}</th>
               <th className="px-6 py-4 text-center">ACTION</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border-default/20">
+          <tbody className="divide-y divide-gray-100/60">
             {filteredNodes.map((node) => (
               <TreeRow
                 key={node.id}
@@ -286,7 +286,7 @@ function DatasetSmallIcon() {
 
 function PlusSmallIcon() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
     </svg>
   );

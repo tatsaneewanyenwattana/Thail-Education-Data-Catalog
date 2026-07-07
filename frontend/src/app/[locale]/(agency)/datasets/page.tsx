@@ -91,7 +91,7 @@ export default function AgencyDatasetsPage() {
         <div className="flex items-center gap-3">
           <Link
             href={`${base}/datasets/create`}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary-dark px-5 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#0d5302] px-5 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90"
           >
             <PlusIcon />
             {t("uploadNew")}
@@ -120,7 +120,7 @@ export default function AgencyDatasetsPage() {
                   <span
                     className={`inline-flex min-w-[22px] items-center justify-center rounded-full px-1.5 py-0.5 font-sarabun text-[11px] font-bold ${
                       isActive
-                        ? "bg-primary-dark text-white"
+                        ? "bg-[#0d5302] text-white"
                         : "bg-surface-container text-text-muted"
                     }`}
                   >

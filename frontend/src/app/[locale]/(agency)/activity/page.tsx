@@ -144,7 +144,7 @@ export default function AgencyActivityPage() {
           type="button"
           onClick={() => items.length > 0 && exportCsv(items)}
           disabled={items.length === 0}
-          className="inline-flex items-center gap-2 rounded-xl bg-primary-dark px-5 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#0d5302] px-5 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           <ExportIcon />
           ส่งออก CSV
@@ -163,7 +163,7 @@ export default function AgencyActivityPage() {
             }}
             className={`rounded-full px-5 py-2 font-sarabun text-label font-medium transition-colors ${
               activeTab === tab.key
-                ? "bg-primary-dark text-white shadow-level-1"
+                ? "bg-[#0d5302] text-white shadow-level-1"
                 : "border border-border-input bg-surface-card text-text-muted hover:bg-surface-container hover:text-text-primary"
             }`}
           >
@@ -183,7 +183,7 @@ export default function AgencyActivityPage() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-border-default/30 font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
+              <tr className="border-b border-border-default/30 bg-[#f3f4f5] font-sarabun text-[15px] font-bold text-text-muted">
                 <th className="px-6 py-4">{t("colDateTime")}</th>
                 <th className="px-6 py-4">{t("colType")}</th>
                 <th className="px-6 py-4">{t("colAction")}</th>
@@ -191,7 +191,7 @@ export default function AgencyActivityPage() {
                 <th className="px-6 py-4 text-center">จัดการ</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border-default/20">
+            <tbody className="divide-y divide-gray-100/60">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
@@ -232,10 +232,10 @@ export default function AgencyActivityPage() {
                   return (
                     <tr
                       key={item.id}
-                      className="transition-colors hover:bg-surface-page"
+                      className="transition-colors hover:bg-gray-50/50"
                     >
                       <td className="px-6 py-4">
-                        <span className="block font-sarabun text-label font-semibold text-text-primary">
+                        <span className="block font-sarabun text-body-md font-semibold text-text-primary">
                           {dateStr}
                         </span>
                         <span className="font-sarabun text-[11px] text-text-muted">
@@ -255,14 +255,14 @@ export default function AgencyActivityPage() {
                             className={`h-2.5 w-2.5 rounded-full ${aStyle.dot}`}
                           />
                           <span
-                            className={`font-sarabun text-label font-semibold ${aStyle.text}`}
+                            className={`font-sarabun text-body-md font-semibold ${aStyle.text}`}
                           >
                             {mapActivityLabel(item.activityType, t)}
                           </span>
                         </span>
                       </td>
                       <td className="max-w-[300px] px-6 py-4">
-                        <span className="block truncate font-sarabun text-label text-text-primary">
+                        <span className="block truncate font-sarabun text-body-md text-text-primary">
                           {item.title ?? "-"}
                         </span>
                       </td>
@@ -326,7 +326,7 @@ export default function AgencyActivityPage() {
                   onClick={() => setPage(pageNum)}
                   className={`flex h-10 w-10 items-center justify-center rounded-xl font-sarabun text-label font-bold transition-colors ${
                     pageNum === currentPage
-                      ? "bg-primary-dark text-white shadow-level-1"
+                      ? "bg-[#0d5302] text-white shadow-level-1"
                       : "border border-border-input text-text-primary hover:bg-surface-container"
                   }`}
                   aria-current={pageNum === currentPage ? "page" : undefined}
@@ -353,14 +353,14 @@ export default function AgencyActivityPage() {
 
 function ExportIcon() {
   return (
-    <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M19 9h-4V3H9v6H5l7 7 7-7ZM5 18v2h14v-2H5Z" />
     </svg>
   );
 }
 function EyeIcon() {
   return (
-    <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
     </svg>
   );

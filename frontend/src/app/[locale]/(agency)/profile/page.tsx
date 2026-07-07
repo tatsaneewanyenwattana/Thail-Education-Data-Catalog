@@ -200,7 +200,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => imageInputRef.current?.click()}
-                    className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary-dark text-white shadow-level-1 hover:opacity-90"
+                    className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#0d5302] text-white shadow-level-1 hover:opacity-90"
                   >
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.33a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.83z" />
@@ -287,7 +287,7 @@ export default function ProfilePage() {
                   type="button"
                   onClick={handleSave}
                   disabled={updateMutation.isPending}
-                  className="rounded-full bg-primary-dark px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90 disabled:opacity-50"
+                  className="rounded-full bg-[#0d5302] px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                   {updateMutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
                 </button>
