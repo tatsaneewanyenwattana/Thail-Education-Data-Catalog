@@ -31,6 +31,7 @@ export default function AgencyDatasetsPage() {
   );
   const [deleteTitle, setDeleteTitle] = useState("");
   const [toastError, setToastError] = useState<string | null>(null);
+  const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [moveTarget, setMoveTarget] = useState<AgencyDatasetRow | null>(null);
   const { data: categoryTree } = useAgencyCategoryTree();
   const moveMutation = useMoveDatasetCategory();
@@ -72,36 +73,34 @@ export default function AgencyDatasetsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <nav className="font-sarabun text-caption uppercase tracking-wider text-text-muted">
-        <span>DATASETS</span>
-        <span className="mx-2">›</span>
-        <span className="font-semibold text-text-primary">MY REPOSITORY</span>
-      </nav>
-
-      <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h1 className="font-kanit text-[28px] font-bold text-text-primary">
-            {t("title")}
-          </h1>
-          <p className="mt-1 font-sarabun text-body-md text-text-muted">
-            จัดการและตรวจสอบข้อมูลการศึกษาที่คุณเผยแพร่เข้าสู่ระบบ
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+      <header
+        className="relative overflow-hidden rounded-2xl p-6 lg:p-7"
+        style={{ background: "linear-gradient(135deg, #01579b 0%, #0277bd 60%, #0288d1 100%)" }}
+      >
+        <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="font-kanit text-xl font-bold text-white">
+              {t("title")}
+            </h1>
+            <p className="mt-1 font-sarabun text-sm text-white/70">
+              จัดการและตรวจสอบข้อมูลการศึกษาที่คุณเผยแพร่เข้าสู่ระบบ
+            </p>
+          </div>
           <Link
             href={`${base}/datasets/create`}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#0d5302] px-5 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 font-sarabun text-label font-medium text-[#01579b] shadow-sm transition-all hover:bg-white/90 active:scale-[0.97]"
           >
             <PlusIcon />
             {t("uploadNew")}
           </Link>
         </div>
+        <div className="absolute -right-5 -top-5 h-28 w-28 rounded-full bg-white/[0.06]" />
+        <div className="absolute right-16 -bottom-8 h-20 w-20 rounded-full bg-white/[0.04]" />
       </header>
 
       {/* Tabs + Filters */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-1">
+      <div className="flex flex-col gap-4 border-b border-border-default/40 md:flex-row md:items-end md:justify-between">
+        <div className="flex items-center gap-4">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -109,24 +108,13 @@ export default function AgencyDatasetsPage() {
                 key={tab.id}
                 type="button"
                 onClick={() => handleTabChange(tab.id)}
-                className={`inline-flex items-center gap-2 rounded-t-lg border-b-2 px-5 py-2.5 font-sarabun text-label font-medium transition-all ${
+                className={`border-b-2 px-4 pb-2.5 font-sarabun text-label font-semibold transition-all ${
                   isActive
-                    ? "border-b-primary-dark text-primary-dark"
-                    : "border-b-transparent text-text-muted hover:border-b-border-default hover:text-text-secondary"
+                    ? "border-b-[#01579b] text-[#01579b]"
+                    : "border-b-transparent text-text-muted hover:text-text-secondary"
                 }`}
               >
-                {tab.label}
-                {tab.count > 0 && (
-                  <span
-                    className={`inline-flex min-w-[22px] items-center justify-center rounded-full px-1.5 py-0.5 font-sarabun text-[11px] font-bold ${
-                      isActive
-                        ? "bg-[#0d5302] text-white"
-                        : "bg-surface-container text-text-muted"
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                )}
+                {tab.label} ({tab.count})
               </button>
             );
           })}
@@ -139,25 +127,46 @@ export default function AgencyDatasetsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="ค้นหาชื่อ Dataset หรือหมวดหมู่..."
-              className="h-10 w-full rounded-xl border border-border-input bg-surface-card pl-10 pr-4 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20 md:w-[260px]"
+              className="h-10 w-full rounded-xl border-none bg-[#f0f2f5] pl-10 pr-4 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-[#01579b]/25 md:w-[260px]"
             />
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
               <SearchIcon />
             </span>
           </div>
-          <select
-            value={selectedYear ?? ""}
-            onChange={(e) => {
-              setSelectedYear(e.target.value ? Number(e.target.value) : undefined);
-              setPage(1);
-            }}
-            className="h-10 rounded-xl border border-border-input bg-surface-card px-3 font-sarabun text-label text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
-          >
-            <option value="">ทุกปี</option>
-            {yearsList?.map((y) => (
-              <option key={y} value={y}>ปีงบประมาณ {y}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setYearDropdownOpen((v) => !v)}
+              onBlur={() => setTimeout(() => setYearDropdownOpen(false), 150)}
+              className="flex h-10 items-center gap-2 rounded-xl border-none bg-[#f0f2f5] px-4 font-sarabun text-label text-text-primary transition-all focus:outline-none focus:ring-2 focus:ring-[#01579b]/25"
+            >
+              <span>{selectedYear ? `ปีงบประมาณ ${selectedYear}` : "ทุกปี"}</span>
+              <svg className={`h-4 w-4 text-text-muted transition-transform ${yearDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+              </svg>
+            </button>
+            {yearDropdownOpen && (
+              <div className="absolute right-0 top-full z-20 mt-1 min-w-[180px] overflow-hidden rounded-xl border border-border-default/60 bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+                <button
+                  type="button"
+                  onMouseDown={() => { setSelectedYear(undefined); setPage(1); setYearDropdownOpen(false); }}
+                  className={`flex w-full items-center px-4 py-2.5 font-sarabun text-label transition-colors hover:bg-primary-light/50 ${selectedYear === undefined ? "font-semibold text-primary-dark" : "text-text-primary"}`}
+                >
+                  ทุกปี
+                </button>
+                {yearsList?.map((y) => (
+                  <button
+                    key={y}
+                    type="button"
+                    onMouseDown={() => { setSelectedYear(y); setPage(1); setYearDropdownOpen(false); }}
+                    className={`flex w-full items-center px-4 py-2.5 font-sarabun text-label transition-colors hover:bg-primary-light/50 ${selectedYear === y ? "font-semibold text-primary-dark" : "text-text-primary"}`}
+                  >
+                    ปีงบประมาณ {y}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -172,8 +181,8 @@ export default function AgencyDatasetsPage() {
         />
         <SummaryCard
           icon={<StarIcon />}
-          iconBg="bg-[#fff3e0]"
-          iconColor="text-[#f57c00]"
+          iconBg="bg-[#ffddb5]"
+          iconColor="text-[#f9a825]"
           label="Dataset ทั้งหมด"
           value={`${totalCount} รายการ`}
         />
@@ -224,6 +233,7 @@ export default function AgencyDatasetsPage() {
           allNodes={categoryTree.tree}
           isLoading={moveMutation.isPending}
           onCancel={() => setMoveTarget(null)}
+          theme="agency"
           onConfirm={(targetCategoryId) => {
             moveMutation.mutate(
               { datasetId: moveTarget.id, categoryId: targetCategoryId },
@@ -253,15 +263,15 @@ function SummaryCard({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-border-default/60 bg-surface-card px-6 py-5 shadow-level-1">
+    <div className="flex items-center gap-4 rounded-2xl bg-white px-6 py-6 shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_3px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
       <div
         className={`flex h-12 w-12 items-center justify-center rounded-full ${iconBg} ${iconColor}`}
       >
         {icon}
       </div>
       <div>
-        <p className="font-sarabun text-caption text-text-muted">{label}</p>
-        <p className="font-kanit text-heading-3-mobile font-bold text-text-primary">
+        <p className="font-sarabun text-[11px] font-medium uppercase tracking-wide text-text-muted">{label}</p>
+        <p className="font-kanit text-[22px] font-bold leading-tight text-text-primary">
           {value}
         </p>
       </div>

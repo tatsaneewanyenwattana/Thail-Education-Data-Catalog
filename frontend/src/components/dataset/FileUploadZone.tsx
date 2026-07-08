@@ -32,6 +32,7 @@ type FileUploadZoneProps = {
   onAnalyzed: (result: PIIScanResult, file: File) => void;
   disabled?: boolean;
   multiple?: boolean;
+  theme?: "agency";
 };
 
 function isAcceptedFile(file: File): boolean {
@@ -48,7 +49,9 @@ export default function FileUploadZone({
   onAnalyzed,
   disabled = false,
   multiple = false,
+  theme,
 }: FileUploadZoneProps) {
+  const isGreen = theme === "agency";
   const t = useTranslations("agency.upload");
   const { scanFile } = usePIIScan();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -129,10 +132,14 @@ export default function FileUploadZone({
             inputRef.current?.click();
           }
         }}
-        className={`mb-6 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#0081A7]/30 bg-surface-page px-6 py-12 text-center transition-colors ${
+        className={`mb-6 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-surface-page px-6 py-12 text-center transition-colors ${
+          isGreen ? "border-[#0277bd]/30" : "border-[#0081A7]/30"
+        } ${
           disabled || isUploading
             ? "cursor-not-allowed opacity-60"
-            : "cursor-pointer hover:border-[#0081A7]/50 hover:bg-[#0081A7]/5"
+            : isGreen
+              ? "cursor-pointer hover:border-[#0277bd]/50 hover:bg-[#0277bd]/5"
+              : "cursor-pointer hover:border-[#0081A7]/50 hover:bg-[#0081A7]/5"
         }`}
         onClick={() => {
           if (!disabled && !isUploading) {
@@ -140,7 +147,7 @@ export default function FileUploadZone({
           }
         }}
       >
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#0081A7]/10 text-[#0081A7]">
+        <div className={`mb-4 flex h-16 w-16 items-center justify-center rounded-full ${isGreen ? "bg-[#0277bd]/10 text-[#0277bd]" : "bg-[#0081A7]/10 text-[#0081A7]"}`}>
           <UploadIcon />
         </div>
         <p className="mb-4 font-kanit text-body-lg font-semibold text-text-primary">
@@ -149,7 +156,7 @@ export default function FileUploadZone({
         <button
           type="button"
           disabled={disabled || isUploading}
-          className="rounded-full bg-[#0081A7] px-8 py-2.5 font-sarabun text-label font-medium text-white shadow-md transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
+          className={`rounded-full px-8 py-2.5 font-sarabun text-label font-medium text-white shadow-md transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 ${isGreen ? "bg-[#01579b]" : "bg-[#0081A7]"}`}
           onClick={(event) => {
             event.stopPropagation();
             inputRef.current?.click();
@@ -167,7 +174,7 @@ export default function FileUploadZone({
             </span>
           ))}
           <span className="font-sarabun text-caption text-text-muted">
-            สูงสุด 100MB
+            สูงสุด 100MB · สามารถอัปโหลดได้หลายไฟล์
           </span>
         </div>
         <input
@@ -204,7 +211,7 @@ export default function FileUploadZone({
           </div>
           <div className="h-2 w-full rounded-full bg-surface-container">
             <div
-              className="h-2 rounded-full bg-[#0081A7] transition-all"
+              className={`h-2 rounded-full transition-all ${isGreen ? "bg-[#0277bd]" : "bg-[#0081A7]"}`}
               style={{ width: `${progress}%` }}
             />
           </div>

@@ -26,6 +26,7 @@ type DownloadModalProps = {
   datasetId: string;
   /** ประเภทไฟล์ต้นฉบับ — ถ้าไม่ส่งจะดึงจาก API อัตโนมัติ */
   sourceFileFormat?: string | null;
+  theme?: "agency";
 };
 
 function buildDownloadSchema(formats: DownloadFormat[]) {
@@ -45,13 +46,16 @@ type DownloadModalFormProps = {
   datasetId: string;
   availableFormats: DownloadFormat[];
   onClose: () => void;
+  theme?: "agency";
 };
 
 function DownloadModalForm({
   datasetId,
   availableFormats,
   onClose,
+  theme,
 }: DownloadModalFormProps) {
+  const isAgency = theme === "agency";
   const t = useTranslations("dataset.download");
   const tCommon = useTranslations("common");
   const downloadMutation = useDownloadDataset();
@@ -170,7 +174,7 @@ function DownloadModalForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 rounded-radius-full bg-gradient-to-b from-primary-hover to-primary-dark py-3 font-sarabun text-label font-bold text-white shadow-level-1 transition-all hover:brightness-110 disabled:opacity-70"
+          className={`flex-1 rounded-radius-full py-3 font-sarabun text-label font-bold text-white shadow-level-1 transition-all hover:brightness-110 disabled:opacity-70 ${isAgency ? "bg-gradient-to-b from-[#0288d1] to-[#01579b]" : "bg-gradient-to-b from-primary-hover to-primary-dark"}`}
         >
           {isSubmitting ? t("processing") : t("submit")}
         </button>
@@ -192,6 +196,7 @@ export default function DownloadModal({
   onClose,
   datasetId,
   sourceFileFormat,
+  theme,
 }: DownloadModalProps) {
   const t = useTranslations("dataset.download");
   const tCommon = useTranslations("common");
@@ -269,6 +274,7 @@ export default function DownloadModal({
             datasetId={datasetId}
             availableFormats={availableFormats}
             onClose={onClose}
+            theme={theme}
           />
         )}
       </div>

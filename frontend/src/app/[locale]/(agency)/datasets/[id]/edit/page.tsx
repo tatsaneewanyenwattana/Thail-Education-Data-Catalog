@@ -7,5 +7,5 @@ export default function EditDatasetPage() {
   const params = useParams<{ id: string }>();
   const datasetId = params.id;
 
-  return <DatasetForm mode="edit" datasetId={datasetId} />;
+  return <DatasetForm mode="edit" datasetId={datasetId} theme="agency" />;
 }

@@ -29,13 +29,14 @@ import { fetchDatasetFormInitial } from "@/utils/datasetFormApi";
 type DatasetFormProps = {
   mode: "create" | "edit";
   datasetId?: string;
+  theme?: "agency";
 };
 
-const inputClass =
-  "w-full rounded-xl border border-border-input bg-surface-page px-4 py-3 font-sarabun text-label text-text-primary outline-none transition-all focus:border-[#0081A7] focus:ring-2 focus:ring-[#0081A7]/20";
+const inputClassBase =
+  "w-full rounded-xl border border-border-input bg-surface-page px-4 py-3 font-sarabun text-label text-text-primary outline-none transition-all";
 const ALL_PROVINCES_VALUE = "all";
 
-export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
+export default function DatasetForm({ mode, datasetId, theme }: DatasetFormProps) {
   const t = useTranslations("agency.upload");
   const tCommon = useTranslations("common");
   const locale = useLocale();
@@ -43,6 +44,12 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
   const base = `/${locale}`;
   const isThai = locale === "th";
   const userRole = useAuthStore((s) => s.user?.role);
+  const isGreen = theme === "agency";
+  const cPrimary = isGreen ? "#01579b" : "#053F5C";
+  const cAccent = isGreen ? "#0277bd" : "#0081A7";
+  const inputClass = isGreen
+    ? `${inputClassBase} focus:border-[#0277bd] focus:ring-2 focus:ring-[#0277bd]/20`
+    : `${inputClassBase} focus:border-[#0081A7] focus:ring-2 focus:ring-[#0081A7]/20`;
   const { scanFile } = usePIIScan();
 
   const { data: initialFromApi, isLoading: isLoadingInitial } = useQuery({
@@ -212,6 +219,11 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     return options.slice(0, 5);
   }, [provinceOptions, provinceQuery]);
 
+  const [yearStartOpen, setYearStartOpen] = useState(false);
+  const [yearEndOpen, setYearEndOpen] = useState(false);
+  const watchedYearStart = watch("yearStart");
+  const watchedYearEnd = watch("yearEnd");
+
   if (mode === "edit" && datasetId && isLoadingInitial) {
     return (
       <div className="rounded-2xl border border-border-default bg-surface-card p-8 text-center">
@@ -230,7 +242,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
         </p>
         <Link
           href={`${base}/datasets`}
-          className="mt-4 inline-block font-sarabun text-label text-[#0081A7] hover:underline"
+          className={`mt-4 inline-block font-sarabun text-label hover:underline ${isGreen ? "text-[#0277bd]" : "text-[#0081A7]"}`}
         >
           {t("backToList")}
         </Link>
@@ -338,30 +350,30 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
     <div className="mx-auto max-w-[800px] space-y-8 pb-24">
       {/* Breadcrumb */}
       <nav className="flex flex-wrap items-center gap-2 font-sarabun text-caption uppercase tracking-wider text-text-muted">
-        <Link href={`${base}/dashboard`} className="hover:text-[#0081A7]">
+        <Link href={`${base}/dashboard`} className={isGreen ? "hover:text-[#0277bd]" : "hover:text-[#0081A7]"}>
           {t("breadcrumbDashboard")}
         </Link>
         <span>›</span>
-        <Link href={`${base}/datasets`} className="hover:text-[#0081A7]">
+        <Link href={`${base}/datasets`} className={isGreen ? "hover:text-[#0277bd]" : "hover:text-[#0081A7]"}>
           {t("breadcrumbDatasets")}
         </Link>
         <span>›</span>
-        <span className="font-semibold text-[#053F5C]">
+        <span className={`font-semibold ${isGreen ? "text-[#01579b]" : "text-[#053F5C]"}`}>
           {mode === "create" ? t("breadcrumbCurrent") : t("breadcrumbEdit")}
         </span>
       </nav>
 
-      <h1 className="font-kanit text-[32px] font-bold text-[#053F5C]">
+      <h1 className={`font-kanit text-[32px] font-bold ${isGreen ? "text-[#01579b]" : "text-[#053F5C]"}`}>
         {mode === "create" ? t("title") : t("editTitle")}
       </h1>
 
       {/* Step 1 — File Upload */}
-      <section className="rounded-2xl border border-[#0081A7]/8 bg-white/95 p-8 shadow-xl shadow-black/5 backdrop-blur-sm">
+      <section className={`rounded-2xl border ${isGreen ? "border-[#0277bd]/8" : "border-[#0081A7]/8"} bg-white/95 p-8 shadow-xl shadow-black/5 backdrop-blur-sm`}>
         <div className="mb-6 flex items-center gap-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#053F5C] font-sarabun text-label font-bold text-white">
+          <span className={`flex h-8 w-8 items-center justify-center rounded-full font-sarabun text-label font-bold text-white ${isGreen ? "bg-[#01579b]" : "bg-[#053F5C]"}`}>
             1
           </span>
-          <h2 className="font-kanit text-heading-3-mobile font-semibold text-[#053F5C]">
+          <h2 className={`font-kanit text-heading-3-mobile font-semibold ${isGreen ? "text-[#01579b]" : "text-[#053F5C]"}`}>
             {t("fileSection")}
           </h2>
         </div>
@@ -372,9 +384,9 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
               const fileHasPii = filePii.length > 0;
               const qs = entry.analysis?.quality_score;
               return (
-                <div key={`${entry.file.name}-${index}`} className="rounded-xl border border-[#0081A7]/10 bg-slate-50 p-4 transition-colors hover:bg-slate-100/80">
+                <div key={`${entry.file.name}-${index}`} className={`rounded-xl border ${isGreen ? "border-[#0277bd]/10" : "border-[#0081A7]/10"} bg-slate-50 p-4 transition-colors hover:bg-slate-100/80`}>
                   <div className="flex items-center gap-3">
-                    <svg className="h-5 w-5 shrink-0 text-[#0081A7]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <svg className={`h-5 w-5 shrink-0 ${isGreen ? "text-[#0277bd]" : "text-[#0081A7]"}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                       <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                     </svg>
                     <div className="min-w-0 flex-1">
@@ -450,11 +462,11 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
                 ไฟล์ปัจจุบัน
               </span>
             </div>
-            <FileUploadZone onAnalyzed={handleAnalyzed} disabled={isSubmitting} multiple />
+            <FileUploadZone onAnalyzed={handleAnalyzed} disabled={isSubmitting} multiple theme={theme} />
             <p className="font-sarabun text-caption text-text-muted">อัปโหลดไฟล์ใหม่เพื่อแทนที่ไฟล์เดิม</p>
           </div>
         ) : (
-          <FileUploadZone onAnalyzed={handleAnalyzed} disabled={isSubmitting} multiple />
+          <FileUploadZone onAnalyzed={handleAnalyzed} disabled={isSubmitting} multiple theme={theme} />
         )}
         {fileError && (
           <p className="mt-2 font-sarabun text-caption text-status-error">
@@ -474,12 +486,12 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
         })}
         className="space-y-8"
       >
-        <section className="rounded-2xl border border-[#0081A7]/8 bg-white/95 p-8 shadow-xl shadow-black/5 backdrop-blur-sm">
+        <section className={`rounded-2xl border ${isGreen ? "border-[#0277bd]/8" : "border-[#0081A7]/8"} bg-white/95 p-8 shadow-xl shadow-black/5 backdrop-blur-sm`}>
           <div className="mb-6 flex items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#053F5C] font-sarabun text-label font-bold text-white">
+            <span className={`flex h-8 w-8 items-center justify-center rounded-full font-sarabun text-label font-bold text-white ${isGreen ? "bg-[#01579b]" : "bg-[#053F5C]"}`}>
               2
             </span>
-            <h2 className="font-kanit text-heading-3-mobile font-semibold text-[#053F5C]">
+            <h2 className={`font-kanit text-heading-3-mobile font-semibold ${isGreen ? "text-[#01579b]" : "text-[#053F5C]"}`}>
               {t("dataSection")}
             </h2>
           </div>
@@ -507,7 +519,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
               </label>
               <textarea
                 rows={4}
-                className={inputClass}
+                className={`${inputClass} resize-y min-h-[120px]`}
                 placeholder={t("fieldDescriptionPlaceholder")}
                 {...register("description")}
               />
@@ -551,13 +563,37 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
                 <label className="mb-2 block font-sarabun text-label font-medium text-text-secondary">
                   {t("fieldYearStart")} *
                 </label>
-                <select className={inputClass} {...register("yearStart")}>
-                  {fiscalYears.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input type="hidden" {...register("yearStart")} />
+                  <button
+                    type="button"
+                    onClick={() => { setYearStartOpen((v) => !v); setYearEndOpen(false); }}
+                    onBlur={() => setTimeout(() => setYearStartOpen(false), 150)}
+                    className={`${inputClass} flex cursor-pointer items-center justify-between pr-10 text-left`}
+                  >
+                    <span>{watchedYearStart || fiscalYears[0]}</span>
+                    <svg className={`absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted transition-transform ${yearStartOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" /></svg>
+                  </button>
+                  {yearStartOpen && (
+                    <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-border-default/60 bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+                      {fiscalYears.map((year) => (
+                        <button
+                          key={year}
+                          type="button"
+                          onMouseDown={() => {
+                            setValue("yearStart", year, { shouldValidate: true, shouldDirty: true });
+                            setYearStartOpen(false);
+                          }}
+                          className={`flex w-full items-center px-4 py-2 font-sarabun text-label transition-colors hover:bg-primary-light/50 ${
+                            Number(watchedYearStart) === year ? "font-semibold text-primary-dark" : "text-text-primary"
+                          }`}
+                        >
+                          {year}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {errors.yearStart && (
                   <p className="mt-1 font-sarabun text-caption text-status-error">
                     {t("fieldYearStartError")}
@@ -568,14 +604,49 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
                 <label className="mb-2 block font-sarabun text-label font-medium text-text-secondary">
                   {t("fieldYearEnd")}
                 </label>
-                <select className={inputClass} {...register("yearEnd")}>
-                  <option value="">{t("fieldYearEndOptional")}</option>
-                  {fiscalYears.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input type="hidden" {...register("yearEnd")} />
+                  <button
+                    type="button"
+                    onClick={() => { setYearEndOpen((v) => !v); setYearStartOpen(false); }}
+                    onBlur={() => setTimeout(() => setYearEndOpen(false), 150)}
+                    className={`${inputClass} flex cursor-pointer items-center justify-between pr-10 text-left`}
+                  >
+                    <span>{watchedYearEnd ? watchedYearEnd : t("fieldYearEndOptional")}</span>
+                    <svg className={`absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted transition-transform ${yearEndOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" /></svg>
+                  </button>
+                  {yearEndOpen && (
+                    <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-border-default/60 bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+                      <button
+                        type="button"
+                        onMouseDown={() => {
+                          setValue("yearEnd", undefined as unknown as number, { shouldValidate: true, shouldDirty: true });
+                          setYearEndOpen(false);
+                        }}
+                        className={`flex w-full items-center px-4 py-2 font-sarabun text-label transition-colors hover:bg-primary-light/50 ${
+                          !watchedYearEnd ? "font-semibold text-primary-dark" : "text-text-primary"
+                        }`}
+                      >
+                        {t("fieldYearEndOptional")}
+                      </button>
+                      {fiscalYears.map((year) => (
+                        <button
+                          key={year}
+                          type="button"
+                          onMouseDown={() => {
+                            setValue("yearEnd", year, { shouldValidate: true, shouldDirty: true });
+                            setYearEndOpen(false);
+                          }}
+                          className={`flex w-full items-center px-4 py-2 font-sarabun text-label transition-colors hover:bg-primary-light/50 ${
+                            Number(watchedYearEnd) === year ? "font-semibold text-primary-dark" : "text-text-primary"
+                          }`}
+                        >
+                          {year}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {errors.yearEnd && (
                   <p className="mt-1 font-sarabun text-caption text-status-error">
                     {errors.yearEnd.message === "yearEndBeforeStart"
@@ -607,10 +678,10 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
                   <button
                     type="button"
                     onClick={clearProvince}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 font-sarabun text-label text-text-muted hover:text-text-primary"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-text-muted/15 text-text-muted transition-colors hover:bg-text-muted/30 hover:text-text-primary"
                     aria-label={t("fieldProvinceClear")}
                   >
-                    x
+                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
                   </button>
                 ) : null}
                 {provinceDropdownOpen ? (
@@ -640,9 +711,9 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
         </section>
 
         {/* Image upload (optional) */}
-        <section className="rounded-2xl border border-[#0081A7]/8 bg-white/95 p-6 shadow-xl shadow-black/5 backdrop-blur-sm">
-          <h3 className="mb-4 flex items-center gap-2 font-kanit text-heading-3-mobile font-bold text-[#053F5C]">
-            <svg className="h-5 w-5 text-[#0081A7]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <section className={`rounded-2xl border ${isGreen ? "border-[#0277bd]/8" : "border-[#0081A7]/8"} bg-white/95 p-6 shadow-xl shadow-black/5 backdrop-blur-sm`}>
+          <h3 className={`mb-4 flex items-center gap-2 font-kanit text-heading-3-mobile font-bold ${isGreen ? "text-[#01579b]" : "text-[#053F5C]"}`}>
+            <svg className={`h-5 w-5 ${isGreen ? "text-[#0277bd]" : "text-[#0081A7]"}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
               <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
             </svg>
             รูปภาพปก
@@ -675,7 +746,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
               <button
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
-                className="font-sarabun text-label text-[#0081A7] hover:underline"
+                className={`font-sarabun text-label hover:underline ${isGreen ? "text-[#0277bd]" : "text-[#0081A7]"}`}
               >
                 เปลี่ยนรูป
               </button>
@@ -683,9 +754,9 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
           ) : (
             <div
               onClick={() => imageInputRef.current?.click()}
-              className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#0081A7]/30 bg-surface-page px-6 py-10 text-center transition-colors hover:border-[#0081A7]/50 hover:bg-[#0081A7]/5"
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-surface-page px-6 py-10 text-center transition-colors ${isGreen ? "border-[#0277bd]/30 hover:border-[#0277bd]/50 hover:bg-[#0277bd]/5" : "border-[#0081A7]/30 hover:border-[#0081A7]/50 hover:bg-[#0081A7]/5"}`}
             >
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#0081A7]/10 text-[#0081A7]">
+              <div className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full ${isGreen ? "bg-[#0277bd]/10 text-[#0277bd]" : "bg-[#0081A7]/10 text-[#0081A7]"}`}>
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                   <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
                 </svg>
@@ -716,7 +787,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
             type="button"
             onClick={() => router.back()}
             disabled={isSubmitting}
-            className="rounded-full border-2 border-gray-200 px-8 py-2.5 font-sarabun text-label font-semibold text-text-muted transition-colors hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-full border-2 border-red-200 px-8 py-2.5 font-sarabun text-label font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
           >
             {t("cancel")}
           </button>
@@ -724,7 +795,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
             type="submit"
             disabled={isSubmitting}
             onClick={() => { submitStatusRef.current = "draft"; setSubmitStatus("draft"); }}
-            className="rounded-full border-2 border-[#0081A7]/30 px-8 py-2.5 font-sarabun text-label font-semibold text-[#053F5C] transition-colors hover:bg-[#0081A7]/5 disabled:opacity-50"
+            className={`rounded-full border-2 px-8 py-2.5 font-sarabun text-label font-semibold transition-colors disabled:opacity-50 ${isGreen ? "border-[#0277bd]/30 text-[#01579b] hover:bg-[#0277bd]/5" : "border-[#0081A7]/30 text-[#053F5C] hover:bg-[#0081A7]/5"}`}
           >
             {isSubmitting && submitStatus === "draft" && <Spinner />}
             {t("saveDraft")}
@@ -734,7 +805,7 @@ export default function DatasetForm({ mode, datasetId }: DatasetFormProps) {
               type="submit"
               disabled={isSubmitting || hasPii}
               onClick={() => { submitStatusRef.current = "published"; setSubmitStatus("published"); }}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#053F5C] to-[#0081A7] px-10 py-2.5 font-sarabun text-label font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
+              className={`inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r px-10 py-2.5 font-sarabun text-label font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 ${isGreen ? "from-[#01579b] to-[#0277bd]" : "from-[#053F5C] to-[#0081A7]"}`}
             >
               {isSubmitting && submitStatus === "published" && <Spinner />}
               {t("publish")}

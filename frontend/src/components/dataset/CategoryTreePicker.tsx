@@ -121,7 +121,7 @@ function CategoryCombobox({
             }
           }}
           onFocus={() => setOpen(true)}
-          className={`w-full rounded-radius-md border bg-surface-page py-2.5 pl-3 pr-9 font-sarabun text-label text-text-primary outline-none transition-all focus:border-border-focus focus:ring-2 focus:ring-primary-dark/20 ${
+          className={`w-full rounded-xl border bg-surface-page py-2.5 pl-3 pr-9 font-sarabun text-label text-text-primary outline-none transition-all focus:border-border-focus focus:ring-2 focus:ring-primary-dark/20 ${
             hasError ? "border-status-error" : "border-border-input"
           }`}
         />
@@ -139,7 +139,7 @@ function CategoryCombobox({
         <ul
           id={`${id}-listbox`}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-radius-md border border-border-input bg-surface-page py-1 shadow-level-2"
+          className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-border-input bg-surface-page py-1 shadow-level-2"
         >
           {filtered.length === 0 ? (
             <li className="px-3 py-2 font-sarabun text-caption text-text-muted">
@@ -419,7 +419,7 @@ function CategoryPickerBody({
       )}
 
       <div
-        className={`space-y-4 rounded-radius-md border bg-surface-page p-4 ${
+        className={`space-y-4 rounded-xl border bg-surface-page p-4 ${
           hasError ? "border-status-error" : "border-border-input"
         }`}
       >
@@ -462,7 +462,7 @@ function CategoryPickerBody({
             />
 
             {showSubPanel && (
-              <div className="rounded-radius-md border border-border-input bg-surface-container/50 p-4">
+              <div className="rounded-xl border border-border-input bg-surface-container/50 p-4">
                 <p className="mb-3 font-sarabun text-label font-semibold text-text-primary">
                   {t("fieldCategorySubPanelTitle", {
                     root: nodeLabel(rootNode, locale),
@@ -486,10 +486,10 @@ function CategoryPickerBody({
                     }}
                     onFocus={() => setSubSearchOpen(true)}
                     placeholder={t("fieldCategorySubSearchPlaceholder")}
-                    className="w-full rounded-radius-md border border-border-input bg-surface-page py-2.5 px-3 font-sarabun text-label text-text-primary outline-none transition-all focus:border-border-focus focus:ring-2 focus:ring-primary-dark/20"
+                    className="w-full rounded-xl border border-border-input bg-surface-page py-2.5 px-3 font-sarabun text-label text-text-primary outline-none transition-all focus:border-border-focus focus:ring-2 focus:ring-primary-dark/20"
                   />
                   {subSearchOpen && subSearchQuery.trim() && (
-                    <ul className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-radius-md border border-border-input bg-surface-page py-1 shadow-level-2">
+                    <ul className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-border-input bg-surface-page py-1 shadow-level-2">
                       {subSearchResults.length === 0 ? (
                         <li className="px-3 py-2 font-sarabun text-caption text-text-muted">
                           {t("fieldCategorySearchEmpty")}
@@ -543,10 +543,10 @@ function CategoryPickerBody({
                             key={node.id}
                             type="button"
                             onClick={() => handleBrowseSelect(node)}
-                            className={`flex items-center justify-between rounded-radius-md border px-3 py-2.5 text-left font-sarabun text-label transition-colors ${
+                            className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left font-sarabun text-label shadow-sm transition-all ${
                               isActive
-                                ? "border-primary-dark bg-primary-light font-semibold text-primary-dark"
-                                : "border-border-input bg-surface-page text-text-primary hover:border-primary-dark/40 hover:bg-surface-container"
+                                ? "border-primary-dark bg-primary-light font-semibold text-primary-dark shadow-primary-dark/10"
+                                : "border-border-input bg-surface-page text-text-primary hover:border-primary-dark/40 hover:bg-surface-container hover:shadow-md"
                             }`}
                           >
                             <span>{nodeLabel(node, locale)}</span>
@@ -568,7 +568,7 @@ function CategoryPickerBody({
             )}
 
             {hasLeafSelected && selectedPathNodes.length > 0 && (
-              <div className="flex items-start gap-2 rounded-radius-md border border-primary-dark/20 bg-primary-light/40 px-3 py-2.5">
+              <div className="flex items-start gap-2 rounded-xl border border-primary-dark/20 bg-primary-light/40 px-3 py-2.5">
                 <CheckIcon />
                 <div>
                   <p className="font-sarabun text-caption font-medium text-primary-dark">
@@ -591,7 +591,7 @@ function CategoryPickerBody({
 
         {allowCreate && (
           <div className="space-y-3 border-t border-border-input pt-4">
-            <p className="flex items-start gap-2 rounded-radius-sm border border-primary-dark/15 bg-primary-light/50 px-3 py-2 font-sarabun text-caption text-text-secondary">
+            <p className="flex items-start gap-2 rounded-xl border border-primary-dark/15 bg-primary-light/50 px-3 py-2 font-sarabun text-caption text-text-secondary">
               <InfoIcon />
               {t("fieldCategoryCreateHint")}
             </p>
@@ -599,7 +599,7 @@ function CategoryPickerBody({
               <button
                 type="button"
                 onClick={openCreateRoot}
-                className="rounded-radius-sm border border-primary-dark px-3 py-1.5 font-sarabun text-caption font-medium text-primary-dark transition-colors hover:bg-primary-light"
+                className="rounded-full border border-primary-dark px-4 py-1.5 font-sarabun text-caption font-medium text-primary-dark transition-colors hover:bg-primary-light"
               >
                 + {t("fieldCategoryCreateRoot")}
               </button>
@@ -607,7 +607,7 @@ function CategoryPickerBody({
                 <button
                   type="button"
                   onClick={openCreateChild}
-                  className="rounded-radius-sm border border-border-input px-3 py-1.5 font-sarabun text-caption font-medium text-text-secondary transition-colors hover:bg-surface-container"
+                  className="rounded-full border border-border-input px-4 py-1.5 font-sarabun text-caption font-medium text-text-secondary transition-colors hover:bg-surface-container"
                 >
                   + {t("fieldCategoryAddChild")}
                 </button>
