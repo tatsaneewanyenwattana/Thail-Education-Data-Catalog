@@ -1,12 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import type { SearchFileFormat } from "@/types/dataset";
-
-// TODO: ดึงตัวเลือกกรองจาก API
-const MOCK_FILTER_AGENCIES: { id: string; labelTh: string; labelEn: string }[] = [];
-const MOCK_FILTER_YEARS: string[] = [];
-const MOCK_FILTER_FORMATS: { id: SearchFileFormat; label: string }[] = [];
+import { useSearchFilters } from "@/hooks/useSearchFilters";
 import {
   parseListParam,
   toggleListParam,
@@ -47,7 +42,9 @@ export default function CategoryFilter({
 }: CategoryFilterProps) {
   const t = useTranslations("category.filter");
   const locale = useLocale();
+  const isTh = locale === "th";
   const updateParams = useSearchParamsUpdate();
+  const { data: filters } = useSearchFilters();
 
   function setSort(next: CategorySortOption) {
     updateParams({ sort: next === "newest" ? null : next });
@@ -116,18 +113,17 @@ export default function CategoryFilter({
           {t("agency")}
         </h4>
         <div className="space-y-3">
-          {MOCK_FILTER_AGENCIES.map((agency) => {
-            const label = locale === "th" ? agency.labelTh : agency.labelEn;
-            const checked = selectedAgencies.includes(agency.id);
+          {(filters?.agencies ?? []).map((agency) => {
+            const checked = selectedAgencies.includes(agency.agency_user_id);
             return (
               <label
-                key={agency.id}
+                key={agency.agency_user_id}
                 className="group flex cursor-pointer items-center gap-3"
               >
                 <input
                   type="checkbox"
                   checked={checked}
-                  onChange={() => toggleAgency(agency.id)}
+                  onChange={() => toggleAgency(agency.agency_user_id)}
                   className="h-4 w-4 rounded-radius-sm border-border-input text-primary focus:ring-primary"
                 />
                 <span
@@ -135,7 +131,7 @@ export default function CategoryFilter({
                     checked ? "font-medium text-primary-dark" : "text-text-secondary"
                   }`}
                 >
-                  {label}
+                  {agency.agency_name}
                 </span>
               </label>
             );
@@ -148,8 +144,10 @@ export default function CategoryFilter({
           {t("year")}
         </h4>
         <div className="space-y-3">
-          {MOCK_FILTER_YEARS.map((year) => {
-            const checked = selectedYears.includes(year);
+          {(filters?.years ?? []).map((year) => {
+            const yearStr = String(year);
+            const displayYear = isTh ? String(year + 543) : yearStr;
+            const checked = selectedYears.includes(yearStr);
             return (
               <label
                 key={year}
@@ -158,7 +156,7 @@ export default function CategoryFilter({
                 <input
                   type="checkbox"
                   checked={checked}
-                  onChange={() => toggleYear(year)}
+                  onChange={() => toggleYear(yearStr)}
                   className="h-4 w-4 rounded-radius-sm border-border-input text-primary focus:ring-primary"
                 />
                 <span
@@ -166,7 +164,7 @@ export default function CategoryFilter({
                     checked ? "font-medium text-primary-dark" : "text-text-secondary"
                   }`}
                 >
-                  {year}
+                  {displayYear}
                 </span>
               </label>
             );
@@ -179,17 +177,17 @@ export default function CategoryFilter({
           {t("format")}
         </h4>
         <div className="space-y-3">
-          {MOCK_FILTER_FORMATS.map((format) => {
-            const checked = selectedFormats.includes(format.id);
+          {(filters?.formats ?? []).map((fmt) => {
+            const checked = selectedFormats.includes(fmt);
             return (
               <label
-                key={format.id}
+                key={fmt}
                 className="group flex cursor-pointer items-center gap-3"
               >
                 <input
                   type="checkbox"
                   checked={checked}
-                  onChange={() => toggleFormat(format.id)}
+                  onChange={() => toggleFormat(fmt)}
                   className="h-4 w-4 rounded-radius-sm border-border-input text-primary focus:ring-primary"
                 />
                 <span
@@ -197,7 +195,7 @@ export default function CategoryFilter({
                     checked ? "font-medium text-primary-dark" : "text-text-secondary"
                   }`}
                 >
-                  {format.label}
+                  {fmt.toUpperCase()}
                 </span>
               </label>
             );

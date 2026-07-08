@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo } from "react";
-import type { MegaMenuLink } from "@/types/category";
+import { useQuery } from "@tanstack/react-query";
+import apiClient from "@/services/api";
 import { useCategories } from "@/hooks/useCategories";
 
-// TODO: เชื่อม GET /api/v1/public/agencies เมื่อ Backend เพิ่ม endpoint นี้
-const MOCK_MEGAMENU_AGENCIES: MegaMenuLink[] = [];
+type AgencyItem = {
+  agency_user_id: string;
+  agency_name: string;
+  agency_name_en: string | null;
+};
 
 type MegaMenuProps = {
   open: boolean;
@@ -31,6 +35,15 @@ export default function MegaMenu({
 
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories();
+
+  const { data: agencies = [] } = useQuery<AgencyItem[]>({
+    queryKey: ["agencies-megamenu"],
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: AgencyItem[] }>("/public/agencies");
+      return res.data.data ?? [];
+    },
+    staleTime: 60_000,
+  });
 
   const level1Categories = useMemo(
     () => categories.filter((c) => c.level === 1),
@@ -108,14 +121,14 @@ export default function MegaMenu({
           {t("agency")}
         </h4>
         <ul className="space-y-2">
-          {MOCK_MEGAMENU_AGENCIES.map((agency) => (
-            <li key={agency.id}>
+          {agencies.map((agency) => (
+            <li key={agency.agency_user_id}>
               <Link
-                href={`/${locale}/search?agency=${agency.id}`}
+                href={`/${locale}/search?agency=${agency.agency_user_id}`}
                 className="font-sarabun text-label text-text-secondary transition-colors hover:text-primary-dark"
                 onClick={onClose}
               >
-                {label(agency)}
+                {isTh ? agency.agency_name : (agency.agency_name_en || agency.agency_name)}
               </Link>
             </li>
           ))}

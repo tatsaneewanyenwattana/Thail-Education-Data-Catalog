@@ -2,7 +2,6 @@ import AnnouncementBanner from "@/components/common/AnnouncementBanner";
 import HeroSearch from "@/components/common/HeroSearch";
 import StatsOverview from "@/components/common/StatsOverview";
 import HomeCategorySection from "@/components/home/HomeCategorySection";
-import HomeAgencySection from "@/components/home/HomeAgencySection";
 import HomeCtaSection from "@/components/home/HomeCtaSection";
 import HomeDatasetSectionClient from "@/components/home/HomeDatasetSectionClient";
 import HomeScholarshipSectionClient from "@/components/home/HomeScholarshipSectionClient";
@@ -26,7 +25,6 @@ export default function HomePage({ params }: HomePageProps) {
         </div>
       </section>
       <HomeCategorySection locale={locale} />
-      <HomeAgencySection />
       <HomeDatasetSectionClient locale={locale} variant="popular" />
       <section className="py-12 md:py-20">
         <div className="mx-auto max-w-container-max px-4 md:px-10">

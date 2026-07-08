@@ -55,27 +55,6 @@ export type AgencyDashboardStats = {
   topDownloadFormatPercent: number | null;
 };
 
-export type DashboardWidgetType = "bar" | "line" | "pie" | "stat";
-
-export type DashboardGridWidget = {
-  id: string;
-  type: DashboardWidgetType;
-  colSpan: 1 | 2 | 3;
-};
-
-export type WidgetChartPoint = {
-  name: string;
-  nameEn: string;
-  value: number;
-};
-
-export type WidgetStatData = {
-  value: number;
-  labelTh: string;
-  labelEn: string;
-  trend: string;
-  trendUp: boolean;
-};
 
 export type AgencyBookmarkMock = {
   id: string;
