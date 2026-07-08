@@ -120,11 +120,11 @@ function SidebarNav({
             onClick={onNavigate}
             className={`flex h-[48px] items-center gap-3 px-4 py-2.5 font-sarabun text-label transition-all ${
               active
-                ? "-mr-4 rounded-l-xl rounded-r-none bg-white font-medium text-[#2d8a2c]"
-                : "rounded-xl text-white/60 hover:bg-white/[0.05] hover:text-white"
+                ? "-mr-4 rounded-l-xl rounded-r-none bg-white font-medium text-[#01579b]"
+                : "rounded-xl text-white/60 hover:bg-white/[0.08] hover:text-white"
             }`}
           >
-            <span className={active ? "text-[#42bd41]" : ""}>
+            <span className={active ? "text-[#01579b]" : ""}>
               <NavIcon name={item.icon} />
             </span>
             {t(item.labelKey)}
@@ -247,7 +247,7 @@ export default function AgencySidebar() {
           onClick={() => switchLocale("th")}
           className={`rounded-full px-3 py-1 font-sarabun text-caption font-semibold transition-all ${
             locale === "th"
-              ? "bg-white text-[#2d8a2c]"
+              ? "bg-white text-[#01579b]"
               : "text-white/60 hover:text-white"
           }`}
         >
@@ -259,7 +259,7 @@ export default function AgencySidebar() {
           onClick={() => switchLocale("en")}
           className={`rounded-full px-3 py-1 font-sarabun text-caption font-semibold transition-all ${
             locale === "en"
-              ? "bg-white text-[#2d8a2c]"
+              ? "bg-white text-[#01579b]"
               : "text-white/60 hover:text-white"
           }`}
         >
@@ -268,7 +268,7 @@ export default function AgencySidebar() {
       </div>
       <Link
         href={`${base}/datasets/create`}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-white/20 py-2.5 font-sarabun text-label font-medium text-white shadow-sm transition-all hover:bg-white/30 active:scale-[0.98]"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-white py-2.5 font-sarabun text-label font-medium text-[#01579b] shadow-sm transition-all hover:bg-white/90 active:scale-[0.98]"
       >
         <PlusIcon />
         {t("publishDataset")}
@@ -282,7 +282,7 @@ export default function AgencySidebar() {
         type="button"
         onClick={toggleSidebar}
         className="fixed bottom-6 left-4 z-40 flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-lg lg:hidden"
-        style={{ background: "linear-gradient(135deg, #2d8a2c, #42bd41)" }}
+        style={{ background: "#01579b" }}
         aria-label={t("menu")}
       >
         <MenuIcon />
@@ -291,8 +291,8 @@ export default function AgencySidebar() {
       <aside
         className="sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col rounded-r-[24px] lg:flex"
         style={{
-          background: "linear-gradient(180deg, #2d8a2c 0%, #42bd41 100%)",
-          boxShadow: "0 0 12px rgba(45,138,44,0.3)",
+          background: "linear-gradient(180deg, #01579b 0%, #0d47a1 100%)",
+          boxShadow: "0 0 12px rgba(1,87,155,0.4)",
         }}
       >
         {sidebarHeader}
@@ -308,7 +308,7 @@ export default function AgencySidebar() {
             onClick={closeDrawer}
             aria-label={t("closeMenu")}
           />
-          <aside className="absolute left-0 top-0 flex h-full w-[280px] flex-col rounded-r-[24px] shadow-2xl" style={{ background: "linear-gradient(180deg, #2d8a2c 0%, #42bd41 100%)" }}>
+          <aside className="absolute left-0 top-0 flex h-full w-[280px] flex-col rounded-r-[24px] shadow-2xl" style={{ background: "linear-gradient(180deg, #01579b 0%, #0d47a1 100%)" }}>
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <span className="font-kanit text-label font-semibold text-white">
                 {t("menu")}
