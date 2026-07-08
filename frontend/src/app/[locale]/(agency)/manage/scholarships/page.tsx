@@ -147,6 +147,9 @@ export default function ManageScholarshipsPage() {
   const [filterLevel, setFilterLevel] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Scholarship | null>(null);
+  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+  const [levelDropdownOpen, setLevelDropdownOpen] = useState(false);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -188,33 +191,29 @@ export default function ManageScholarshipsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <nav className="flex flex-wrap items-center gap-2 font-sarabun text-caption uppercase tracking-wider text-text-muted">
-        <Link href={`${base}/dashboard`} className="hover:text-primary-dark">
-          Dashboard
-        </Link>
-        <span>›</span>
-        <span className="font-semibold text-text-primary">
-          Manage Scholarships
-        </span>
-      </nav>
-
-      <header className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <div>
-          <h1 className="font-kanit text-[28px] font-bold text-text-primary">
-            {tManage("title")}
-          </h1>
-          <p className="mt-1 font-sarabun text-body-md text-text-muted">
-            {tManage("subtitle")}
-          </p>
+      <header
+        className="relative overflow-hidden rounded-2xl p-6 lg:p-7"
+        style={{ background: "linear-gradient(135deg, #01579b 0%, #0277bd 60%, #0288d1 100%)" }}
+      >
+        <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="font-kanit text-xl font-bold text-white">
+              {tManage("title")}
+            </h1>
+            <p className="mt-1 font-sarabun text-sm text-white/70">
+              {tManage("subtitle")}
+            </p>
+          </div>
+          <Link
+            href={`${base}/manage/scholarships/new`}
+            className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 font-sarabun text-label font-medium text-[#01579b] shadow-sm transition-all hover:bg-white/90 active:scale-[0.97]"
+          >
+            <PlusIcon />
+            {tManage("createNew")}
+          </Link>
         </div>
-        <Link
-          href={`${base}/manage/scholarships/new`}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0d5302] px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90"
-        >
-          <PlusIcon />
-          {tManage("createNew")}
-        </Link>
+        <div className="absolute -right-5 -top-5 h-28 w-28 rounded-full bg-white/[0.06]" />
+        <div className="absolute right-16 -bottom-8 h-20 w-20 rounded-full bg-white/[0.04]" />
       </header>
 
       {/* Summary card */}
@@ -248,46 +247,115 @@ export default function ManageScholarshipsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ค้นหาชื่อทุน..."
-                className="h-10 w-full rounded-xl border border-border-input bg-surface-card pl-10 pr-4 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20 md:w-[220px]"
+                className="h-10 w-full rounded-xl border-none bg-[#f0f2f5] pl-10 pr-4 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-[#01579b]/25 md:w-[220px]"
               />
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
                 <SearchIcon />
               </span>
             </div>
-            <select
-              value={filterType}
-              onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
-              className="h-10 rounded-xl border border-border-input bg-surface-card px-3 font-sarabun text-label text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
-            >
-              <option value="">ประเภททุน</option>
-              <option value="government">{tTypes("government")}</option>
-              <option value="university">{tTypes("university")}</option>
-              <option value="private">{tTypes("private")}</option>
-              <option value="foundation">{tTypes("foundation")}</option>
-              <option value="exchange">{tTypes("exchange")}</option>
-              <option value="other">{tTypes("other")}</option>
-            </select>
-            <select
-              value={filterLevel}
-              onChange={(e) => { setFilterLevel(e.target.value); setPage(1); }}
-              className="h-10 rounded-xl border border-border-input bg-surface-card px-3 font-sarabun text-label text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
-            >
-              <option value="">ระดับ</option>
-              <option value="high_school">{tLevels("high_school")}</option>
-              <option value="bachelor">{tLevels("bachelor")}</option>
-              <option value="master">{tLevels("master")}</option>
-              <option value="doctoral">{tLevels("doctoral")}</option>
-              <option value="any">{tLevels("any")}</option>
-            </select>
-            <select
-              value={filterStatus}
-              onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-              className="h-10 rounded-xl border border-border-input bg-surface-card px-3 font-sarabun text-label text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark/20"
-            >
-              <option value="">สถานะ</option>
-              <option value="published">{t("common.statusPublished")}</option>
-              <option value="draft">{t("common.statusDraft")}</option>
-            </select>
+            {/* ประเภททุน dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => { setTypeDropdownOpen((v) => !v); setLevelDropdownOpen(false); setStatusDropdownOpen(false); }}
+                onBlur={() => setTimeout(() => setTypeDropdownOpen(false), 150)}
+                className="flex h-10 items-center gap-2 rounded-xl border-none bg-[#f0f2f5] px-4 font-sarabun text-label text-text-primary transition-all focus:outline-none focus:ring-2 focus:ring-[#01579b]/25"
+              >
+                <span>{filterType ? tTypes(filterType as "government" | "university" | "private" | "foundation" | "exchange" | "other") : "ประเภททุน"}</span>
+                <svg className={`h-4 w-4 text-text-muted transition-transform ${typeDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                </svg>
+              </button>
+              {typeDropdownOpen && (
+                <div className="absolute right-0 top-full z-20 mt-1 min-w-[180px] overflow-hidden rounded-xl border border-border-default/60 bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+                  {[
+                    { value: "", label: "ทั้งหมด" },
+                    { value: "government", label: tTypes("government") },
+                    { value: "university", label: tTypes("university") },
+                    { value: "private", label: tTypes("private") },
+                    { value: "foundation", label: tTypes("foundation") },
+                    { value: "exchange", label: tTypes("exchange") },
+                    { value: "other", label: tTypes("other") },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onMouseDown={() => { setFilterType(opt.value); setPage(1); setTypeDropdownOpen(false); }}
+                      className={`flex w-full items-center px-4 py-2.5 font-sarabun text-label transition-colors hover:bg-[#e1f5fe] ${filterType === opt.value ? "font-semibold text-[#01579b]" : "text-text-primary"}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* ระดับ dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => { setLevelDropdownOpen((v) => !v); setTypeDropdownOpen(false); setStatusDropdownOpen(false); }}
+                onBlur={() => setTimeout(() => setLevelDropdownOpen(false), 150)}
+                className="flex h-10 items-center gap-2 rounded-xl border-none bg-[#f0f2f5] px-4 font-sarabun text-label text-text-primary transition-all focus:outline-none focus:ring-2 focus:ring-[#01579b]/25"
+              >
+                <span>{filterLevel ? tLevels(filterLevel as "high_school" | "bachelor" | "master" | "doctoral" | "any") : "ระดับ"}</span>
+                <svg className={`h-4 w-4 text-text-muted transition-transform ${levelDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                </svg>
+              </button>
+              {levelDropdownOpen && (
+                <div className="absolute right-0 top-full z-20 mt-1 min-w-[180px] overflow-hidden rounded-xl border border-border-default/60 bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+                  {[
+                    { value: "", label: "ทั้งหมด" },
+                    { value: "high_school", label: tLevels("high_school") },
+                    { value: "bachelor", label: tLevels("bachelor") },
+                    { value: "master", label: tLevels("master") },
+                    { value: "doctoral", label: tLevels("doctoral") },
+                    { value: "any", label: tLevels("any") },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onMouseDown={() => { setFilterLevel(opt.value); setPage(1); setLevelDropdownOpen(false); }}
+                      className={`flex w-full items-center px-4 py-2.5 font-sarabun text-label transition-colors hover:bg-[#e1f5fe] ${filterLevel === opt.value ? "font-semibold text-[#01579b]" : "text-text-primary"}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* สถานะ dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => { setStatusDropdownOpen((v) => !v); setTypeDropdownOpen(false); setLevelDropdownOpen(false); }}
+                onBlur={() => setTimeout(() => setStatusDropdownOpen(false), 150)}
+                className="flex h-10 items-center gap-2 rounded-xl border-none bg-[#f0f2f5] px-4 font-sarabun text-label text-text-primary transition-all focus:outline-none focus:ring-2 focus:ring-[#01579b]/25"
+              >
+                <span>{filterStatus === "published" ? t("common.statusPublished") : filterStatus === "draft" ? t("common.statusDraft") : "สถานะ"}</span>
+                <svg className={`h-4 w-4 text-text-muted transition-transform ${statusDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                </svg>
+              </button>
+              {statusDropdownOpen && (
+                <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-border-default/60 bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+                  {[
+                    { value: "", label: "ทั้งหมด" },
+                    { value: "published", label: t("common.statusPublished") },
+                    { value: "draft", label: t("common.statusDraft") },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onMouseDown={() => { setFilterStatus(opt.value); setPage(1); setStatusDropdownOpen(false); }}
+                      className={`flex w-full items-center px-4 py-2.5 font-sarabun text-label transition-colors hover:bg-[#e1f5fe] ${filterStatus === opt.value ? "font-semibold text-[#01579b]" : "text-text-primary"}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -372,7 +440,7 @@ export default function ManageScholarshipsPage() {
                           <div className="flex items-center justify-center gap-2">
                             <Link
                               href={`${base}/manage/scholarships/${scholarship.id}/edit`}
-                              className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-container hover:text-primary-dark"
+                              className="flex h-7 w-7 items-center justify-center rounded-full text-[#01579b] transition-colors hover:bg-[#e1f5fe]"
                               aria-label={tManage("edit")}
                               title={tManage("edit")}
                             >
@@ -381,7 +449,7 @@ export default function ManageScholarshipsPage() {
                             <button
                               type="button"
                               onClick={() => setDeleteTarget(scholarship)}
-                              className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-[#ffdad6] hover:text-status-error"
+                              className="flex h-7 w-7 items-center justify-center rounded-full text-[#d01716] transition-colors hover:bg-[#ffdad6]"
                               aria-label={tManage("delete")}
                               title={tManage("delete")}
                             >
@@ -397,17 +465,17 @@ export default function ManageScholarshipsPage() {
             </div>
 
             {/* Pagination */}
-            <div className="flex flex-col gap-4 px-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 border-t border-border-default/30 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="font-sarabun text-label text-text-muted">
-                Showing {from} to {to} of {totalItems} scholarships
+                แสดง {from} ถึง {to} จาก {totalItems} รายการ
               </p>
               {totalPages > 1 && (
-                <nav className="flex items-center gap-1">
+                <nav className="flex items-center gap-1" aria-label="pagination">
                   <button
                     type="button"
                     onClick={() => setPage((v) => Math.max(1, v - 1))}
                     disabled={page <= 1}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-border-input text-text-muted transition-colors hover:bg-surface-container disabled:opacity-40"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-container disabled:opacity-30"
                   >
                     <ChevronLeftIcon />
                   </button>
@@ -415,7 +483,7 @@ export default function ManageScholarshipsPage() {
                     p === "ellipsis" ? (
                       <span
                         key={`e-${i}`}
-                        className="px-2 font-sarabun text-label text-text-muted"
+                        className="px-1 font-sarabun text-label text-text-muted"
                       >
                         ...
                       </span>
@@ -424,11 +492,12 @@ export default function ManageScholarshipsPage() {
                         key={p}
                         type="button"
                         onClick={() => setPage(p)}
-                        className={`flex h-10 w-10 items-center justify-center rounded-xl font-sarabun text-label font-bold transition-colors ${
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg font-sarabun text-caption font-bold transition-colors ${
                           p === page
-                            ? "bg-[#0d5302] text-white shadow-level-1"
-                            : "border border-border-input text-text-primary hover:bg-surface-container"
+                            ? "bg-[#01579b] text-white"
+                            : "text-text-primary hover:bg-surface-container"
                         }`}
+                        aria-current={p === page ? "page" : undefined}
                       >
                         {p}
                       </button>
@@ -438,7 +507,7 @@ export default function ManageScholarshipsPage() {
                     type="button"
                     onClick={() => setPage((v) => Math.min(totalPages, v + 1))}
                     disabled={page >= totalPages}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-border-input text-text-muted transition-colors hover:bg-surface-container disabled:opacity-40"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-container disabled:opacity-30"
                   >
                     <ChevronRightIcon />
                   </button>
@@ -517,14 +586,14 @@ function FilterIcon() {
 }
 function EditIcon() {
   return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
     </svg>
   );
 }
 function DeleteIcon() {
   return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
     </svg>
   );

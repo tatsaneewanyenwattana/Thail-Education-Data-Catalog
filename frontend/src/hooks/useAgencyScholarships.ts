@@ -7,6 +7,8 @@ export type ScholarshipItem = {
   id: string;
   title: string;
   titleEn: string;
+  description: string;
+  scholarshipType: string;
   status: string;
   openDate: string;
   closeDate: string;
@@ -19,18 +21,22 @@ async function fetchAgencyScholarships(): Promise<ScholarshipItem[]> {
       id: string;
       title: string;
       title_en: string;
+      description: string;
+      scholarship_type: string;
       status: string;
       open_date: string;
       close_date: string;
       updated_at: string;
     }>;
-  }>("/scholarship/mine?status=published&page=1&page_size=5");
-  
+  }>("/scholarship/mine?status=published&page=1&page_size=6");
+
   const data = res.data?.data || [];
   return data.map((item) => ({
     id: item.id,
     title: item.title,
     titleEn: item.title_en,
+    description: item.description || "",
+    scholarshipType: item.scholarship_type || "other",
     status: item.status,
     openDate: item.open_date,
     closeDate: item.close_date,
