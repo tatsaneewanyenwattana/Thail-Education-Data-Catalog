@@ -21,11 +21,13 @@ function getPageNumbers(
 
 type FilterTab = "all" | "dataset" | "scholarship";
 
-const FILTER_TABS: { key: FilterTab; label: string }[] = [
-  { key: "all", label: "ทั้งหมด" },
-  { key: "dataset", label: "Dataset" },
-  { key: "scholarship", label: "Scholarship" },
-];
+function getFilterTabs(t: ReturnType<typeof useTranslations>): { key: FilterTab; label: string }[] {
+  return [
+    { key: "all", label: t("filterAll") },
+    { key: "dataset", label: t("filterDataset") },
+    { key: "scholarship", label: t("filterScholarship") },
+  ];
+}
 
 function actionStyle(activityType: AgencyActivityLogItem["activityType"]) {
   switch (activityType) {
@@ -140,7 +142,7 @@ export default function AgencyActivityPage() {
             className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 font-sarabun text-label font-medium text-[#01579b] shadow-sm transition-all hover:bg-white/90 active:scale-[0.97] disabled:opacity-50"
           >
             <ExportIcon />
-            ส่งออก CSV
+            {t("exportCsv")}
           </button>
         </div>
         <div className="absolute -right-5 -top-5 h-28 w-28 rounded-full bg-white/[0.06]" />
@@ -149,7 +151,7 @@ export default function AgencyActivityPage() {
 
       {/* Filter tabs */}
       <div className="flex flex-wrap items-center gap-2">
-        {FILTER_TABS.map((tab) => (
+        {getFilterTabs(t).map((tab) => (
           <button
             key={tab.key}
             type="button"
@@ -184,7 +186,7 @@ export default function AgencyActivityPage() {
                 <th className="px-6 py-4">{t("colType")}</th>
                 <th className="px-6 py-4">{t("colAction")}</th>
                 <th className="px-6 py-4">{t("colTitle")}</th>
-                <th className="px-6 py-4 text-center">จัดการ</th>
+                <th className="px-6 py-4 text-center">{t("colManage")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100/60">
@@ -268,7 +270,7 @@ export default function AgencyActivityPage() {
                             <Link
                               href={detailHref}
                               className="flex h-7 w-7 items-center justify-center rounded-full text-[#01579b] transition-colors hover:bg-[#e1f5fe]"
-                              title="ดูรายละเอียด"
+                              title={t("viewDetail")}
                             >
                               <EyeIcon />
                             </Link>

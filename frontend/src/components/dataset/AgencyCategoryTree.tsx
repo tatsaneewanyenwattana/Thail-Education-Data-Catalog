@@ -125,8 +125,8 @@ function TreeRow({
                 type="button"
                 onClick={() => onMove(node)}
                 className="flex h-7 w-7 items-center justify-center rounded-full text-[#2baf2b] transition-colors hover:bg-[#e8f5e9]"
-                aria-label="ย้ายหมวดหมู่"
-                title="ย้ายหมวดหมู่"
+                aria-label={t("moveCategory")}
+                title={t("moveCategory")}
               >
                 <MoveIcon />
               </button>

@@ -124,24 +124,24 @@ export default function AgencyCategoriesPage() {
             icon={<GridIcon />}
             iconBg="bg-[#e1f5fe]"
             iconColor="text-[#039be5]"
-            label="หมวดหมู่ทั้งหมด"
-            value={`${totalCategories} หมวดหมู่`}
+            label={t("totalCategories")}
+            value={t("categoryCount", { count: totalCategories })}
             waveColor="rgba(3,155,229,0.07)"
           />
           <SummaryCard
             icon={<DataIcon />}
             iconBg="bg-[#e8f5e9]"
             iconColor="text-[#43a047]"
-            label="ชุดข้อมูลรวม"
-            value={`${totalDatasets} ชุดข้อมูล`}
+            label={t("totalDatasetsInCategory")}
+            value={t("datasetCountLabel", { count: totalDatasets })}
             waveColor="rgba(67,160,71,0.07)"
           />
           <SummaryCard
             icon={<ClockIcon />}
             iconBg="bg-[#fff3e0]"
             iconColor="text-[#f57c00]"
-            label="อัปเดตล่าสุด"
-            value={formatRelativeTime(lastUpdatedAt)}
+            label={t("lastUpdated")}
+            value={formatRelativeTime(lastUpdatedAt, t)}
             waveColor="rgba(245,124,0,0.07)"
           />
         </div>
@@ -160,7 +160,7 @@ export default function AgencyCategoriesPage() {
                 : "border-b-transparent text-text-muted hover:border-b-border-default hover:text-text-secondary"
             }`}
           >
-            หมวดระดับ {lvl}
+            {t("levelTab", { level: lvl })}
           </button>
         ))}
       </div>
@@ -226,7 +226,7 @@ export default function AgencyCategoriesPage() {
               { id: moveTarget.id, parentId: targetParentId },
               {
                 onSuccess: () => setMoveTarget(null),
-                onError: () => setToastError("ย้ายหมวดหมู่ไม่สำเร็จ"),
+                onError: () => setToastError(t("moveCategoryError")),
               }
             );
           }}
@@ -236,16 +236,16 @@ export default function AgencyCategoriesPage() {
   );
 }
 
-function formatRelativeTime(isoDate: string | null): string {
+function formatRelativeTime(isoDate: string | null, t: ReturnType<typeof useTranslations>): string {
   if (!isoDate) return "-";
   const diff = Date.now() - new Date(isoDate).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "เมื่อสักครู่";
-  if (mins < 60) return `${mins} นาทีที่แล้ว`;
+  if (mins < 1) return t("timeJustNow");
+  if (mins < 60) return t("timeMinutesAgo", { mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} ชม. ที่ผ่านมา`;
+  if (hours < 24) return t("timeHoursAgo", { hours });
   const days = Math.floor(hours / 24);
-  return `${days} วันที่แล้ว`;
+  return t("timeDaysAgo", { days });
 }
 
 function countNodes(nodes: CategoryTreeNode[]): number {

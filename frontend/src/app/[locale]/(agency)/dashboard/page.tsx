@@ -76,10 +76,10 @@ export default function AgencyDashboardPage() {
         <div className="relative z-10 flex items-center justify-between">
           <div>
             <h1 className="font-kanit text-xl font-bold text-white">
-              สวัสดี{user?.agency_name ? `, ${user.agency_name}` : ""}
+              {t("greeting")}{user?.agency_name ? `, ${user.agency_name}` : ""}
             </h1>
             <p className="mt-1 font-sarabun text-sm text-white/70">
-              ภาพรวมข้อมูลของหน่วยงานคุณ
+              {t("subtitle")}
             </p>
           </div>
         </div>
@@ -91,7 +91,7 @@ export default function AgencyDashboardPage() {
         <p className="rounded-2xl border border-status-error/30 bg-status-error/5 px-4 py-3 font-sarabun text-body-md text-status-error">
           {error instanceof Error
             ? error.message
-            : "โหลดข้อมูล Dashboard ไม่สำเร็จ"}
+            : t("loadError")}
         </p>
       ) : null}
 
@@ -108,7 +108,7 @@ export default function AgencyDashboardPage() {
                 <p className="font-kanit text-xl font-bold text-gray-900">
                   {stats.totalDatasets.toLocaleString(locale === "th" ? "th-TH" : "en-US")}
                 </p>
-                <p className="font-sarabun text-xs text-gray-500">Dataset ทั้งหมด</p>
+                <p className="font-sarabun text-xs text-gray-500">{t("totalDatasets")}</p>
               </div>
             </div>
 

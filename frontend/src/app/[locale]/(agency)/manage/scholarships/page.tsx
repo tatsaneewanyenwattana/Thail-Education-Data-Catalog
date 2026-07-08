@@ -222,15 +222,15 @@ export default function ManageScholarshipsPage() {
           icon={<ScholarshipIcon />}
           iconBg="bg-primary-light"
           iconColor="text-primary-dark"
-          label="ทุนทั้งหมด"
-          value={`${totalItems} ทุน`}
+          label={tManage("totalScholarships")}
+          value={tManage("scholarshipCount", { count: totalItems })}
         />
         <StatCard
           icon={<PublishIcon />}
           iconBg="bg-[#e8f5e9]"
           iconColor="text-[#43a047]"
-          label="เผยแพร่แล้ว"
-          value={`${items.filter((s) => s.status === "published").length} ทุน`}
+          label={tManage("publishedLabel")}
+          value={tManage("scholarshipCount", { count: items.filter((s) => s.status === "published").length })}
         />
       </div>
 
@@ -238,7 +238,7 @@ export default function ManageScholarshipsPage() {
       <div className="space-y-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <h2 className="font-kanit text-heading-3-mobile font-bold text-text-primary">
-            รายการทุนการศึกษา
+            {tManage("listTitle")}
           </h2>
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
@@ -246,7 +246,7 @@ export default function ManageScholarshipsPage() {
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ค้นหาชื่อทุน..."
+                placeholder={tManage("searchPlaceholder")}
                 className="h-10 w-full rounded-xl border-none bg-[#f0f2f5] pl-10 pr-4 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-[#01579b]/25 md:w-[220px]"
               />
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
@@ -261,7 +261,7 @@ export default function ManageScholarshipsPage() {
                 onBlur={() => setTimeout(() => setTypeDropdownOpen(false), 150)}
                 className="flex h-10 items-center gap-2 rounded-xl border-none bg-[#f0f2f5] px-4 font-sarabun text-label text-text-primary transition-all focus:outline-none focus:ring-2 focus:ring-[#01579b]/25"
               >
-                <span>{filterType ? tTypes(filterType as "government" | "university" | "private" | "foundation" | "exchange" | "other") : "ประเภททุน"}</span>
+                <span>{filterType ? tTypes(filterType as "government" | "university" | "private" | "foundation" | "exchange" | "other") : tManage("filterType")}</span>
                 <svg className={`h-4 w-4 text-text-muted transition-transform ${typeDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                   <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
                 </svg>
@@ -269,7 +269,7 @@ export default function ManageScholarshipsPage() {
               {typeDropdownOpen && (
                 <div className="absolute right-0 top-full z-20 mt-1 min-w-[180px] overflow-hidden rounded-xl border border-border-default/60 bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
                   {[
-                    { value: "", label: "ทั้งหมด" },
+                    { value: "", label: tManage("filterAll") },
                     { value: "government", label: tTypes("government") },
                     { value: "university", label: tTypes("university") },
                     { value: "private", label: tTypes("private") },
@@ -297,7 +297,7 @@ export default function ManageScholarshipsPage() {
                 onBlur={() => setTimeout(() => setLevelDropdownOpen(false), 150)}
                 className="flex h-10 items-center gap-2 rounded-xl border-none bg-[#f0f2f5] px-4 font-sarabun text-label text-text-primary transition-all focus:outline-none focus:ring-2 focus:ring-[#01579b]/25"
               >
-                <span>{filterLevel ? tLevels(filterLevel as "high_school" | "bachelor" | "master" | "doctoral" | "any") : "ระดับ"}</span>
+                <span>{filterLevel ? tLevels(filterLevel as "high_school" | "bachelor" | "master" | "doctoral" | "any") : tManage("filterLevel")}</span>
                 <svg className={`h-4 w-4 text-text-muted transition-transform ${levelDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                   <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
                 </svg>
@@ -305,7 +305,7 @@ export default function ManageScholarshipsPage() {
               {levelDropdownOpen && (
                 <div className="absolute right-0 top-full z-20 mt-1 min-w-[180px] overflow-hidden rounded-xl border border-border-default/60 bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
                   {[
-                    { value: "", label: "ทั้งหมด" },
+                    { value: "", label: tManage("filterAll") },
                     { value: "high_school", label: tLevels("high_school") },
                     { value: "bachelor", label: tLevels("bachelor") },
                     { value: "master", label: tLevels("master") },
@@ -332,7 +332,7 @@ export default function ManageScholarshipsPage() {
                 onBlur={() => setTimeout(() => setStatusDropdownOpen(false), 150)}
                 className="flex h-10 items-center gap-2 rounded-xl border-none bg-[#f0f2f5] px-4 font-sarabun text-label text-text-primary transition-all focus:outline-none focus:ring-2 focus:ring-[#01579b]/25"
               >
-                <span>{filterStatus === "published" ? t("common.statusPublished") : filterStatus === "draft" ? t("common.statusDraft") : "สถานะ"}</span>
+                <span>{filterStatus === "published" ? t("common.statusPublished") : filterStatus === "draft" ? t("common.statusDraft") : tManage("filterStatus")}</span>
                 <svg className={`h-4 w-4 text-text-muted transition-transform ${statusDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                   <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
                 </svg>
@@ -340,7 +340,7 @@ export default function ManageScholarshipsPage() {
               {statusDropdownOpen && (
                 <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-border-default/60 bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
                   {[
-                    { value: "", label: "ทั้งหมด" },
+                    { value: "", label: tManage("filterAll") },
                     { value: "published", label: t("common.statusPublished") },
                     { value: "draft", label: t("common.statusDraft") },
                   ].map((opt) => (
@@ -467,7 +467,7 @@ export default function ManageScholarshipsPage() {
             {/* Pagination */}
             <div className="flex flex-col gap-4 border-t border-border-default/30 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="font-sarabun text-label text-text-muted">
-                แสดง {from} ถึง {to} จาก {totalItems} รายการ
+                {tManage("paginationSummary", { from, to, total: totalItems })}
               </p>
               {totalPages > 1 && (
                 <nav className="flex items-center gap-1" aria-label="pagination">

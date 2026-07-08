@@ -21,13 +21,17 @@ const ACTION_COLORS: Record<string, string> = {
   delete: "#d01716",
 };
 
-const ACTION_LABELS: Record<string, string> = {
-  upload: "อัปโหลด",
-  "bulk_upload": "อัปโหลดหลายอัน",
-  update: "แก้ไข",
-  draft: "บันทึกแบบร่าง",
-  delete: "ลบ",
-};
+function getActionLabel(actType: string, t: ReturnType<typeof useTranslations>) {
+  const map: Record<string, string> = {
+    upload: "activityUpload",
+    bulk_upload: "activityBulkUpload",
+    update: "activityUpdate",
+    draft: "activityDraft",
+    delete: "activityDelete",
+  };
+  const key = map[actType];
+  return key ? t(key) : actType;
+}
 
 function getActivityType(action: string): string {
   const actionMap: Record<string, string> = {
@@ -64,20 +68,20 @@ export default function ActivityLog() {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
 
-    if (hours < 1) return "เมื่อสักครู่";
-    if (hours < 24) return `เมื่อ ${hours} ชั่วโมงที่แล้ว`;
-    if (days === 1) return "เมื่อวาน";
-    if (days < 7) return `${days} วันที่แล้ว`;
+    if (hours < 1) return t("timeJustNow");
+    if (hours < 24) return t("timeHoursAgo", { hours });
+    if (days === 1) return t("timeYesterday");
+    if (days < 7) return t("timeDaysAgo", { days });
     return date.toLocaleDateString(locale === "th" ? "th-TH" : "en-US");
   };
 
   return (
     <div className="rounded-2xl bg-white p-4 shadow-sm">
       <h3 className="font-kanit text-[15px] font-semibold text-gray-900 mb-0.5">
-        กิจกรรมล่าสุด
+        {t("recentActivity")}
       </h3>
       <p className="font-sarabun text-xs text-gray-500 mb-3">
-        {activities.length} รายการล่าสุด
+        {t("recentActivityCount", { count: activities.length })}
       </p>
 
       <div className="flex flex-col gap-2">
@@ -85,7 +89,7 @@ export default function ActivityLog() {
           activities.map((activity) => {
             const actType = getActivityType(activity.action);
             const color = ACTION_COLORS[actType] || "#888888";
-            const label = ACTION_LABELS[actType] || activity.action;
+            const label = getActionLabel(actType, t);
             return (
               <div
                 key={activity.id}
@@ -97,7 +101,7 @@ export default function ActivityLog() {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-sarabun text-label font-medium text-gray-900">
-                    {label} {activity.itemType === "dataset" ? "Dataset" : "ทุนการศึกษา"}
+                    {label} {activity.itemType === "dataset" ? t("activityDataset") : t("activityScholarship")}
                   </p>
                   <p className="font-sarabun text-caption text-gray-600 mt-0.5">
                     {formatTime(activity.createdAt)}
@@ -107,7 +111,7 @@ export default function ActivityLog() {
             );
           })
         ) : (
-          <p className="font-sarabun text-body-md text-gray-500">ไม่มีกิจกรรม</p>
+          <p className="font-sarabun text-body-md text-gray-500">{t("noActivity")}</p>
         )}
       </div>
 
@@ -116,7 +120,7 @@ export default function ActivityLog() {
           href={`${base}/activity`}
           className="rounded-full border border-[#01579b]/30 px-4 py-1.5 font-sarabun text-label font-medium text-[#01579b] transition-colors hover:bg-[#e3f2fd]"
         >
-          ดูทั้งหมด
+          {t("viewAll")}
         </Link>
       </div>
     </div>

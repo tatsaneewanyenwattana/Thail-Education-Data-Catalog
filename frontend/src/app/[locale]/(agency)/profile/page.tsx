@@ -241,7 +241,7 @@ export default function ProfilePage() {
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.33a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.83z" />
                   </svg>
-                  แก้ไข
+                  {t("editButton")}
                 </button>
               )}
             </div>
@@ -257,12 +257,12 @@ export default function ProfilePage() {
                   value={agencyType}
                   onChange={(e) => setAgencyType(e.target.value)}
                 >
-                  <option value="">— เลือก —</option>
-                  <option value="central">ส่วนกลาง</option>
-                  <option value="regional">ส่วนภูมิภาค</option>
-                  <option value="local">ส่วนท้องถิ่น</option>
-                  <option value="educational">สถาบันการศึกษา</option>
-                  <option value="other">อื่นๆ</option>
+                  <option value="">{t("selectPlaceholder")}</option>
+                  <option value="central">{t("agencyType_central")}</option>
+                  <option value="regional">{t("agencyType_regional")}</option>
+                  <option value="local">{t("agencyType_local")}</option>
+                  <option value="educational">{t("agencyType_educational")}</option>
+                  <option value="other">{t("agencyType_other")}</option>
                 </select>
               </ProfileField>
               <ProfileField label={t("contactName")} value={data?.contact_name ?? "—"} editing={editing}>
@@ -281,7 +281,7 @@ export default function ProfilePage() {
                   onClick={cancelEdit}
                   className="rounded-full border border-border-input px-6 py-2.5 font-sarabun text-label font-medium text-text-primary transition-colors hover:bg-surface-container"
                 >
-                  ยกเลิก
+                  {t("cancel")}
                 </button>
                 <button
                   type="button"
@@ -289,14 +289,14 @@ export default function ProfilePage() {
                   disabled={updateMutation.isPending}
                   className="rounded-full bg-[#01579b] px-6 py-2.5 font-sarabun text-label font-medium text-white shadow-level-1 transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
-                  {updateMutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
+                  {updateMutation.isPending ? t("saving") : t("save")}
                 </button>
               </div>
             )}
 
             {updateMutation.isError && (
               <div className="mx-8 mb-4 rounded-2xl border border-status-error/30 bg-status-error-bg px-4 py-3 font-sarabun text-caption text-status-error">
-                บันทึกไม่สำเร็จ กรุณาลองใหม่
+                {t("saveError")}
               </div>
             )}
           </>
@@ -312,10 +312,10 @@ export default function ProfilePage() {
         >
           <div className="text-left">
             <h2 className="font-kanit text-heading-2 text-text-primary">
-              ประวัติการเข้าสู่ระบบ
+              {t("loginHistory")}
             </h2>
             <p className="mt-0.5 font-sarabun text-caption text-text-muted">
-              รายการการเข้าสู่ระบบล่าสุดของบัญชีนี้
+              {t("loginHistoryDesc")}
             </p>
           </div>
           <svg
@@ -353,10 +353,10 @@ export default function ProfilePage() {
               </svg>
             </div>
             <h3 className="font-kanit text-xl font-bold text-text-primary">
-              ต้องการลบบัญชีหรือไม่?
+              {t("deleteConfirmTitle")}
             </h3>
             <p className="mt-2 font-sarabun text-body-md text-text-muted">
-              การลบบัญชีจะไม่สามารถกู้คืนได้ ข้อมูลทั้งหมดจะถูกลบออกจากระบบ
+              {t("deleteConfirmMsg")}
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -364,14 +364,14 @@ export default function ProfilePage() {
                 onClick={() => setShowDeleteModal(false)}
                 className="rounded-full border border-border-input px-6 py-2.5 font-sarabun text-label font-medium text-text-primary transition-colors hover:bg-surface-container"
               >
-                ยกเลิก
+                {t("cancel")}
               </button>
               <Link
                 href={`${base}/profile/delete`}
                 className="inline-flex items-center rounded-full bg-status-error px-6 py-2.5 font-sarabun text-label font-medium text-white transition-opacity hover:opacity-90"
                 onClick={() => setShowDeleteModal(false)}
               >
-                ดำเนินการลบ
+                {t("deleteConfirm")}
               </Link>
             </div>
           </div>

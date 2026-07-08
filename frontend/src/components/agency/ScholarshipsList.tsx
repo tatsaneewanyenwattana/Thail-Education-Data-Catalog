@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useAgencyScholarships } from "@/hooks/useAgencyScholarships";
 
-const TYPE_LABELS: Record<string, string> = {
-  government: "ทุนรัฐบาล",
-  private: "ทุนเอกชน",
-  foundation: "ทุนมูลนิธิ",
-  exchange: "ทุนแลกเปลี่ยน",
-  other: "อื่นๆ",
+const TYPE_KEYS: Record<string, string> = {
+  government: "government",
+  private: "private",
+  foundation: "foundation",
+  exchange: "exchange",
+  other: "other",
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -21,6 +21,8 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export default function ScholarshipsList() {
+  const t = useTranslations("agency.dashboard");
+  const tType = useTranslations("scholarship.types");
   const locale = useLocale();
   const base = `/${locale}`;
   const { data: scholarships = [] } = useAgencyScholarships();
@@ -41,16 +43,17 @@ export default function ScholarshipsList() {
   return (
     <div className="rounded-2xl bg-white p-5 shadow-sm">
       <h3 className="font-kanit text-[15px] font-semibold text-gray-900 mb-0.5">
-        ทุนอัปเดตล่าสุด
+        {t("recentScholarships")}
       </h3>
       <p className="font-sarabun text-xs text-gray-500 mb-3">
-        ทุนการศึกษาที่อัปเดตล่าสุด {sorted.length} รายการ
+        {t("recentScholarshipsCount", { count: sorted.length })}
       </p>
 
       {sorted.length > 0 ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.slice(0, 6).map((scholarship) => {
-            const typeLabel = TYPE_LABELS[scholarship.scholarshipType] || TYPE_LABELS.other;
+            const typeKey = TYPE_KEYS[scholarship.scholarshipType] || "other";
+            const typeLabel = tType(typeKey);
             const typeColor = TYPE_COLORS[scholarship.scholarshipType] || TYPE_COLORS.other;
             return (
               <div
@@ -78,7 +81,7 @@ export default function ScholarshipsList() {
                       </p>
                     )}
                     <p className="font-sarabun text-caption text-gray-500">
-                      Deadline: {formatDate(scholarship.closeDate)}
+                      {t("scholarshipDeadline", { date: formatDate(scholarship.closeDate) })}
                     </p>
                   </div>
                 </div>
@@ -88,7 +91,7 @@ export default function ScholarshipsList() {
         </div>
       ) : (
         <p className="font-sarabun text-body-md text-gray-500">
-          ไม่มีทุนที่เปิดรับ
+          {t("noScholarships")}
         </p>
       )}
 
@@ -97,7 +100,7 @@ export default function ScholarshipsList() {
           href={`${base}/manage/scholarships`}
           className="rounded-full border border-[#01579b]/30 px-4 py-1.5 font-sarabun text-label font-medium text-[#01579b] transition-colors hover:bg-[#e3f2fd]"
         >
-          ดูทั้งหมด
+          {t("viewAll")}
         </Link>
       </div>
     </div>

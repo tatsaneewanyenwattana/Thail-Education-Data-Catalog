@@ -83,7 +83,7 @@ export default function AgencyDatasetsPage() {
               {t("title")}
             </h1>
             <p className="mt-1 font-sarabun text-sm text-white/70">
-              จัดการและตรวจสอบข้อมูลการศึกษาที่คุณเผยแพร่เข้าสู่ระบบ
+              {t("subtitle")}
             </p>
           </div>
           <Link
@@ -126,7 +126,7 @@ export default function AgencyDatasetsPage() {
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ค้นหาชื่อ Dataset หรือหมวดหมู่..."
+              placeholder={t("searchPlaceholder")}
               className="h-10 w-full rounded-xl border-none bg-[#f0f2f5] pl-10 pr-4 font-sarabun text-body-md text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-[#01579b]/25 md:w-[260px]"
             />
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
@@ -140,7 +140,7 @@ export default function AgencyDatasetsPage() {
               onBlur={() => setTimeout(() => setYearDropdownOpen(false), 150)}
               className="flex h-10 items-center gap-2 rounded-xl border-none bg-[#f0f2f5] px-4 font-sarabun text-label text-text-primary transition-all focus:outline-none focus:ring-2 focus:ring-[#01579b]/25"
             >
-              <span>{selectedYear ? `ปีงบประมาณ ${selectedYear}` : "ทุกปี"}</span>
+              <span>{selectedYear ? t("fiscalYear", { year: selectedYear }) : t("allYears")}</span>
               <svg className={`h-4 w-4 text-text-muted transition-transform ${yearDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                 <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
               </svg>
@@ -152,7 +152,7 @@ export default function AgencyDatasetsPage() {
                   onMouseDown={() => { setSelectedYear(undefined); setPage(1); setYearDropdownOpen(false); }}
                   className={`flex w-full items-center px-4 py-2.5 font-sarabun text-label transition-colors hover:bg-primary-light/50 ${selectedYear === undefined ? "font-semibold text-primary-dark" : "text-text-primary"}`}
                 >
-                  ทุกปี
+                  {t("allYears")}
                 </button>
                 {yearsList?.map((y) => (
                   <button
@@ -161,7 +161,7 @@ export default function AgencyDatasetsPage() {
                     onMouseDown={() => { setSelectedYear(y); setPage(1); setYearDropdownOpen(false); }}
                     className={`flex w-full items-center px-4 py-2.5 font-sarabun text-label transition-colors hover:bg-primary-light/50 ${selectedYear === y ? "font-semibold text-primary-dark" : "text-text-primary"}`}
                   >
-                    ปีงบประมาณ {y}
+                    {t("fiscalYear", { year: y })}
                   </button>
                 ))}
               </div>
@@ -176,22 +176,22 @@ export default function AgencyDatasetsPage() {
           icon={<PublishIcon />}
           iconBg="bg-primary-light"
           iconColor="text-primary-dark"
-          label="เผยแพร่สำเร็จรวม"
-          value={`${publishedCount} รายการ`}
+          label={t("publishedTotal")}
+          value={t("itemCount", { count: publishedCount })}
         />
         <SummaryCard
           icon={<StarIcon />}
           iconBg="bg-[#ffddb5]"
           iconColor="text-[#f9a825]"
-          label="Dataset ทั้งหมด"
-          value={`${totalCount} รายการ`}
+          label={t("totalDatasetsLabel")}
+          value={t("itemCount", { count: totalCount })}
         />
         <SummaryCard
           icon={<TrendIcon />}
           iconBg="bg-[#e8f5e9]"
           iconColor="text-[#43a047]"
-          label="การดาวน์โหลดรวม"
-          value={`${totalDownloads.toLocaleString()} ครั้ง`}
+          label={t("downloadTotal")}
+          value={t("downloadCount", { count: totalDownloads.toLocaleString() })}
         />
       </div>
 
@@ -239,7 +239,7 @@ export default function AgencyDatasetsPage() {
               { datasetId: moveTarget.id, categoryId: targetCategoryId },
               {
                 onSuccess: () => setMoveTarget(null),
-                onError: () => setToastError("ย้ายหมวดหมู่ไม่สำเร็จ"),
+                onError: () => setToastError(t("moveCategoryError")),
               }
             );
           }}

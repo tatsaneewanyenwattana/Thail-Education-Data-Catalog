@@ -59,7 +59,7 @@ export default function DownloadChart({ data }: DownloadChartProps) {
           {t("downloadChart")}
         </h2>
         <p className="font-sarabun text-xs text-text-muted mt-0.5">
-          สถิติ 12 เดือนล่าสุด
+          {t("downloadChartSubtitle")}
         </p>
       </div>
       {chartData.length > 0 && maxCount > 0 ? (
@@ -107,10 +107,10 @@ export default function DownloadChart({ data }: DownloadChartProps) {
             <path d="M19 9h-4V3H9v6H5l7 7 7-7ZM5 18v2h14v-2H5Z" />
           </svg>
           <p className="font-sarabun text-body-md font-medium text-text-muted">
-            ยังไม่มีข้อมูลดาวน์โหลด
+            {t("noDownloadData")}
           </p>
           <p className="mt-1 font-sarabun text-caption text-text-muted/70">
-            ข้อมูลจะแสดงเมื่อมีการดาวน์โหลด Dataset
+            {t("noDownloadDataHint")}
           </p>
         </div>
       )}

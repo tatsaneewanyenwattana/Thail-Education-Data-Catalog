@@ -143,7 +143,7 @@ export default function AgencyDatasetTable({
         <p className="font-sarabun text-body-md text-status-error">
           {error instanceof Error
             ? error.message
-            : "โหลดรายการ Dataset ไม่สำเร็จ"}
+            : t("loadError")}
         </p>
       </div>
     );
@@ -286,8 +286,8 @@ export default function AgencyDatasetTable({
                             type="button"
                             onClick={() => onMoveCategory(row)}
                             className="flex h-7 w-7 items-center justify-center rounded-full text-[#2baf2b] transition-colors hover:bg-[#e8f5e9]"
-                            aria-label="ย้ายหมวดหมู่"
-                            title="ย้ายหมวดหมู่"
+                            aria-label={t("moveCategory")}
+                            title={t("moveCategory")}
                           >
                             <MoveIcon />
                           </button>
