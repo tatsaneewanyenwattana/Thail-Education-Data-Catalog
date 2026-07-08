@@ -3,127 +3,183 @@
 import { useState, useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { useAgencyCategories } from "@/hooks/useAgencyCategories";
+import { useAgencyCategoryTree } from "@/hooks/useAgencyCategories";
+import type { CategoryTreeNode } from "@/utils/categoryTreeUtils";
 
-const COLORS = ["#ffb74d", "#ff7043", "#4db6ac", "#26c6da", "#e84e40"];
-
-const COLOR_RAMPS = {
-  "#ffb74d": ["#fff3e0", "#ffe0b2", "#ffcc80", "#ffb74d", "#ffa726", "#ff9800", "#fb8c00", "#f57c00", "#ef6c00"],
-  "#ff7043": ["#fce4ec", "#f8bbd0", "#f48fb1", "#f06292", "#ec407a", "#e91e63", "#d81b60", "#c2185b", "#ad1457"],
-  "#4db6ac": ["#e0f2f1", "#b2dfdb", "#80cbc4", "#4db6ac", "#26a69a", "#009688", "#00897b", "#00796b", "#00695c"],
-  "#26c6da": ["#e0f7fa", "#b2ebf2", "#80deea", "#4dd0e1", "#26c6da", "#00bcd4", "#00acc1", "#0097a7", "#00838f"],
-  "#e84e40": ["#fffde7", "#fff9c4", "#fff59d", "#fff176", "#ffee58", "#ffeb3b", "#fdd835", "#fbc02d", "#f9a825"],
-};
+const COLORS = ["#1565c0", "#0277bd", "#00838f", "#00695c", "#2e7d32"];
 
 type ChartCategory = {
   name: string;
   value: number;
   color: string;
+  id: string;
 };
 
 export default function CategoryCharts() {
   const t = useTranslations("agency.dashboard");
   const locale = useLocale();
-  const { data: categories = [] } = useAgencyCategories();
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const { data: treeData } = useAgencyCategoryTree();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const roots = treeData?.tree ?? [];
 
   const mainCategoryData = useMemo(() => {
-    if (!categories.length) return { data: [], others: 0, fullList: [] };
+    if (!roots.length) return [];
 
-    const sorted = [...categories].sort((a, b) => b.datasetCount - a.datasetCount);
+    const sorted = [...roots].sort((a, b) => b.datasetCount - a.datasetCount);
     const top5 = sorted.slice(0, 5);
-    const others = sorted.slice(5).reduce((sum, cat) => sum + cat.datasetCount, 0);
+    const othersCount = sorted.slice(5).reduce((sum, cat) => sum + cat.datasetCount, 0);
 
     const data: ChartCategory[] = top5.map((cat, idx) => ({
-      name: locale === "th" ? cat.name : cat.nameEn,
+      id: cat.id,
+      name: locale === "th" ? cat.nameTh : cat.nameEn,
       value: cat.datasetCount,
-      color: COLORS[idx],
+      color: COLORS[idx % COLORS.length],
     }));
 
-    if (others > 0) {
-      data.push({ name: "อื่นๆ", value: others, color: "#e0e0e0" });
+    if (othersCount > 0) {
+      data.push({ id: "__others__", name: locale === "th" ? "อื่นๆ" : "Others", value: othersCount, color: "#bdbdbd" });
     }
 
-    return { data, others, fullList: sorted };
-  }, [categories, locale]);
+    return data;
+  }, [roots, locale]);
 
-  const selectedCategory = useMemo(() => {
-    if (!selectedCategoryId) return null;
-    return mainCategoryData.fullList.find((cat) => cat.id === selectedCategoryId);
-  }, [selectedCategoryId, mainCategoryData.fullList]);
+  const selectedNode: CategoryTreeNode | null = useMemo(() => {
+    if (!selectedId) return null;
+    return roots.find((r) => r.id === selectedId) ?? null;
+  }, [selectedId, roots]);
 
-  const handleMainCategoryClick = (data: any) => {
-    const clickedCategory = mainCategoryData.fullList.find(
-      (cat) => (locale === "th" ? cat.name : cat.nameEn) === data.name
-    );
-    if (clickedCategory) {
-      setSelectedCategoryId(clickedCategory.id);
+  const subCategories = useMemo(() => {
+    if (!selectedNode || selectedNode.children.length === 0) return [];
+    const total = selectedNode.children.reduce((sum, c) => sum + c.datasetCount, 0);
+    return selectedNode.children
+      .filter((c) => c.datasetCount > 0)
+      .sort((a, b) => b.datasetCount - a.datasetCount)
+      .map((c) => ({
+        name: locale === "th" ? c.nameTh : c.nameEn,
+        count: c.datasetCount,
+        percent: total > 0 ? Math.round((c.datasetCount / total) * 100) : 0,
+      }));
+  }, [selectedNode, locale]);
+
+  const handleClick = (data: any) => {
+    const found = mainCategoryData.find((d) => d.name === data.name);
+    if (found && found.id !== "__others__") {
+      setSelectedId(found.id);
     }
   };
 
-  return (
-    <div className="grid grid-cols-1 gap-3 rounded-2xl border border-border-default/60 bg-surface-card p-6 shadow-level-1 lg:grid-cols-2">
-      <div>
-        <h3 className="font-kanit text-heading-3-mobile font-semibold text-text-primary mb-4">
-          หมวดหมู่หลัก
-        </h3>
-        {mainCategoryData.data.length > 0 ? (
-          <div style={{ height: 280 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={mainCategoryData.data}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={2}
-                  dataKey="value"
-                  onClick={handleMainCategoryClick}
-                  cursor="pointer"
-                >
-                  {mainCategoryData.data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value) => `${value} datasets`}
-                  contentStyle={{
-                    backgroundColor: "var(--surface-2)",
-                    border: "0.5px solid var(--border)",
-                    borderRadius: "8px",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        ) : null}
-      </div>
+  const selectedColor = useMemo(() => {
+    if (!selectedId) return COLORS[0];
+    return mainCategoryData.find((d) => d.id === selectedId)?.color ?? COLORS[0];
+  }, [selectedId, mainCategoryData]);
 
-      <div className="flex flex-col justify-center">
-        <h3 className="font-kanit text-heading-3-mobile font-semibold text-text-primary mb-4">
-          {selectedCategory
-            ? locale === "th"
-              ? selectedCategory.name
-              : selectedCategory.nameEn
-            : "เลือกหมวดหมู่"}
-        </h3>
-        {selectedCategory ? (
-          <div>
-            <p className="font-sarabun text-label text-text-primary">
-              {locale === "th" ? selectedCategory.name : selectedCategory.nameEn}
-            </p>
-            <p className="font-kanit text-3xl font-bold text-text-primary mt-2">
-              {selectedCategory.datasetCount}
-            </p>
-            <p className="font-sarabun text-caption text-text-muted mt-2">
-              Datasets
-            </p>
+  return (
+    <div className="self-start rounded-2xl bg-white p-5 shadow-sm">
+      <h3 className="font-kanit text-[15px] font-semibold text-text-primary mb-0.5">
+        หมวดหมู่หลัก
+      </h3>
+      <p className="font-sarabun text-xs text-text-muted mb-3">
+        สัดส่วน dataset ตามหมวดหมู่
+      </p>
+      {mainCategoryData.length > 0 ? (
+        <>
+          <div className="flex items-center gap-4">
+            <div style={{ width: 120, height: 120 }} className="flex-shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={mainCategoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={32}
+                    outerRadius={50}
+                    paddingAngle={2}
+                    dataKey="value"
+                    onClick={handleClick}
+                    cursor="pointer"
+                  >
+                    {mainCategoryData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.color}
+                        stroke={selectedId === entry.id ? "#fff" : "none"}
+                        strokeWidth={selectedId === entry.id ? 3 : 0}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => `${value} datasets`}
+                    contentStyle={{
+                      backgroundColor: "var(--surface-2)",
+                      border: "0.5px solid var(--border)",
+                      borderRadius: "8px",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {mainCategoryData.map((cat) => (
+                <button
+                  key={cat.id}
+                  className="flex items-center gap-2 font-sarabun text-xs text-text-muted hover:text-text-primary transition-colors text-left"
+                  onClick={() => cat.id !== "__others__" && setSelectedId(cat.id)}
+                >
+                  <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
+                  {cat.name}
+                </button>
+              ))}
+            </div>
           </div>
-        ) : (
-          <p className="font-sarabun text-body-md text-text-muted">คลิกที่หมวดหมู่เพื่อดูรายละเอียด</p>
-        )}
-      </div>
+
+          {selectedNode && (
+            <div className="mt-3 border-t border-border-default/40 pt-3">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h4 className="font-kanit text-xs font-semibold text-text-primary">
+                    {locale === "th" ? selectedNode.nameTh : selectedNode.nameEn}
+                  </h4>
+                  <p className="font-sarabun text-[11px] text-text-muted">
+                    {selectedNode.datasetCount} datasets
+                  </p>
+                </div>
+                <button
+                  className="font-sarabun text-xs text-text-muted hover:text-text-primary transition-colors"
+                  onClick={() => setSelectedId(null)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {subCategories.length > 0 ? (
+                <div className="flex flex-col gap-2 max-h-[140px] overflow-y-auto pr-1">
+                  {subCategories.map((sub) => (
+                    <div key={sub.name}>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="font-sarabun text-[11px] text-text-primary truncate mr-2">{sub.name}</span>
+                        <span className="font-sarabun text-[11px] font-semibold text-text-muted flex-shrink-0">
+                          {sub.percent}% ({sub.count})
+                        </span>
+                      </div>
+                      <div className="h-1 w-full rounded-full bg-surface-container">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${sub.percent}%`, backgroundColor: selectedColor }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="font-sarabun text-[11px] text-text-muted">ไม่มีหมวดหมู่ย่อย</p>
+              )}
+            </div>
+          )}
+        </>
+      ) : (
+        <p className="font-sarabun text-xs text-text-muted">ไม่มีข้อมูลหมวดหมู่</p>
+      )}
     </div>
   );
 }

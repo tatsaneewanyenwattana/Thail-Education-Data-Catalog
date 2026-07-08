@@ -12,6 +12,7 @@ type AgencyStatsCardProps = {
   progressBar?: { percent: number; color?: string };
   bgGradient?: string;
   patternColor?: string;
+  textColor?: "white" | "dark";
 };
 
 export default function AgencyStatsCard({
@@ -24,10 +25,12 @@ export default function AgencyStatsCard({
   progressBar,
   bgGradient,
   patternColor,
+  textColor,
 }: AgencyStatsCardProps) {
+  const isWhite = textColor === "white";
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-border-default/60 p-5 shadow-level-1 transition-shadow hover:shadow-level-2"
+      className="relative overflow-hidden rounded-2xl border border-border-default/60 p-6 shadow-level-1 transition-shadow hover:shadow-level-2"
       style={bgGradient ? { background: bgGradient } : { backgroundColor: 'var(--color-surface-card)' }}
     >
       {patternColor && (
@@ -41,23 +44,21 @@ export default function AgencyStatsCard({
         <div className="absolute right-4 top-4 z-10">{trendBadge}</div>
       ) : null}
 
-      <div className="relative z-10 flex items-start gap-4">
+      <div className="relative z-10">
         <div
-          className={`flex h-11 w-11 items-center justify-center rounded-full ${iconClassName}`}
+          className={`mb-5 flex h-14 w-14 items-center justify-center rounded-2xl ${iconClassName}`}
         >
           {icon}
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="font-sarabun text-caption text-text-muted">{label}</p>
-          <p className="mt-1 font-kanit text-[28px] font-bold leading-tight text-text-primary">
-            {value}
-          </p>
-        </div>
+        <p className={`mb-1 font-sarabun text-sm font-semibold ${isWhite ? "text-white/70" : "text-text-muted"}`}>{label}</p>
+        <p className={`font-kanit text-[30px] font-bold leading-tight ${isWhite ? "text-white" : "text-text-primary"}`}>
+          {value}
+        </p>
       </div>
 
       {progressBar ? (
         <div className="relative z-10 mt-4">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-container">
+          <div className={`h-1.5 w-full overflow-hidden rounded-full ${isWhite ? "bg-white/20" : "bg-surface-container"}`}>
             <div
               className="h-full rounded-full transition-all"
               style={{

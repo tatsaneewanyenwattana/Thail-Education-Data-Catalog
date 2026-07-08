@@ -1,10 +1,28 @@
 "use client";
 
+import Link from "next/link";
 import { useLocale } from "next-intl";
 import { useAgencyScholarships } from "@/hooks/useAgencyScholarships";
 
+const TYPE_LABELS: Record<string, string> = {
+  government: "ทุนรัฐบาล",
+  private: "ทุนเอกชน",
+  foundation: "ทุนมูลนิธิ",
+  exchange: "ทุนแลกเปลี่ยน",
+  other: "อื่นๆ",
+};
+
+const TYPE_COLORS: Record<string, string> = {
+  government: "#1565c0",
+  private: "#c62828",
+  foundation: "#2e7d32",
+  exchange: "#e65100",
+  other: "#546e7a",
+};
+
 export default function ScholarshipsList() {
   const locale = useLocale();
+  const base = `/${locale}`;
   const { data: scholarships = [] } = useAgencyScholarships();
 
   const formatDate = (dateStr: string) => {
@@ -12,45 +30,76 @@ export default function ScholarshipsList() {
     return date.toLocaleDateString(locale === "th" ? "th-TH" : "en-US", {
       day: "numeric",
       month: "short",
-      year: "2-digit",
+      year: "numeric",
     });
   };
 
-  const sortedScholarships = [...scholarships].sort(
+  const sorted = [...scholarships].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 
   return (
-    <div className="rounded-2xl border border-border-default/60 bg-surface-card p-6 shadow-level-1">
-      <h3 className="font-kanit text-heading-3-mobile font-semibold text-text-primary mb-4">
-        ทุนที่เปิดรับ (ล่าสุด)
+    <div className="rounded-2xl bg-white p-5 shadow-sm">
+      <h3 className="font-kanit text-[15px] font-semibold text-gray-900 mb-0.5">
+        ทุนอัปเดตล่าสุด
       </h3>
-      {sortedScholarships.length > 0 ? (
-        <div className="flex flex-col gap-0">
-          {sortedScholarships.map((scholarship) => (
-            <div
-              key={scholarship.id}
-              className="flex items-center justify-between border-b border-border-default/20 py-2.5 last:border-b-0"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="font-sarabun text-label text-text-primary truncate">
-                  {locale === "th" ? scholarship.title : scholarship.titleEn}
-                  <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-caption font-semibold text-green-700">
-                    เปิดรับ
-                  </span>
-                </p>
+      <p className="font-sarabun text-xs text-gray-500 mb-3">
+        ทุนการศึกษาที่อัปเดตล่าสุด {sorted.length} รายการ
+      </p>
+
+      {sorted.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {sorted.slice(0, 6).map((scholarship) => {
+            const typeLabel = TYPE_LABELS[scholarship.scholarshipType] || TYPE_LABELS.other;
+            const typeColor = TYPE_COLORS[scholarship.scholarshipType] || TYPE_COLORS.other;
+            return (
+              <div
+                key={scholarship.id}
+                className="rounded-xl bg-[#f3e5f5] p-3"
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className="mt-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                    style={{ backgroundColor: typeColor }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <span
+                      className="inline-block rounded-full px-2.5 py-0.5 font-sarabun text-caption font-medium text-white mb-1"
+                      style={{ backgroundColor: typeColor }}
+                    >
+                      {typeLabel}
+                    </span>
+                    <p className="font-kanit text-label font-semibold text-gray-900 mb-0.5">
+                      {locale === "th" ? scholarship.title : scholarship.titleEn}
+                    </p>
+                    {scholarship.description && (
+                      <p className="font-sarabun text-caption text-gray-600 line-clamp-1 mb-1">
+                        {scholarship.description}
+                      </p>
+                    )}
+                    <p className="font-sarabun text-caption text-gray-500">
+                      Deadline: {formatDate(scholarship.closeDate)}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <p className="font-sarabun text-caption text-text-muted ml-3 flex-shrink-0">
-                {formatDate(scholarship.updatedAt)}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
-        <p className="font-sarabun text-body-md text-text-muted">
+        <p className="font-sarabun text-body-md text-gray-500">
           ไม่มีทุนที่เปิดรับ
         </p>
       )}
+
+      <div className="mt-3 flex justify-end">
+        <Link
+          href={`${base}/manage/scholarships`}
+          className="rounded-full border border-[#01579b]/30 px-4 py-1.5 font-sarabun text-label font-medium text-[#01579b] transition-colors hover:bg-[#e3f2fd]"
+        >
+          ดูทั้งหมด
+        </Link>
+      </div>
     </div>
   );
 }

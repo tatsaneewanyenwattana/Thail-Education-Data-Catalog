@@ -12,7 +12,7 @@ type RecentDatasetTableProps = {
 
 function DatasetRowIcon() {
   return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-light text-primary-dark">
+    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e3f2fd] text-[#01579b]">
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
         <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
       </svg>
@@ -22,7 +22,7 @@ function DatasetRowIcon() {
 
 function CategoryPill({ label }: { label: string }) {
   return (
-    <span className="inline-flex max-w-[160px] truncate rounded-full bg-primary-light px-3 py-1 font-sarabun text-caption font-medium text-primary-dark">
+    <span className="inline-flex max-w-[160px] truncate rounded-full bg-gray-100 px-3 py-1 font-sarabun text-caption font-medium text-text-secondary">
       {label}
     </span>
   );
@@ -130,7 +130,7 @@ export default function RecentDatasetTable({ limit = 5 }: RecentDatasetTableProp
         </h2>
         <Link
           href={`${base}/datasets`}
-          className="rounded-xl px-3 py-1.5 font-sarabun text-label font-medium text-primary-dark transition-colors hover:bg-primary-light"
+          className="rounded-full border border-[#01579b]/30 px-4 py-1.5 font-sarabun text-label font-medium text-[#01579b] transition-colors hover:bg-[#e3f2fd]"
         >
           {t("viewAll")}
         </Link>
@@ -142,16 +142,16 @@ export default function RecentDatasetTable({ limit = 5 }: RecentDatasetTableProp
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-border-default/30 font-sarabun text-caption font-semibold uppercase tracking-wide text-text-muted">
-                <th className="px-6 py-3">{t("colTitle")}</th>
-                <th className="px-6 py-3">{t("colCategory")}</th>
-                <th className="px-6 py-3">{t("colStatus")}</th>
-                <th className="px-6 py-3 text-center">{t("colDownloads")}</th>
-                <th className="px-6 py-3">{t("colUpdated")}</th>
-                <th className="px-6 py-3" />
+              <tr className="bg-[#f3f4f5] font-sarabun text-[15px] font-bold text-text-muted">
+                <th className="px-6 py-4">{t("colTitle")}</th>
+                <th className="px-6 py-4">{t("colCategory")}</th>
+                <th className="px-6 py-4">{t("colStatus")}</th>
+                <th className="px-6 py-4 text-center">{t("colDownloads")}</th>
+                <th className="px-6 py-4">{t("colUpdated")}</th>
+                <th className="px-6 py-4" />
               </tr>
             </thead>
-            <tbody className="font-sarabun text-label text-text-primary">
+            <tbody className="divide-y divide-gray-100/60 font-sarabun text-label text-text-primary">
               {rows.map((row) => {
                 const title = locale === "th" ? row.title : row.titleEn;
                 const category =
@@ -164,14 +164,14 @@ export default function RecentDatasetTable({ limit = 5 }: RecentDatasetTableProp
                 return (
                   <tr
                     key={row.id}
-                    className="border-b border-border-default/20 transition-colors last:border-b-0 hover:bg-surface-page"
+                    className="transition-colors hover:bg-gray-50/50"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <DatasetRowIcon />
                         <Link
                           href={`${base}/datasets/${row.id}`}
-                          className="max-w-[200px] truncate font-medium text-text-primary hover:text-primary-dark hover:underline"
+                          className="max-w-[200px] truncate font-sarabun text-body-md font-semibold text-[#01579b] transition-colors hover:text-[#0277bd] hover:underline"
                         >
                           {title}
                         </Link>
