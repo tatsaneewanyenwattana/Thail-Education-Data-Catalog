@@ -74,11 +74,13 @@ def preview_dataset(
     id: uuid.UUID,
     request: Request,
     db: Session = Depends(get_db),
+    file_id: uuid.UUID | None = Query(None),
 ):
     """
     Preview 100 แถวแรกของ Dataset ที่ Publish แล้ว
 
     - **Auth**: ไม่ต้อง Login
+    - **Query**: file_id (optional) — เลือกไฟล์ที่ต้องการ preview
     - **Errors**: DATASET_NOT_FOUND, FILE_NOT_FOUND
     """
     result = download_service.preview(
@@ -87,6 +89,7 @@ def preview_dataset(
         redis_client=_get_redis(),
         dataset_id=id,
         current_user=_get_optional_user_payload(request),
+        file_id=file_id,
     )
     return success_response(result.model_dump())
 
@@ -98,12 +101,13 @@ def download_dataset(
     purpose: str = Query(...),
     file_format: str = Query(..., alias="format"),
     db: Session = Depends(get_db),
+    file_id: uuid.UUID | None = Query(None),
 ):
     """
     ดาวน์โหลดไฟล์ Dataset (ผ่าน Backend เท่านั้น)
 
     - **Auth**: ไม่ต้อง Login (ส่ง Bearer ได้ถ้า Login แล้วเพื่อบันทึก user_id)
-    - **Query**: purpose, format (csv|excel|json|xml)
+    - **Query**: purpose, format (csv|excel|json|xml), file_id (optional)
     - **Errors**: DOWNLOAD_PURPOSE_REQUIRED, DOWNLOAD_INVALID_FORMAT,
       DATASET_NOT_FOUND, FILE_NOT_FOUND
     """
@@ -116,6 +120,7 @@ def download_dataset(
         user_id=_get_optional_user_id(request),
         ip_address=get_client_ip(request),
         source="web",
+        file_id=file_id,
     )
     _ascii_ext = {
         "csv": "csv",

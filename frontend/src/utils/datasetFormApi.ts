@@ -40,9 +40,10 @@ export async function toUploadApiFormData(
   const categoryId = String(formData.get("categoryId") ?? "");
 
   const apiForm = new FormData();
-  const file = formData.get("file");
-  if (file instanceof File) {
-    apiForm.append("file", file);
+  for (const file of formData.getAll("file")) {
+    if (file instanceof File) {
+      apiForm.append("file", file);
+    }
   }
   apiForm.append("title", String(formData.get("title") ?? ""));
   const description = formData.get("description");

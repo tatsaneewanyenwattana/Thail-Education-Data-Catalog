@@ -193,6 +193,8 @@ export type ApiDataset = {
   rating_avg?: number;
   rating_count?: number;
   user_rating?: number | null;
+  tag_names?: string[];
+  files?: Array<{ id: string; file_name: string; file_size: number; file_format: string }>;
 };
 
 export type DatasetPreviewData = {

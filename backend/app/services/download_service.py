@@ -138,6 +138,23 @@ def _rows_from_dataframe(df: pd.DataFrame) -> list[dict[str, Any]]:
     return preview_df.to_dict(orient="records")
 
 
+def _get_file_path_by_id(db: Session, dataset_id: uuid.UUID, file_id: uuid.UUID) -> str:
+    from app.models.dataset_file_model import DatasetFile
+
+    file = (
+        db.query(DatasetFile.file_path)
+        .filter(
+            DatasetFile.id == file_id,
+            DatasetFile.dataset_id == dataset_id,
+            DatasetFile.is_deleted.is_(False),
+        )
+        .first()
+    )
+    if not file:
+        raise_app_error("FILE_NOT_FOUND")
+    return file[0]
+
+
 def _get_latest_file_path(db: Session, dataset_id: uuid.UUID) -> str:
     versions = dataset_repo.get_dataset_versions(db, dataset_id)
     if versions:
@@ -212,12 +229,17 @@ def download(
     user_id: uuid.UUID | None,
     ip_address: str,
     source: str = "web",
+    file_id: uuid.UUID | None = None,
 ) -> tuple[bytes | Iterator[bytes], str, str]:
     cleaned_purpose = _validate_purpose(purpose)
     target_format = _validate_download_format(file_format)
     dataset = _get_published_dataset(db, dataset_id)
 
-    file_path = _get_latest_file_path(db, dataset_id)
+    file_path = (
+        _get_file_path_by_id(db, dataset_id, file_id)
+        if file_id
+        else _get_latest_file_path(db, dataset_id)
+    )
     source_format = _get_source_format(db, dataset_id, file_path)
 
     if source_format in ("pdf", "sql"):
@@ -272,15 +294,21 @@ def preview(
     redis_client: Redis,
     dataset_id: uuid.UUID,
     current_user: dict | None = None,
+    file_id: uuid.UUID | None = None,
 ) -> PreviewResponse:
     _get_dataset_with_preview_permission(db, dataset_id, current_user)
-    cache_key = f"{PREVIEW_CACHE_PREFIX}{dataset_id}"
+    cache_suffix = f":{file_id}" if file_id else ""
+    cache_key = f"{PREVIEW_CACHE_PREFIX}{dataset_id}{cache_suffix}"
     cached = redis_client.get(cache_key)
     if cached:
         data = json.loads(cached)
         return PreviewResponse(**data)
 
-    file_path = _get_latest_file_path(db, dataset_id)
+    file_path = (
+        _get_file_path_by_id(db, dataset_id, file_id)
+        if file_id
+        else _get_latest_file_path(db, dataset_id)
+    )
     content = _fetch_file_content(minio_client, file_path)
     source_format = _get_source_format(db, dataset_id, file_path)
 

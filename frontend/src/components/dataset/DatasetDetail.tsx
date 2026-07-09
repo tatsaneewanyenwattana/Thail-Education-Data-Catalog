@@ -31,6 +31,8 @@ type DatasetDetailProps = {
   userRating?: number | null;
   datasetOwnerId?: string;
   isPublished?: boolean;
+  tagNames?: string[];
+  files?: Array<{ id: string; file_name: string; file_size: number; file_format: string }>;
 };
 
 type DetailTab = "preview" | "citation";
@@ -102,6 +104,8 @@ export default function DatasetDetail({
   userRating,
   datasetOwnerId,
   isPublished,
+  tagNames,
+  files,
 }: DatasetDetailProps) {
   const t = useTranslations("dataset");
   const tDetail = useTranslations("dataset.detail");
@@ -111,12 +115,19 @@ export default function DatasetDetail({
   const [activeTab, setActiveTab] = useState<DetailTab>("preview");
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [apiAccessOpen, setApiAccessOpen] = useState(false);
+  const [selectedFileId, setSelectedFileId] = useState<string | undefined>(undefined);
 
   const { user } = useAuthStore();
   const addBookmarkMutation = useAddBookmark();
   const canBookmark = user?.role === "agency" || user?.role === "admin";
 
-  const previewQuery = useDatasetPreview(datasetId, activeTab === "preview");
+  const hasMultipleFiles = (files?.length ?? 0) > 1;
+  const selectedFile = hasMultipleFiles && selectedFileId
+    ? files?.find((f) => f.id === selectedFileId)
+    : files?.[0];
+  const effectiveFileFormat = selectedFile?.file_format ?? sourceFileFormat;
+
+  const previewQuery = useDatasetPreview(datasetId, activeTab === "preview", selectedFileId);
   const citationQuery = useDatasetCitation(datasetId, activeTab === "citation");
 
   const previewTable = previewQuery.data
@@ -124,8 +135,8 @@ export default function DatasetDetail({
     : { columns: [], rows: [] };
 
   const availableFormats = useMemo(
-    () => getAvailableDownloadFormats(sourceFileFormat),
-    [sourceFileFormat]
+    () => getAvailableDownloadFormats(effectiveFileFormat),
+    [effectiveFileFormat]
   );
 
   const sectionTabClass = (active: boolean) =>
@@ -257,6 +268,47 @@ export default function DatasetDetail({
             </div>
 
             <div className="rounded-2xl border border-border-default/60 bg-white p-6 shadow-level-1">
+              {hasMultipleFiles && files && (
+                <div className="mb-4">
+                  <h3 className="mb-3 flex items-center gap-2 font-kanit text-body-md font-bold text-primary">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    {locale === "th" ? `ไฟล์ทั้งหมด (${files.length})` : `All files (${files.length})`}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {files.map((file) => {
+                      const isActive = selectedFileId === file.id || (!selectedFileId && file.id === files[0].id);
+                      const colors = FORMAT_ICON_COLORS[file.file_format] ?? { bg: "#f5f5f5", text: "#616161" };
+                      return (
+                        <button
+                          key={file.id}
+                          type="button"
+                          onClick={() => setSelectedFileId(file.id)}
+                          className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left transition-all ${
+                            isActive
+                              ? "border-primary bg-primary-light/40 shadow-sm"
+                              : "border-border-default hover:border-primary/50 hover:bg-surface-container"
+                          }`}
+                        >
+                          <span
+                            className="rounded px-1.5 py-0.5 text-[11px] font-bold uppercase"
+                            style={{ backgroundColor: colors.bg, color: colors.text }}
+                          >
+                            {file.file_format}
+                          </span>
+                          <span className="font-sarabun text-caption text-text-primary">{file.file_name}</span>
+                          <span className="font-sarabun text-caption text-text-muted">
+                            ({(file.file_size / 1024).toFixed(0)} KB)
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <hr className="mt-4 border-border-default/60" />
+                </div>
+              )}
+
               {previewQuery.isLoading && (
                 <div className="animate-pulse">
                   <div className="mb-4 h-6 w-48 rounded bg-surface-container" />
@@ -378,8 +430,7 @@ export default function DatasetDetail({
               <h3 className="mb-3 font-kanit text-label font-bold text-primary-dark">
                 {tDetail("tags")}
               </h3>
-              <DatasetTags tags={[]} />
-              {/* Tags are currently empty - will show when tag data is available */}
+              <DatasetTags tags={tagNames ?? []} />
             </div>
 
             <div className="rounded-2xl border border-border-default/60 bg-white p-6 shadow-level-1">
@@ -405,7 +456,8 @@ export default function DatasetDetail({
         open={downloadOpen}
         onClose={() => setDownloadOpen(false)}
         datasetId={datasetId}
-        sourceFileFormat={sourceFileFormat}
+        sourceFileFormat={effectiveFileFormat}
+        fileId={selectedFileId}
       />
 
       <ApiAccessModal

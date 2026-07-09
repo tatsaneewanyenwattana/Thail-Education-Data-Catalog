@@ -118,6 +118,8 @@ export default function DatasetDetailPageClient({
       userRating={apiDataset.user_rating ?? null}
       datasetOwnerId={apiDataset.user_id ? String(apiDataset.user_id) : ""}
       isPublished={apiDataset.status === "published"}
+      tagNames={apiDataset.tag_names ?? []}
+      files={apiDataset.files ?? []}
     />
   );
 }

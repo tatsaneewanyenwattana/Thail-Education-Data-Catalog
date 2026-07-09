@@ -320,6 +320,15 @@ export default function DatasetForm({ mode, datasetId, theme }: DatasetFormProps
         id = result.id;
       } else if (datasetId) {
         await updateMutation.mutateAsync({ id: datasetId, formData });
+        if (selectedFiles.length > 0) {
+          const fileForm = new FormData();
+          for (const { file } of selectedFiles) {
+            fileForm.append("file", file);
+          }
+          await apiClient.post(`/datasets/${datasetId}/files`, fileForm, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+        }
       }
       if (id) await uploadImageForDataset(id);
       if (userRole === "admin") {

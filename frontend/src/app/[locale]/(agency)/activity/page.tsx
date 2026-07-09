@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ACTIVITY_LOG_PAGE_SIZE,
   type AgencyActivityLogItem,
   useAgencyActivityLogs,
 } from "@/hooks/useAgencyActivityLogs";
+import apiClient from "@/services/api";
 
 function getPageNumbers(
   current: number,
@@ -96,6 +97,242 @@ function exportCsv(items: AgencyActivityLogItem[]) {
   URL.revokeObjectURL(url);
 }
 
+type QuickPreviewTarget = {
+  id: string;
+  title: string;
+  itemType: "dataset" | "scholarship";
+};
+
+type DatasetQuickInfo = {
+  title: string;
+  status: string;
+  description: string | null;
+  download_count: number;
+  view_count: number;
+  file_format: string | null;
+  files: Array<{ file_name: string; file_format: string; file_size: number }>;
+  published_at: string | null;
+  agency_name: string | null;
+  tag_names: string[];
+  quality_score: number | null;
+};
+
+type PreviewRow = Record<string, string | number>;
+
+function QuickPreviewModal({
+  target,
+  onClose,
+  locale,
+}: {
+  target: QuickPreviewTarget;
+  onClose: () => void;
+  locale: string;
+}) {
+  const [detail, setDetail] = useState<DatasetQuickInfo | null>(null);
+  const [previewRows, setPreviewRows] = useState<PreviewRow[]>([]);
+  const [previewCols, setPreviewCols] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const isTh = locale === "th";
+  const base = `/${locale}`;
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    if (target.itemType === "dataset") {
+      Promise.all([
+        apiClient.get(`/datasets/${target.id}`).then((r) => r.data.data),
+        apiClient.get(`/datasets/${target.id}/preview`, { timeout: 15000 }).then((r) => r.data.data).catch(() => null),
+      ]).then(([ds, preview]) => {
+        if (cancelled) return;
+        setDetail(ds);
+        if (preview) {
+          setPreviewCols(preview.columns?.slice(0, 5) ?? []);
+          setPreviewRows(preview.rows?.slice(0, 5) ?? []);
+        }
+        setLoading(false);
+      }).catch(() => !cancelled && setLoading(false));
+    } else {
+      apiClient.get(`/scholarships/${target.id}`).then((r) => {
+        if (cancelled) return;
+        setDetail(r.data.data);
+        setLoading(false);
+      }).catch(() => !cancelled && setLoading(false));
+    }
+
+    return () => { cancelled = true; };
+  }, [target.id, target.itemType]);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  const formatSize = (bytes: number) => bytes >= 1024 * 1024
+    ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+    : `${(bytes / 1024).toFixed(0)} KB`;
+
+  const FORMAT_COLORS: Record<string, { bg: string; text: string }> = {
+    csv: { bg: "#e3f2fd", text: "#1565c0" },
+    excel: { bg: "#e8f5e9", text: "#2e7d32" },
+    json: { bg: "#fff3e0", text: "#e65100" },
+    pdf: { bg: "#ffebee", text: "#c62828" },
+    sql: { bg: "#e0f2f1", text: "#00695c" },
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <button type="button" className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} aria-label="ปิด" />
+      <div className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-border-default/80 bg-white shadow-level-3">
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border-default/60 bg-white px-6 py-4">
+          <h3 className="font-kanit text-lg font-bold text-[#01579b]">
+            {target.itemType === "dataset"
+              ? (isTh ? "รายละเอียดชุดข้อมูล" : "Dataset Detail")
+              : (isTh ? "รายละเอียดทุนการศึกษา" : "Scholarship Detail")}
+          </h3>
+          <button type="button" onClick={onClose} className="rounded-full p-1 text-text-muted hover:bg-surface-container">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        <div className="p-6">
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-5 animate-pulse rounded bg-surface-container" />
+              ))}
+            </div>
+          ) : !detail ? (
+            <p className="text-center font-sarabun text-body-md text-text-muted">
+              {isTh ? "ไม่พบข้อมูล" : "Not found"}
+            </p>
+          ) : (
+            <div className="space-y-5">
+              {/* Title + Status */}
+              <div>
+                <h4 className="font-kanit text-heading-3-mobile font-bold text-text-primary">{detail.title}</h4>
+                {detail.status && (
+                  <span className={`mt-1 inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-sarabun text-caption font-semibold ${
+                    detail.status === "published"
+                      ? "border border-green-200 bg-green-50 text-green-700"
+                      : "border border-amber-200 bg-amber-50 text-amber-700"
+                  }`}>
+                    <span className={`h-2 w-2 rounded-full ${detail.status === "published" ? "bg-green-500" : "bg-amber-500"}`} />
+                    {detail.status === "published" ? (isTh ? "เผยแพร่แล้ว" : "Published") : (isTh ? "ฉบับร่าง" : "Draft")}
+                  </span>
+                )}
+              </div>
+
+              {/* Description */}
+              {detail.description && (
+                <p className="font-sarabun text-body-md text-text-secondary">
+                  {detail.description.length > 200 ? `${detail.description.slice(0, 200)}...` : detail.description}
+                </p>
+              )}
+
+              {/* Stats grid */}
+              {target.itemType === "dataset" && (
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-xl border border-border-default/60 bg-surface-container/30 p-3 text-center">
+                    <p className="font-kanit text-lg font-bold text-[#01579b]">{(detail.download_count ?? 0).toLocaleString()}</p>
+                    <p className="font-sarabun text-caption text-text-muted">{isTh ? "ดาวน์โหลด" : "Downloads"}</p>
+                  </div>
+                  <div className="rounded-xl border border-border-default/60 bg-surface-container/30 p-3 text-center">
+                    <p className="font-kanit text-lg font-bold text-[#01579b]">{(detail.view_count ?? 0).toLocaleString()}</p>
+                    <p className="font-sarabun text-caption text-text-muted">{isTh ? "เข้าชม" : "Views"}</p>
+                  </div>
+                  <div className="rounded-xl border border-border-default/60 bg-surface-container/30 p-3 text-center">
+                    <p className="font-kanit text-lg font-bold text-[#01579b]">{detail.quality_score ?? "-"}</p>
+                    <p className="font-sarabun text-caption text-text-muted">{isTh ? "คะแนนคุณภาพ" : "Quality"}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Files */}
+              {target.itemType === "dataset" && detail.files && detail.files.length > 0 && (
+                <div>
+                  <h5 className="mb-2 font-kanit text-label font-bold text-text-primary">
+                    {isTh ? `ไฟล์ (${detail.files.length})` : `Files (${detail.files.length})`}
+                  </h5>
+                  <div className="flex flex-wrap gap-2">
+                    {detail.files.map((f, i) => {
+                      const colors = FORMAT_COLORS[f.file_format] ?? { bg: "#f5f5f5", text: "#616161" };
+                      return (
+                        <div key={i} className="flex items-center gap-2 rounded-lg border border-border-default px-3 py-1.5">
+                          <span className="rounded px-1.5 py-0.5 text-[11px] font-bold uppercase" style={{ backgroundColor: colors.bg, color: colors.text }}>
+                            {f.file_format}
+                          </span>
+                          <span className="font-sarabun text-caption text-text-primary">{f.file_name}</span>
+                          <span className="font-sarabun text-caption text-text-muted">({formatSize(f.file_size)})</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Tags */}
+              {detail.tag_names && detail.tag_names.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {detail.tag_names.map((tag) => (
+                    <span key={tag} className="rounded-full bg-primary-light/50 px-3 py-1 font-sarabun text-caption font-medium text-primary-dark">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Preview table (5 rows max) */}
+              {previewCols.length > 0 && previewRows.length > 0 && (
+                <div>
+                  <h5 className="mb-2 font-kanit text-label font-bold text-text-primary">
+                    {isTh ? "ตัวอย่างข้อมูล" : "Data preview"}
+                  </h5>
+                  <div className="overflow-x-auto rounded-lg border border-border-default/60">
+                    <table className="w-full text-left font-sarabun text-caption">
+                      <thead>
+                        <tr className="bg-[#f3f4f5]">
+                          {previewCols.map((col) => (
+                            <th key={col} className="whitespace-nowrap px-3 py-2 font-semibold text-text-muted">{col}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {previewRows.map((row, ri) => (
+                          <tr key={ri} className="hover:bg-gray-50/50">
+                            {previewCols.map((col) => (
+                              <td key={col} className="whitespace-nowrap px-3 py-1.5 text-text-primary">
+                                {row[col] != null ? String(row[col]) : "-"}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Action button */}
+              <div className="flex justify-end pt-2">
+                <Link
+                  href={`${base}/datasets/${target.id}/edit`}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#01579b] px-5 py-2 font-sarabun text-label font-medium text-white transition-all hover:brightness-110"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                  {isTh ? "แก้ไข" : "Edit"}
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AgencyActivityPage() {
   const t = useTranslations("agency.activity");
   const locale = useLocale();
@@ -103,6 +340,7 @@ export default function AgencyActivityPage() {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
+  const [previewTarget, setPreviewTarget] = useState<QuickPreviewTarget | null>(null);
   const itemTypeParam = activeTab === "all" ? undefined : activeTab;
   const { data, isLoading, isError, error } = useAgencyActivityLogs(
     page,
@@ -221,12 +459,6 @@ export default function AgencyActivityPage() {
                   const aStyle = actionStyle(item.activityType);
                   const tPill = typePillStyle(item.itemType);
 
-                  const detailHref = item.targetId
-                    ? item.itemType === "scholarship"
-                      ? `${base}/scholarship/${item.targetId}`
-                      : `${base}/datasets/${item.targetId}`
-                    : null;
-
                   return (
                     <tr
                       key={item.id}
@@ -266,14 +498,19 @@ export default function AgencyActivityPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-1.5">
-                          {detailHref ? (
-                            <Link
-                              href={detailHref}
+                          {item.targetId ? (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewTarget({
+                                id: item.targetId!,
+                                title: item.title ?? "-",
+                                itemType: item.itemType,
+                              })}
                               className="flex h-7 w-7 items-center justify-center rounded-full text-[#01579b] transition-colors hover:bg-[#e1f5fe]"
                               title={t("viewDetail")}
                             >
                               <EyeIcon />
-                            </Link>
+                            </button>
                           ) : (
                             <span className="flex h-7 w-7 items-center justify-center rounded-full text-text-muted/40">
                               <EyeIcon />
@@ -344,6 +581,14 @@ export default function AgencyActivityPage() {
             </button>
           </nav>
         </div>
+      )}
+
+      {previewTarget && (
+        <QuickPreviewModal
+          target={previewTarget}
+          onClose={() => setPreviewTarget(null)}
+          locale={locale}
+        />
       )}
     </div>
   );

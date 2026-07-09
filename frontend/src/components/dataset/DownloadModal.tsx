@@ -27,6 +27,7 @@ type DownloadModalProps = {
   /** ประเภทไฟล์ต้นฉบับ — ถ้าไม่ส่งจะดึงจาก API อัตโนมัติ */
   sourceFileFormat?: string | null;
   theme?: "agency";
+  fileId?: string;
 };
 
 function buildDownloadSchema(formats: DownloadFormat[]) {
@@ -47,6 +48,7 @@ type DownloadModalFormProps = {
   availableFormats: DownloadFormat[];
   onClose: () => void;
   theme?: "agency";
+  fileId?: string;
 };
 
 function DownloadModalForm({
@@ -54,6 +56,7 @@ function DownloadModalForm({
   availableFormats,
   onClose,
   theme,
+  fileId,
 }: DownloadModalFormProps) {
   const isAgency = theme === "agency";
   const t = useTranslations("dataset.download");
@@ -91,6 +94,7 @@ function DownloadModalForm({
         datasetId,
         purpose: values.purpose,
         format: values.format,
+        fileId,
       });
       onClose();
     } catch {
@@ -197,6 +201,7 @@ export default function DownloadModal({
   datasetId,
   sourceFileFormat,
   theme,
+  fileId,
 }: DownloadModalProps) {
   const t = useTranslations("dataset.download");
   const tCommon = useTranslations("common");
@@ -275,6 +280,7 @@ export default function DownloadModal({
             availableFormats={availableFormats}
             onClose={onClose}
             theme={theme}
+            fileId={fileId}
           />
         )}
       </div>

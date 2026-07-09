@@ -257,16 +257,19 @@ def public_get_dataset(
 def public_preview_dataset(
     id: uuid.UUID,
     db: Session = Depends(get_db),
+    file_id: uuid.UUID | None = Query(None),
 ):
     """
     Preview ข้อมูล Dataset ตาม #20
     - Auth ❌
+    - Query: file_id (optional)
     """
     result = download_service.preview(
         db=db,
         minio_client=_get_minio(),
         redis_client=_get_redis(),
         dataset_id=id,
+        file_id=file_id,
     )
     return success_response(result.model_dump())
 
@@ -278,10 +281,12 @@ def public_download_dataset(
     purpose: str = Query(...),
     file_format: str = Query(..., alias="format"),
     db: Session = Depends(get_db),
+    file_id: uuid.UUID | None = Query(None),
 ):
     """
     ดาวน์โหลด Dataset ตาม #20
     - Auth ❌
+    - Query: file_id (optional)
     """
     file_content, media_type, filename = download_service.download(
         db=db,
@@ -292,6 +297,7 @@ def public_download_dataset(
         user_id=None,
         ip_address=get_client_ip(request),
         source="api",
+        file_id=file_id,
     )
     _ascii_ext = {
         "csv": "csv",

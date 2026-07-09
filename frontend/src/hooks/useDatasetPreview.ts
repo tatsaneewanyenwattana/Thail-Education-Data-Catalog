@@ -5,13 +5,14 @@ import apiClient from "@/services/api";
 import type { DatasetPreviewData } from "@/types/dataset";
 
 /** GET /api/v1/datasets/{id}/preview — ไม่ต้อง Auth */
-export function useDatasetPreview(datasetId: string, enabled = true) {
+export function useDatasetPreview(datasetId: string, enabled = true, fileId?: string) {
   return useQuery<DatasetPreviewData, Error>({
-    queryKey: ["datasets", datasetId, "preview"],
+    queryKey: ["datasets", datasetId, "preview", fileId ?? "latest"],
     queryFn: async () => {
+      const params = fileId ? { file_id: fileId } : undefined;
       const res = await apiClient.get<{ data: DatasetPreviewData }>(
         `/datasets/${datasetId}/preview`,
-        { timeout: 120000 }
+        { params, timeout: 120000 }
       );
       return res.data.data;
     },

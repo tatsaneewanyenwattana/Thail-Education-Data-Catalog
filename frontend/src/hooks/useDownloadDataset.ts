@@ -10,6 +10,7 @@ export type DownloadDatasetVariables = {
   datasetId: string;
   purpose: string;
   format: DownloadFormat;
+  fileId?: string;
 };
 
 type JSendErrorBody = {
@@ -45,7 +46,11 @@ async function downloadDataset(
     const res = await apiClient.get<Blob>(
       `/datasets/${variables.datasetId}/download`,
       {
-        params: { purpose: variables.purpose, format: variables.format },
+        params: {
+        purpose: variables.purpose,
+        format: variables.format,
+        ...(variables.fileId ? { file_id: variables.fileId } : {}),
+      },
         responseType: "blob",
         timeout: 120000,
       }
